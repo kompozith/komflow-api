@@ -1,4 +1,4 @@
-package features.contact.model;
+package features.contact.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

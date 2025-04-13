@@ -1,7 +1,7 @@
-package features.messaging.model;
+package features.messaging.entity;
 
-import features.contact.model.Contact;
-import features.general.model.File;
+import features.contact.entity.Contact;
+import features.general.entity.File;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

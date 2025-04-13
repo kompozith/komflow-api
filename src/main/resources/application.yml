@@ -1,6 +1,6 @@
+server.port: 9001
 spring:
-  application.name: komflow
-  server.url: http://localhost:9000
+  application.name: Komflow
 
   # ===============================
   # = DATA SOURCE
@@ -8,9 +8,9 @@ spring:
   # Set here configurations for the database connection
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5433/komflow
-    username: root
-    password: root
+    url: jdbc:postgresql://localhost:5432/komflow
+    username: komflow_user
+    password: komflow_user
 
   # ===============================
   # = JPA / HIBERNATE
@@ -18,14 +18,8 @@ spring:
   # Show or not log for each sql query
   jpa:
     show-sql: true
-    # Hibernate ddl auto (create, create-drop, update): with "create-drop" the database
-    # schema will be automatically created afresh for every start of application
-    hibernate.ddl-auto: update
 
-    # Allows Hibernate to generate SQL optimized for a particular DBMS
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate.ddl-auto: update
 
   flyway:
     enabled: true
@@ -33,3 +27,7 @@ spring:
     locations: classpath:db/migration
     out-of-order: false
     baseline-on-migrate: true
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/komflow
+    user: komflow_user
+    password: komflow_user

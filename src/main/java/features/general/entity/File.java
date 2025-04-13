@@ -1,4 +1,4 @@
-package features.general.model;
+package features.general.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
