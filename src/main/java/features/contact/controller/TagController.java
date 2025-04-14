@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("api/tag")
 public class TagController {
 
-    private TagService tagService;
+    private final TagService tagService;
 
     @PostMapping
     public TagDto create(TagDto tagDto) {
