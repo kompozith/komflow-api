@@ -1,7 +1,7 @@
-package features.contact.controller;
+package org.example.komflow.features.contact.controller;
 
-import features.contact.dto.TagDto;
-import features.contact.service.TagService;
+import org.example.komflow.features.contact.dto.TagDto;
+import org.example.komflow.features.contact.service.TagService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

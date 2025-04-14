@@ -1,6 +1,6 @@
-package features.contact.service;
+package org.example.komflow.features.contact.service;
 
-import features.contact.dto.TagDto;
+import org.example.komflow.features.contact.dto.TagDto;
 
 import java.util.List;
 

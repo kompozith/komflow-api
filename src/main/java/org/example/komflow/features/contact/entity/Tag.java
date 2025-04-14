@@ -1,4 +1,4 @@
-package features.contact.entity;
+package org.example.komflow.features.contact.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

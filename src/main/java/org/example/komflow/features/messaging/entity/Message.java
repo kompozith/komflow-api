@@ -1,7 +1,7 @@
-package features.messaging.entity;
+package org.example.komflow.features.messaging.entity;
 
-import features.contact.entity.Contact;
-import features.general.entity.File;
+import org.example.komflow.features.contact.entity.Contact;
+import org.example.komflow.features.general.entity.File;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

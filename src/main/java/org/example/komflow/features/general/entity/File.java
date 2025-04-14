@@ -1,4 +1,4 @@
-package features.general.entity;
+package org.example.komflow.features.general.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

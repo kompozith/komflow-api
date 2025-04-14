@@ -1,4 +1,4 @@
-package features.contact.dto;
+package org.example.komflow.features.contact.dto;
 
 import java.time.Instant;
 

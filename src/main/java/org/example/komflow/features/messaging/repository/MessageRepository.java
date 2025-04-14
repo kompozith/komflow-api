@@ -1,6 +1,6 @@
-package features.messaging.repository;
+package org.example.komflow.features.messaging.repository;
 
-import features.messaging.entity.Message;
+import org.example.komflow.features.messaging.entity.Message;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {

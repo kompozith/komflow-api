@@ -1,9 +1,9 @@
-package features.contact.service;
+package org.example.komflow.features.contact.service;
 
-import features.contact.dto.TagDto;
-import features.contact.entity.Tag;
-import features.contact.mapper.TagMapper;
-import features.contact.repository.TagRepository;
+import org.example.komflow.features.contact.dto.TagDto;
+import org.example.komflow.features.contact.entity.Tag;
+import org.example.komflow.features.contact.mapper.TagMapper;
+import org.example.komflow.features.contact.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
