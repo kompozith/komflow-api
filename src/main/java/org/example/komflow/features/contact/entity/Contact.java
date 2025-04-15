@@ -1,19 +1,20 @@
 package org.example.komflow.features.contact.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.example.komflow.features.general.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Entity
+@Setter
+@Data
 @Table(name = "cnt_contats")
-public class Contact {
+public class Contact extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_id")
@@ -46,12 +47,4 @@ public class Contact {
             inverseJoinColumns = @JoinColumn(name = "cnt_tag_id")
     )
     private List<Tag> tags;
-
-    // Date de création (automatique)
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // Dernière modification (mise à jour automatique)
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 }

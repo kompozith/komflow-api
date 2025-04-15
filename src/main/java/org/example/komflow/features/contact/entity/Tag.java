@@ -2,23 +2,27 @@ package org.example.komflow.features.contact.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.example.komflow.features.general.entity.BaseEntity;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Entity
+@Setter
+@Data
 @Table(name = "cnt_tags")
-public class Tag {
+public class Tag extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_id")
     private Long id;
 
     // Nom du tag
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     // Code couleur du tag
@@ -30,12 +34,4 @@ public class Tag {
 
     @ManyToMany(mappedBy = "tags")
     private List<Contact> contacts;
-
-    // Date de création (automatique)
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // Dernière modification (mise à jour automatique)
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 }

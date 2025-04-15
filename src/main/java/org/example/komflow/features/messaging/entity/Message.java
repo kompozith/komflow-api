@@ -1,21 +1,22 @@
 package org.example.komflow.features.messaging.entity;
 
+import lombok.*;
 import org.example.komflow.features.contact.entity.Contact;
+import org.example.komflow.features.general.entity.BaseEntity;
 import org.example.komflow.features.general.entity.File;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Entity
+@Setter
+@Data
 @Table(name = "msg_messages")
-public class Message {
+public class Message extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_id")
@@ -66,13 +67,5 @@ public class Message {
             inverseJoinColumns = @JoinColumn(name = "gen_file_id")
     )
     private List<File> Attachments;
-
-    // Date de création (automatique)
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // Dernière modification (mise à jour automatique)
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
 }
