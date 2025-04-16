@@ -3,12 +3,11 @@ package org.example.komflow.features.general.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Setter
-@Data
+@Getter
 @Table(name = "gen_files")
 public class File extends BaseEntity {
 

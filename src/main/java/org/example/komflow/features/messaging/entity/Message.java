@@ -9,12 +9,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Setter
-@Data
+@Getter
 @Table(name = "msg_messages")
 public class Message extends BaseEntity {
 

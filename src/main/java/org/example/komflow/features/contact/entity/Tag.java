@@ -4,16 +4,17 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.komflow.features.general.entity.BaseEntity;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Setter
-@Data
+@Getter
 @Table(name = "cnt_tags")
 public class Tag extends BaseEntity {
 

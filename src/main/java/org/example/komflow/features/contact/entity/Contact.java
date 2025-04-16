@@ -7,12 +7,11 @@ import org.example.komflow.features.general.entity.BaseEntity;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Setter
-@Data
+@Getter
 @Table(name = "cnt_contats")
 public class Contact extends BaseEntity {
 
