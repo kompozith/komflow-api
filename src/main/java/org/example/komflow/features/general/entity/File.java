@@ -12,7 +12,7 @@ import lombok.*;
 public class File extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     //Objet du message

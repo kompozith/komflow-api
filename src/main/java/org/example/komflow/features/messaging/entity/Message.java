@@ -18,7 +18,7 @@ import java.util.List;
 public class Message extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     //Objet du message
