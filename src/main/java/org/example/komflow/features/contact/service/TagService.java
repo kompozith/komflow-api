@@ -7,7 +7,7 @@ import java.util.List;
 public interface TagService {
     TagDto create (TagDto tag);
     List<TagDto> getAll();
-    TagDto getById(int id);
+    TagDto getById(Long id); // Changed from int to Long
     TagDto update(TagDto tag);
-    void delete(int id);
+    void delete(Long id); // Changed from int to Long
 }
