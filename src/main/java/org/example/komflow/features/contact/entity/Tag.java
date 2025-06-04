@@ -2,12 +2,8 @@ package org.example.komflow.features.contact.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.example.komflow.features.general.entity.BaseEntity;
+import org.example.komflow.features.core.entity.BaseEntity;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @AllArgsConstructor
@@ -32,6 +28,8 @@ public class Tag extends BaseEntity {
 
     // Description du tag
     private String description;
+
+    private boolean enabled;
 
     @ManyToMany(mappedBy = "tags")
     private List<Contact> contacts;

@@ -1,4 +1,4 @@
-package org.example.komflow.features.general.entity;
+package org.example.komflow.features.core.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,18 +8,16 @@ import lombok.*;
 @Entity
 @Setter
 @Getter
-@Table(name = "gen_files")
+@Table(name = "core_file")
 public class File extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    //Objet du message
     @Column(nullable = false)
     private String name;
 
-    // Aperçu du message
     @Column(nullable = false)
     private String url;
 }

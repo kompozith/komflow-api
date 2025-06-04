@@ -2,9 +2,9 @@ package org.example.komflow.features.contact.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.example.komflow.features.general.entity.BaseEntity;
+import org.example.komflow.features.core.entity.Person;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @AllArgsConstructor
@@ -13,30 +13,18 @@ import java.util.List;
 @Setter
 @Getter
 @Table(name = "cnt_contats")
-public class Contact extends BaseEntity {
+public class Contact extends Person {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    // Email du contact
-    private String email;
+    private boolean enabled;
 
-    // Prenom du contact
-    @Column(name = "first_name", nullable = false)
-    private String firstName;
+    private Instant lastMessageReceivedAt;
 
-    // Nom du contact
-    @Column(name = "last_name", nullable = false)
-    private String lastName;
-
-    // numero de telephone du contact
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    // Numero Whatsapp du contact
-    @Column(name = "whatsapp_number")
-    private String whatsappNumber;
+    @OneToOne(cascade = CascadeType.ALL)
+    private Person person;
 
     //Tags linked to the contacts
     @ManyToMany(cascade = CascadeType.ALL)
