@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import org.example.komflow.features.contact.dto.TagDto;
 import org.example.komflow.features.contact.service.TagService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,5 +27,22 @@ public class TagController {
     @GetMapping
     public List<TagDto> getAll() {
         return tagService.getAll();
+    }
+
+    @GetMapping("/{id}")
+    public TagDto getById(@PathVariable Long id) {
+        return tagService.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    public TagDto update(@PathVariable Long id, @Valid @RequestBody TagDto tagDto) {
+        tagDto.setId(id);
+        return tagService.update(tagDto);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        tagService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
