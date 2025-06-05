@@ -1,20 +1,20 @@
 package org.example.komflow.features.contact.dto;
 
-import jakarta.validation.constraints.NotBlank; // Import added
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.Instant;
 
 @Data
 public class TagDto {
-    private Long id; // Changed from String to Long
+    private Long id;
 
-    @NotBlank // Added
+    @NotBlank(message = "tag.name.notBlank")
     private String name;
 
     private String description;
 
-    @NotBlank // Added
+    @NotBlank(message = "tag.colorCode.notBlank")
     private String colorCode;
 
     private Instant createdAt;
