@@ -1,19 +1,19 @@
-package org.example.komflow.features.contact.entity;
+package org.example.komflow.features.personnel.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.komflow.features.contact.entity.Contact;
 import org.example.komflow.features.core.entity.BaseEntity;
-import org.example.komflow.features.core.entity.Person;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Setter
 @Getter
-@Table(name = "cnt_phone_number")
+@Table(name = "prs_phone_number")
 public class PhoneNumber extends BaseEntity {
 
     @Id
@@ -28,4 +28,7 @@ public class PhoneNumber extends BaseEntity {
 
     @ManyToOne(cascade = CascadeType.ALL)
     private Person person;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    private Contact contact;
 }

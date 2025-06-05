@@ -1,4 +1,4 @@
-package org.example.komflow.features.security;
+package org.example.komflow.features.security.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

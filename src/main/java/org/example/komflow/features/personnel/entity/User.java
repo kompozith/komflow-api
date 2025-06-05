@@ -1,11 +1,13 @@
-package org.example.komflow.features.security;
+package org.example.komflow.features.personnel.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.example.komflow.features.core.entity.Person;
+import org.example.komflow.features.core.entity.BaseEntity;
+import org.example.komflow.features.security.entity.AuditLog;
+import org.example.komflow.features.security.entity.Role;
 
 import java.util.List;
 
@@ -15,7 +17,7 @@ import java.util.List;
 @Setter
 @Getter
 @Table(name = "prs_users")
-public class User extends Person {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
@@ -26,6 +28,9 @@ public class User extends Person {
     private String password;
 
     private boolean enabled;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private Person person;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

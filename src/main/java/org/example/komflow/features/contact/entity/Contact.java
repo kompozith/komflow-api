@@ -2,7 +2,8 @@ package org.example.komflow.features.contact.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.example.komflow.features.core.entity.Person;
+import org.example.komflow.features.core.entity.BaseEntity;
+import org.example.komflow.features.personnel.entity.Person;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
 @Setter
 @Getter
 @Table(name = "cnt_contats")
-public class Contact extends Person {
+public class Contact extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

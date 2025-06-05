@@ -1,4 +1,4 @@
-package org.example.komflow.features.core.entity;
+package org.example.komflow.features.personnel.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.example.komflow.features.contact.entity.PhoneNumber;
+import org.example.komflow.features.core.entity.BaseEntity;
 
 import java.util.List;
 
@@ -15,8 +15,8 @@ import java.util.List;
 @Setter
 @Getter
 @SuperBuilder
-@MappedSuperclass
-@Table(name = "core_persons")
+@Entity
+@Table(name = "prs_persons")
 public abstract class Person extends BaseEntity {
 
     @Id
