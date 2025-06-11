@@ -36,3 +36,7 @@ spring:
     default-schema: komflow
     user: komflow_user
     password: komflow_user
+
+logging:
+  level:
+    org.springframework.security: DEBUG

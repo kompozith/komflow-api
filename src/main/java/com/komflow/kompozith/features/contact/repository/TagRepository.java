@@ -1,0 +1,7 @@
+package com.komflow.kompozith.features.contact.repository;
+
+import com.komflow.kompozith.features.contact.entity.Tag;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TagRepository extends JpaRepository<Tag, Long> {
+}
