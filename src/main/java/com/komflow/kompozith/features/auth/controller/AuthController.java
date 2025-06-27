@@ -27,7 +27,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    private ResponseEntity<SimpleResponse<UserDetailsDto>> signUp(@Valid @RequestBody SignUpDto signUpDto) {
+    public ResponseEntity<SimpleResponse<UserDetailsDto>> signUp(@Valid @RequestBody SignUpDto signUpDto) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(authService.signUp(signUpDto));
@@ -38,7 +38,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    private ResponseEntity<SimpleResponse<UserDetailsWithTokenDto>> login(@Valid @RequestBody LoginDto loginDto) {
+    public ResponseEntity<SimpleResponse<UserDetailsWithTokenDto>> login(@Valid @RequestBody LoginDto loginDto) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(authService.login(loginDto));
