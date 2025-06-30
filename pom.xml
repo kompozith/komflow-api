@@ -8,8 +8,8 @@
         <version>3.4.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.komflow</groupId>
-    <artifactId>kompozith</artifactId>
+    <groupId>com.kompozith</groupId>
+    <artifactId>komflow</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Komflow</name>
     <description>Komflow</description>
