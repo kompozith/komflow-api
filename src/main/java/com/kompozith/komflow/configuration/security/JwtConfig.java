@@ -1,4 +1,4 @@
-package com.kompozith.komflow.features.security.util;
+package com.kompozith.komflow.configuration.security;
 
 import lombok.Getter;
 import lombok.Setter;

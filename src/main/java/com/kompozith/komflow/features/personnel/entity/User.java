@@ -3,9 +3,6 @@ package com.kompozith.komflow.features.personnel.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import com.kompozith.komflow.features.core.entity.BaseEntity;
-import com.kompozith.komflow.features.security.entity.AuditLog;
-import com.kompozith.komflow.features.security.entity.Role;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.util.List;
 

@@ -1,8 +1,11 @@
-package com.kompozith.komflow.features.configuration.advice;
+package com.kompozith.komflow.configuration.advice;
 
-import com.kompozith.komflow.features.configuration.exception.*;
-import com.kompozith.komflow.features.configuration.record.ErrorResponse;
-import com.kompozith.komflow.features.configuration.record.SimpleResponse;
+import com.kompozith.komflow.configuration.exception.AccessDeniedException;
+import com.kompozith.komflow.configuration.exception.InvalidCredentialsException;
+import com.kompozith.komflow.configuration.exception.ObjectExistException;
+import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
+import com.kompozith.komflow.configuration.util.ErrorResponse;
+import com.kompozith.komflow.configuration.util.SimpleResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;

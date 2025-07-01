@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.auth.service;
 
-import com.kompozith.komflow.features.configuration.exception.ObjectNotFoundException;
+import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.personnel.entity.User;
 import com.kompozith.komflow.features.personnel.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

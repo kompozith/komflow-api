@@ -1,10 +1,7 @@
-package com.kompozith.komflow.features.configuration;
+package com.kompozith.komflow.configuration.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kompozith.komflow.features.auth.service.CustomUserDetailsService;
-import com.kompozith.komflow.features.configuration.service.JwtAuthenticationEntryPoint;
-import com.kompozith.komflow.features.security.util.JwtTokenFilter;
-import com.kompozith.komflow.features.security.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

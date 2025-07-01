@@ -1,4 +1,4 @@
-package com.kompozith.komflow.features.security.entity;
+package com.kompozith.komflow.features.personnel.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

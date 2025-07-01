@@ -1,7 +1,6 @@
-package com.kompozith.komflow.features.configuration.util;
+package com.kompozith.komflow.configuration.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kompozith.komflow.features.configuration.record.ErrorResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

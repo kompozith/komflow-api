@@ -1,4 +1,4 @@
-package com.kompozith.komflow.features.security.util;
+package com.kompozith.komflow.configuration.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

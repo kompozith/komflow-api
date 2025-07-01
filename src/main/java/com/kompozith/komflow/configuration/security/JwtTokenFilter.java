@@ -1,9 +1,7 @@
-package com.kompozith.komflow.features.security.util;
+package com.kompozith.komflow.configuration.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kompozith.komflow.features.configuration.exception.JwtAuthenticationException;
-import com.kompozith.komflow.features.configuration.record.ErrorResponse;
-import com.kompozith.komflow.features.configuration.util.ErrorResponseWriter;
+import com.kompozith.komflow.configuration.util.ErrorResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -11,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;

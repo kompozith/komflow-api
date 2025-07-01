@@ -1,4 +1,4 @@
-package com.kompozith.komflow.features.configuration.exception;
+package com.kompozith.komflow.configuration.exception;
 
 public class InvalidCredentialsException extends RuntimeException {
 
