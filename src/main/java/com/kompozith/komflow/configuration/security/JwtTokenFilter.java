@@ -67,7 +67,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         } catch (JwtException | AuthenticationException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            ErrorResponse errorResponse = new ErrorResponse(e.getLocalizedMessage().toUpperCase(),e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("AUTHENTICATION_FAILED",e.getMessage());
 
             response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
         }

@@ -1,4 +1,4 @@
-package com.kompozith.komflow.features.personnel.dto;
+package com.kompozith.komflow.features.auth.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

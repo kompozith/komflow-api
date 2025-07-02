@@ -1,4 +1,4 @@
-package com.kompozith.komflow.features.personnel.entity;
+package com.kompozith.komflow.features.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import java.time.Instant;
 @Entity
 @Setter
 @Getter
-@Table(name = "scr_audit_logs")
+@Table(name = "aut_audit_logs")
 public class AuditLog {
 
     @Id

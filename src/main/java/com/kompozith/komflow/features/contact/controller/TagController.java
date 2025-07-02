@@ -19,8 +19,8 @@ public class TagController {
 
     private final TagService tagService;
 
+    @PreAuthorize("hasAuthority('TAG_CREATE')")
     @PostMapping
-    @PreAuthorize("hasAuthority('user:read')")
     public TagDto create(@Valid @RequestBody TagDto tagDto) {
         return tagService.create(tagDto);
     }

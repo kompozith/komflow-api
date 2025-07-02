@@ -1,0 +1,78 @@
+package com.kompozith.komflow.features.core.util;
+
+import com.kompozith.komflow.features.auth.entity.Role;
+import com.kompozith.komflow.features.auth.repository.RoleRepository;
+import com.kompozith.komflow.features.contact.permissions.ContactPermissionEnum;
+import com.kompozith.komflow.features.personnel.entity.Person;
+import com.kompozith.komflow.features.personnel.entity.User;
+import com.kompozith.komflow.features.personnel.repository.PersonRepository;
+import com.kompozith.komflow.features.personnel.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.kompozith.komflow.features.core.util.AppConstants.*;
+
+@Component
+@RequiredArgsConstructor
+public class DataInitializer {
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final PersonRepository personRepository;
+
+    @PostConstruct
+    public void init() {
+        initAdminRole();
+        initAdminUser();
+        assignAdminRoleToAdmin();
+    }
+
+    void initAdminRole() {
+
+        Role adminRole = roleRepository.findByName(ADMIN_ROLE_NAME).orElse(null);
+
+        if (adminRole == null) {
+            adminRole = new Role();
+            adminRole.setName(ADMIN_ROLE_NAME);
+            adminRole.setDescription(ADMIN_ROLE_DESCRIPTION);
+
+            adminRole.setPermissions(new HashSet<>(ContactPermissionEnum.getAllCodes()));
+
+            roleRepository.save(adminRole);
+        }
+    }
+
+    void initAdminUser() {
+
+        if (userRepository.findByUsername(ADMIN_USERNAME).isEmpty()) {
+            User admin = new User();
+            admin.setUsername(ADMIN_USERNAME);
+            admin.setPassword(passwordEncoder.encode(ADMIN_PASSWORD));
+
+            // Create a person for the user
+            Person person = new Person();
+            person.setEmail(ADMIN_EMAIL);
+
+            personRepository.save(person);
+
+            admin.setPerson(person);
+            userRepository.save(admin);
+        }
+    }
+
+    void assignAdminRoleToAdmin() {
+        Role adminRole = roleRepository.findByName(ADMIN_ROLE_NAME).orElse(null);
+        User admin = userRepository.findByUsername(ADMIN_USERNAME).orElse(null);
+
+        assert adminRole != null;
+        assert admin != null;
+        admin.setRoles(Set.of(adminRole));
+
+        userRepository.save(admin);
+    }
+}

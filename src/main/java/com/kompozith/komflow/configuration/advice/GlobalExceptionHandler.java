@@ -9,6 +9,7 @@ import com.kompozith.komflow.configuration.util.SimpleResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -57,9 +58,9 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    @ExceptionHandler(AccessDeniedException.class)
-    public ErrorResponse handleAccessDeniedException(AccessDeniedException exception) {
-        return new ErrorResponse("ACCESS_DENIED", exception.getMessage());
+    @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
+    public ErrorResponse handleAccessDeniedException(RuntimeException exception) {
+        return new ErrorResponse("ACCESS_DENIED", "You are not authorized to access this resource");
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)

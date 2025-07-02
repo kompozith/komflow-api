@@ -23,6 +23,7 @@ public class Person extends BaseEntity {
     private Long id;
 
     // Email du contact
+    @Column(nullable = false)
     private String email;
 
     // Prenom du contact

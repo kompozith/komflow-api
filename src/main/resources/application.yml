@@ -46,4 +46,6 @@ jwt:
 
 logging:
   level:
+    root: INFO
     org.springframework.security: DEBUG
+    com.kompozith.komflow.features.auth.CustomUserDetailsService: DEBUG
