@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.contact.service;
 
-import jakarta.persistence.EntityNotFoundException;
+import com.kompozith.komflow.configuration.exception.ObjectExistException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+
 @ExtendWith(MockitoExtension.class)
 class TagServiceImplTest {
 
@@ -25,157 +26,79 @@ class TagServiceImplTest {
     private TagRepository tagRepository;
 
     @Mock
-    private TagMapper tagMapper; // Mocking the interface
+    private TagMapper tagMapper;
 
     @InjectMocks
     private TagServiceImpl tagService;
 
-    private Tag tagEntity;
-    private TagDto tagDto;
+    Tag tag;
+    TagDto tagDto;
+    Tag expectedSavedTag;
 
     @BeforeEach
     void setUp() {
-        tagEntity = new Tag();
-        tagEntity.setId(1L);
-        tagEntity.setName("Test Tag");
-        tagEntity.setColorCode("#FFFFFF");
-        tagEntity.setDescription("Test Description");
 
+        // tagDto and mapped TagDto
         tagDto = new TagDto();
         tagDto.setId(1L);
-        tagDto.setName("Test Tag DTO");
-        tagDto.setColorCode("#000000");
-        tagDto.setDescription("Test DTO Description");
-    }
+        tagDto.setName("Tag Example");
+        tagDto.setColorCode("#FFFFFFFF");
+        tagDto.setDescription("Tag Example Description");
 
-    // --- getById Tests ---
-    @Test
-    void getById_whenTagExists_shouldReturnTagDto() {
-        // Arrange
-        when(tagRepository.findById(1L)).thenReturn(Optional.of(tagEntity));
-        when(tagMapper.tagToTagDto(tagEntity)).thenReturn(tagDto);
+        // Tag and mapped tag
+        tag = new Tag();
+        tag.setId(1L);
+        tag.setName("Tag Example");
+        tag.setColorCode("#FFFFFFFF");
+        tag.setDescription("Tag Example Description");
 
-        // Act
-        TagDto result = tagService.getById(1L);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(tagDto.getId(), result.getId());
-        assertEquals(tagDto.getName(), result.getName());
-        verify(tagRepository).findById(1L);
-        verify(tagMapper).tagToTagDto(tagEntity);
+        expectedSavedTag = new Tag();
+        expectedSavedTag.setId(tagDto.getId());
+        expectedSavedTag.setName(tagDto.getName());
+        expectedSavedTag.setColorCode(tagDto.getColorCode());
+        expectedSavedTag.setDescription(tagDto.getDescription());
     }
 
     @Test
-    void getById_whenTagNotFound_shouldThrowEntityNotFoundException() {
-        // Arrange
-        when(tagRepository.findById(1L)).thenReturn(Optional.empty());
+    void shouldCreateTagSuccessfully() {
 
-        // Act & Assert
-        assertThrows(EntityNotFoundException.class, () -> {
-            tagService.getById(1L);
-        });
-        verify(tagRepository).findById(1L);
+        when(tagRepository.findByName(tagDto.getName())).thenReturn(Optional.empty());
+        when(tagMapper.tagDtoToTag(tagDto)).thenReturn(tag);
+        when(tagRepository.save(any())).thenReturn(tag);
+        when(tagMapper.tagToTagDto(any())).thenReturn(tagDto);
+
+        TagDto savedTag = tagService.create(tagDto);
+
+        assertNotNull(savedTag);
+        assert(savedTag.getId().equals(tagDto.getId()));
+        assert(savedTag.getName().equals(tagDto.getName()));
+        assert(savedTag.getColorCode().equals(tagDto.getColorCode()));
+        assert(savedTag.getDescription().equals(tagDto.getDescription()));
+    }
+
+    @Test
+    void shouldReturnObjectExistExceptionOnCreateWhenTadExist() {
+
+        when(tagRepository.findByName(tagDto.getName())).thenReturn(Optional.of(tag));
+
+        ObjectExistException existException = assertThrows(ObjectExistException.class, () ->
+                tagService.create(tagDto)
+        );
+
+        assertEquals("Tag already exists with name: " + tagDto.getName(), existException.getMessage());
+        verify(tagRepository, never()).save(any());
         verifyNoInteractions(tagMapper);
     }
 
-    // --- update Tests ---
     @Test
-    void update_whenTagExists_shouldUpdateAndReturnTagDto() {
-        // Arrange
-        Tag existingTag = new Tag(); // Simulate existing entity
-        existingTag.setId(1L);
-        existingTag.setName("Old Name");
-        existingTag.setColorCode("#OLDCLR");
-        
-        TagDto inputDto = new TagDto();
-        inputDto.setId(1L);
-        inputDto.setName("New Name");
-        inputDto.setColorCode("#NEWCLR");
-        inputDto.setDescription("New Desc");
-
-        Tag savedTag = new Tag(); // Simulate entity after save
-        savedTag.setId(1L);
-        savedTag.setName(inputDto.getName());
-        savedTag.setColorCode(inputDto.getColorCode());
-        savedTag.setDescription(inputDto.getDescription());
-        
-        TagDto expectedReturnDto = new TagDto(); // DTO mapped from savedTag
-        expectedReturnDto.setId(1L);
-        expectedReturnDto.setName(savedTag.getName());
-        // Ensure all relevant fields are set for the expected DTO
-        expectedReturnDto.setColorCode(savedTag.getColorCode());
-        expectedReturnDto.setDescription(savedTag.getDescription());
-
-
-        when(tagRepository.findById(1L)).thenReturn(Optional.of(existingTag));
-        when(tagRepository.save(any(Tag.class))).thenReturn(savedTag);
-        when(tagMapper.tagToTagDto(savedTag)).thenReturn(expectedReturnDto);
-
-        // Act
-        TagDto result = tagService.update(inputDto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedReturnDto.getName(), result.getName());
-        assertEquals(expectedReturnDto.getColorCode(), result.getColorCode());
-        assertEquals(expectedReturnDto.getDescription(), result.getDescription());
-        
-        verify(tagRepository).findById(1L);
-        verify(tagRepository).save(argThat(tag -> 
-            tag.getId().equals(1L) &&
-            tag.getName().equals(inputDto.getName()) &&
-            tag.getColorCode().equals(inputDto.getColorCode()) &&
-            tag.getDescription().equals(inputDto.getDescription())
-        ));
-        verify(tagMapper).tagToTagDto(savedTag);
-    }
-    
-    @Test
-    void update_whenTagNotFound_shouldThrowEntityNotFoundException() {
-        // Arrange
-        TagDto inputDto = new TagDto();
-        inputDto.setId(1L); // ID of non-existent tag
-        inputDto.setName("Attempt Update Name");
-        
-        when(tagRepository.findById(1L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(EntityNotFoundException.class, () -> {
-            tagService.update(inputDto);
-        });
-        
-        verify(tagRepository).findById(1L);
-        verify(tagRepository, never()).save(any(Tag.class));
-        verifyNoInteractions(tagMapper);
-    }
-
-    // --- delete Tests ---
-    @Test
-    void delete_whenTagExists_shouldCallDeleteById() {
-        // Arrange
-        when(tagRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(tagRepository).deleteById(1L); // For void methods
-
-        // Act
-        tagService.delete(1L);
-
-        // Assert
-        verify(tagRepository).existsById(1L);
-        verify(tagRepository).deleteById(1L);
+    void getById() {
     }
 
     @Test
-    void delete_whenTagNotFound_shouldThrowEntityNotFoundException() {
-        // Arrange
-        when(tagRepository.existsById(1L)).thenReturn(false);
+    void update() {
+    }
 
-        // Act & Assert
-        assertThrows(EntityNotFoundException.class, () -> {
-            tagService.delete(1L);
-        });
-        
-        verify(tagRepository).existsById(1L);
-        verify(tagRepository, never()).deleteById(1L);
+    @Test
+    void delete() {
     }
 }

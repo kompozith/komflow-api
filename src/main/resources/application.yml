@@ -41,7 +41,7 @@ spring:
 # Configuration JWT
 jwt:
   secret-key: "${JWT_SECRET:de717372299e516520195b110c787d30b004db006a9692498bb04914556eca1f}"
-  expiration-ms: "${JWT_EXPIRATION_MS:3600000}"
+  expiration-ms: "${JWT_EXPIRATION_MS:43200000}" # 12 heures
   issuer: "${JWT_ISSUER:komflow-app}"
 
 logging:

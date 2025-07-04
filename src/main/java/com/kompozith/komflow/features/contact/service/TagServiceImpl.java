@@ -1,5 +1,6 @@
 package com.kompozith.komflow.features.contact.service;
 
+import com.kompozith.komflow.configuration.exception.ObjectExistException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
@@ -7,7 +8,6 @@ import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.core.service.BaseService;
 import jakarta.persistence.EntityNotFoundException; // Added import
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,11 +18,18 @@ import java.util.stream.Collectors;
 public class TagServiceImpl extends BaseService implements TagService {
 
     private final TagRepository tagRepository;
+    private final TagMapper tagMapper;
 
     @Override
     public TagDto create(TagDto tagDto) {
-        Tag tag = TagMapper.INSTANCE.tagDtoToTag(tagDto);
-        return TagMapper.INSTANCE.tagToTagDto(
+
+        // Verifier qu'aucun tag n'existe sur ce nom.
+        if(tagRepository.findByName(tagDto.getName()).isPresent()){
+            throw new ObjectExistException("Tag already exists with name: " + tagDto.getName());
+        }
+
+        Tag tag = tagMapper.tagDtoToTag(tagDto);
+        return tagMapper.tagToTagDto(
                 tagRepository.save(tag)
         );
     }
@@ -30,7 +37,7 @@ public class TagServiceImpl extends BaseService implements TagService {
     @Override
     public List<TagDto> getAll() {
         return tagRepository.findAll().stream().map(
-                TagMapper.INSTANCE::tagToTagDto
+                tagMapper::tagToTagDto
         ).collect(Collectors.toList());
     }
 
@@ -38,7 +45,7 @@ public class TagServiceImpl extends BaseService implements TagService {
     public TagDto getById(Long id) { // Changed from int to Long
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tag not found with id: " + id));
-        return TagMapper.INSTANCE.tagToTagDto(tag);
+        return tagMapper.tagToTagDto(tag);
     }
 
     @Override
@@ -51,10 +58,10 @@ public class TagServiceImpl extends BaseService implements TagService {
         tag.setName(tagDto.getName());
         tag.setDescription(tagDto.getDescription());
         tag.setColorCode(tagDto.getColorCode());
-        // Assuming BaseEntity handles updatedAt automatically
 
+        // Assuming BaseEntity handles updatedAt automatically
         Tag updatedTag = tagRepository.save(tag);
-        return TagMapper.INSTANCE.tagToTagDto(updatedTag);
+        return tagMapper.tagToTagDto(updatedTag);
     }
 
     @Override

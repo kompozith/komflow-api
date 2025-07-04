@@ -13,14 +13,14 @@ public enum ContactPermissionEnum {
     TAG_LIST("TAG_LIST", "Tags list", "List all tags"),
     TAG_CREATE("TAG_CREATE", "Tag create", "Create a tag"),
     TAG_SHOW("TAG_SHOW", "Tag show", "Show a tag details"),
-    TAG_EDIT("TAG_EDIT", "Tag edit", "Edit a tag"),
+    TAG_UPDATE("TAG_UPDATE", "Tag edit", "Edit a tag"),
     TAG_DELETE("TAG_DELETE", "Tag delete", "Delete a tag"),
 
     // Contact
     CONTACT_LIST("CONTACT_LIST", "Contact list", "List all contacts"),
     CONTACT_SHOW("CONTACT_SHOW", "Contact details", "Show a contact details"),
     CONTACT_CREATE("CONTACT_CREATE", "Contact create", "Create a contact"),
-    CONTACT_EDIT("CONTACT_EDIT", "Contact edit", "Edit a contact"),
+    CONTACT_UPDATE("CONTACT_UPDATE", "Contact edit", "Edit a contact"),
     CONTACT_DELETE("CONTACT_DELETE", "Contact delete", "Delete a contact");
 
     private final String code;
