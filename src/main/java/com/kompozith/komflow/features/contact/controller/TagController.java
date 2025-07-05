@@ -27,21 +27,21 @@ public class TagController {
 
     @PreAuthorize("hasAuthority('TAG_LIST')")
     @GetMapping
-    public List<TagDto> getAll() {
-        return tagService.getAll();
+    public List<TagDto> findAll() {
+        return tagService.findAll();
     }
 
     @PreAuthorize("hasAuthority('TAG_SHOW')")
     @GetMapping("/{id}")
-    public TagDto getById(@PathVariable Long id) {
-        return tagService.getById(id);
+    public TagDto findById(@PathVariable Long id) {
+        return tagService.findById(id);
     }
 
     @PreAuthorize("hasAuthority('TAG_UPDATE')")
     @PutMapping("/{id}")
     public TagDto update(@PathVariable Long id, @Valid @RequestBody TagDto tagDto) {
         tagDto.setId(id);
-        return tagService.update(tagDto);
+        return tagService.update(id, tagDto);
     }
 
     @PreAuthorize("hasAuthority('TAG_DELETE')")

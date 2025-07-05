@@ -41,7 +41,7 @@ public class AuthServiceImpl extends BaseService implements AuthService {
         Optional<User> foundUserByUserName = userRepository.findByUsername(signUpDto.username());
 
         if (foundUserByUserName.isPresent()) {
-            throw new ObjectExistException("username.exists");
+            throw new ObjectExistException(User.class.getSimpleName(),"username",signUpDto.username());
         }
 
         // Check if email is used
@@ -51,7 +51,7 @@ public class AuthServiceImpl extends BaseService implements AuthService {
             Person person = foundPersonByEmail.get();
             Optional<User> foundUserByPersonId = userRepository.findByPersonId(person.getId());
             if(foundUserByPersonId.isPresent()) {
-                throw new ObjectExistException("email.exists");
+                throw new ObjectExistException(User.class.getSimpleName(), "email", signUpDto.email());
             }
         }
 
@@ -92,12 +92,12 @@ public class AuthServiceImpl extends BaseService implements AuthService {
         if(optUser.isEmpty()) {
             // Find user by email if not found by username
             try {
-                person = RequireExist.of(personRepository.findByEmail(loginDto.login()),"");
+                person = RequireExist.of(personRepository.findByEmail(loginDto.login()),User.class.getSimpleName());
             } catch (ObjectNotFoundException e) {
                 throw new InvalidCredentialsException("Invalid login or password");
             }
 
-            user = RequireExist.of(userRepository.findByPersonId(person.getId()),"person");
+            user = RequireExist.of(userRepository.findByPersonId(person.getId()),User.class.getSimpleName());
         }
         else {
             user = optUser.get();

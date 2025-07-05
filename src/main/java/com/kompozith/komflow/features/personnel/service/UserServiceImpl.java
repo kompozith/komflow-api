@@ -20,7 +20,7 @@ public class UserServiceImpl extends BaseService implements UserService {
     @Override
     public SimpleResponse<UserDetailsDto> findUserByUsername(String username) {
 
-        User user = RequireExist.of(userRepository.findByUsername(username), "user.notFound") ;
+        User user = RequireExist.of(userRepository.findByUsername(username), User.class.getSimpleName()) ;
 
         return new SimpleResponse<>(
                 "user.information",

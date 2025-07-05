@@ -1,6 +1,7 @@
 package com.kompozith.komflow.features.contact.service;
 
 import com.kompozith.komflow.configuration.exception.ObjectExistException;
+import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
@@ -60,7 +61,7 @@ class TagServiceImplTest {
     }
 
     @Test
-    void shouldCreateTagSuccessfully() {
+    void shouldCreateSuccessfully() {
 
         when(tagRepository.findByName(tagDto.getName())).thenReturn(Optional.empty());
         when(tagMapper.tagDtoToTag(tagDto)).thenReturn(tag);
@@ -74,10 +75,15 @@ class TagServiceImplTest {
         assert(savedTag.getName().equals(tagDto.getName()));
         assert(savedTag.getColorCode().equals(tagDto.getColorCode()));
         assert(savedTag.getDescription().equals(tagDto.getDescription()));
+
+        verify(tagRepository).findByName(tagDto.getName());
+        verify(tagMapper).tagDtoToTag(tagDto);
+        verify(tagRepository, times(1)).save(any());
+        verify(tagMapper, times(1)).tagToTagDto(tag);
     }
 
     @Test
-    void shouldReturnObjectExistExceptionOnCreateWhenTadExist() {
+    void shouldReturnObjectExistExceptionOnCreateWhenAlreadyExistWithGivenName() {
 
         when(tagRepository.findByName(tagDto.getName())).thenReturn(Optional.of(tag));
 
@@ -85,20 +91,115 @@ class TagServiceImplTest {
                 tagService.create(tagDto)
         );
 
-        assertEquals("Tag already exists with name: " + tagDto.getName(), existException.getMessage());
+        assertEquals("Tag already exists with name " + tagDto.getName() + ".", existException.getMessage());
+
+        verify(tagRepository).findByName(tagDto.getName());
         verify(tagRepository, never()).save(any());
         verifyNoInteractions(tagMapper);
     }
 
     @Test
-    void getById() {
+    void shouldFindByIdSuccessfullyWhenTagExist() {
+        when(tagRepository.findById(tagDto.getId())).thenReturn(Optional.of(tag));
+        when(tagMapper.tagToTagDto(any())).thenReturn(tagDto);
+
+        TagDto foundTag = tagService.findById(tagDto.getId());
+
+        assertNotNull(foundTag);
+        assert(foundTag.getId().equals(tag.getId()));
+        assert(foundTag.getName().equals(tag.getName()));
+        assert(foundTag.getColorCode().equals(tagDto.getColorCode()));
+        assert(foundTag.getDescription().equals(tagDto.getDescription()));
+
+        verify(tagRepository).findById(tag.getId());
+        verify(tagMapper).tagToTagDto(tag);
     }
 
     @Test
-    void update() {
+    void shouldReturnObjectNotFoundExceptionOnFindByIdWhenTagNotExistWithGivenId() {
+        when(tagRepository.findById(any())).thenReturn(Optional.empty());
+
+        ObjectNotFoundException objectNotFoundException = assertThrows(ObjectNotFoundException.class, () ->
+                tagService.findById(tagDto.getId())
+        );
+
+        assertEquals("Tag not found with id " + tagDto.getId() + ".", objectNotFoundException.getMessage());
+
+        verify((tagRepository)).findById(tagDto.getId());
+        verifyNoInteractions(tagMapper);
     }
 
     @Test
-    void delete() {
+    void shouldUpdateSuccessfully() {
+
+        // Dto information for tag to update
+        TagDto updatedTagDto = new TagDto();
+        updatedTagDto.setName("Updated tag");
+        updatedTagDto.setColorCode("#TE7FFF");
+        updatedTagDto.setDescription("Updated description");
+
+        // saved updated tag
+        Tag updatedTag = new Tag();
+        updatedTag.setName(updatedTagDto.getName());
+        updatedTag.setColorCode(updatedTagDto.getColorCode());
+        updatedTag.setDescription(updatedTagDto.getDescription());
+
+        when(tagRepository.findById(tagDto.getId())).thenReturn(Optional.of(tag));
+        when(tagRepository.save(any())).thenReturn(updatedTag);
+        when(tagMapper.tagToTagDto(any())).thenReturn(updatedTagDto);
+
+        TagDto savedUpdatedTag = tagService.update(tagDto.getId(), updatedTagDto);
+
+        assertNotNull(savedUpdatedTag);
+        assertEquals(savedUpdatedTag.getName(), updatedTagDto.getName());
+        assertEquals(savedUpdatedTag.getColorCode(), updatedTagDto.getColorCode());
+        assertEquals(savedUpdatedTag.getDescription(), updatedTagDto.getDescription());
+
+        verify(tagRepository).save(argThat(savingtag ->
+                savedUpdatedTag.getName().equals(updatedTagDto.getName()) &&
+                savedUpdatedTag.getColorCode().equals(updatedTagDto.getColorCode()) &&
+                savedUpdatedTag.getDescription().equals(updatedTagDto.getDescription())
+        ));
+        verify(tagRepository).findById(tagDto.getId());
+        verify(tagMapper).tagToTagDto(updatedTag);
+    }
+
+
+    @Test
+    void shouldReturnObjectNotFoundExceptionWhenUpdatingByNotFoundId() {
+
+        when(tagRepository.findById(any())).thenReturn(Optional.empty());
+
+        ObjectNotFoundException objectNotFoundException = assertThrows(ObjectNotFoundException.class, () ->
+                tagService.update(tagDto.getId(), tagDto)
+        );
+
+        assertEquals("Tag not found with id " + tagDto.getId() + ".", objectNotFoundException.getMessage());
+        verify(tagRepository, never()).save(any());
+        verifyNoInteractions(tagMapper);
+    }
+
+    @Test
+    void shouldDeleteTagSuccessfully() {
+        when(tagRepository.existsById(tagDto.getId())).thenReturn(true);
+        doNothing().when(tagRepository).deleteById(tagDto.getId());
+
+        tagService.delete(tagDto.getId());
+
+        verify(tagRepository).existsById(tagDto.getId());
+        verify(tagRepository).deleteById(tagDto.getId());
+    }
+
+    @Test
+    void shouldReturnObjectNotFoundExceptionWhenDeletingByNotFoundId() {
+        when(tagRepository.existsById(tagDto.getId())).thenReturn(false);
+
+        ObjectNotFoundException objectNotFoundException = assertThrows(ObjectNotFoundException.class, () ->
+                tagService.delete(tagDto.getId())
+        );
+
+        assertEquals("Tag not found with id " + tagDto.getId() + ".", objectNotFoundException.getMessage());
+        verify(tagRepository).existsById(tagDto.getId());
+        verify(tagRepository, never()).deleteById(tagDto.getId());
     }
 }

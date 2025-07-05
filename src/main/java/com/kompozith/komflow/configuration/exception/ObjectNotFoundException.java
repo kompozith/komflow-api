@@ -1,12 +1,22 @@
 package com.kompozith.komflow.configuration.exception;
 
+import java.util.HashMap;
+
 public class ObjectNotFoundException extends RuntimeException {
 
-    public ObjectNotFoundException(String message) {
-        super(message);
+    // Only class name given
+    public ObjectNotFoundException(String className) {
+        super(className+ " not found.");
     }
 
-    public ObjectNotFoundException(String message, Throwable cause) {
-        super(message, cause);
+    // Class name and object id given
+    public ObjectNotFoundException(String className, Long id) {
+        super(className+ " not found with id " + id + ".");
     }
+
+    // Class name, some parameter and his value given
+    public ObjectNotFoundException(String className, String fieldName, String fieldValue) {
+        super(className + " not found with " + fieldName+ " " + fieldValue + ".");
+    }
+
 }
