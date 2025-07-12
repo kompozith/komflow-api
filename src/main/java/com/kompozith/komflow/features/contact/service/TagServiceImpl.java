@@ -23,7 +23,7 @@ public class TagServiceImpl extends BaseService implements TagService {
     @Override
     public TagDto create(TagDto tagDto) {
 
-        // Verifier qu'aucun tag n'existe sur ce nom.
+        // Verify that another tag didn't exist with yhe given name.
         if(tagRepository.findByName(tagDto.getName()).isPresent()){
             throw new ObjectExistException(Tag.class.getSimpleName(), "name", tagDto.getName());
         }
@@ -52,6 +52,14 @@ public class TagServiceImpl extends BaseService implements TagService {
     public TagDto update(Long id, TagDto tagDto) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
+
+        Tag alredyExistedTag = tagRepository.findByName(tagDto.getName()).orElse(null);
+
+        // Throw exception if the name is already assigned to another tag
+        if(tagDto.getName() != null) {
+            if(alredyExistedTag != null && !alredyExistedTag.getId().equals(tag.getId()))
+                throw new ObjectExistException(Tag.class.getSimpleName(), "name", tagDto.getName());
+        }
 
         // Update fields
         tag.setName(tagDto.getName());

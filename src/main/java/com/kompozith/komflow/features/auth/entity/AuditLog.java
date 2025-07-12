@@ -20,17 +20,29 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
+    @Column(nullable = false)
     private String action;
 
-    private String objectType;
+    @Column(nullable = false)
+    private String objectType; // Class name
 
+    @Column(nullable = false)
     private String objectId;
+
+    private String connectedUserId;
 
     private String ipAddress;
 
     private String userAgent;
 
+    private String userLocation;
+
     private String details;
 
     private Instant date;
+
+    @PrePersist
+    protected void onCreate() {
+        this.date = Instant.now();
+    }
 }
