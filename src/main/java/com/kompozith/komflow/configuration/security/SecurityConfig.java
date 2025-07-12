@@ -60,7 +60,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 API_PREFIX_V1+"/auth/signup",
-                                API_PREFIX_V1+"/auth/login"
+                                API_PREFIX_V1+"/auth/login",
+                                "swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -74,10 +77,7 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers(
-                "/error",
-                "/favicon.ico",
-                "/static/**",
-                "/webjars/**"
+                "/error"
         );
     }
 }

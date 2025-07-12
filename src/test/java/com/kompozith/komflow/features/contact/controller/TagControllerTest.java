@@ -1,6 +1,5 @@
 package com.kompozith.komflow.features.contact.controller;
 
-import com.kompozith.komflow.configuration.security.JwtUtil;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.service.TagService;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.util.PathMatcher;
 
 import java.util.List;
 
@@ -28,9 +26,6 @@ class TagControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
     @MockitoBean
     private TagService tagService;
 
@@ -38,9 +33,6 @@ class TagControllerTest {
     TagDto tagDto2;
     TagDto tagDto3;
     List<TagDto> tagDtoList;
-
-    @Autowired
-    private PathMatcher mvcPathMatcher;
 
     @BeforeEach
     void setUp() {
