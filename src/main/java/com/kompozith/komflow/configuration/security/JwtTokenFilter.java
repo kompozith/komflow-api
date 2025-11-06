@@ -1,7 +1,7 @@
 package com.kompozith.komflow.configuration.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kompozith.komflow.configuration.util.ErrorResponse;
+import com.kompozith.komflow.util.ErrorResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -17,8 +17,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import static com.kompozith.komflow.features.core.util.AppConstants.API_PREFIX_V1;
 
 @Component
 @RequiredArgsConstructor
@@ -37,8 +35,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) {
         // Liste des routes à ignorer
         if (
-                request.getRequestURI().equals(API_PREFIX_V1+"/auth/signup") ||
-                request.getRequestURI().equals(API_PREFIX_V1+"/auth/login") ||
+                request.getRequestURI().equals("/auth/signup") ||
+                request.getRequestURI().equals("/auth/login") ||
                 request.getRequestURI().contains("swagger")
         ) {
             filterChain.doFilter(request, response);

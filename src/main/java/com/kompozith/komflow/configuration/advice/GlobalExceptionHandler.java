@@ -1,15 +1,14 @@
 package com.kompozith.komflow.configuration.advice;
 
-import com.kompozith.komflow.configuration.exception.AccessDeniedException;
-import com.kompozith.komflow.configuration.exception.InvalidCredentialsException;
-import com.kompozith.komflow.configuration.exception.ObjectExistException;
-import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
-import com.kompozith.komflow.configuration.util.ErrorResponse;
-import com.kompozith.komflow.configuration.util.SimpleResponse;
+import com.kompozith.komflow.exception.AccessDeniedException;
+import com.kompozith.komflow.exception.InvalidCredentialsException;
+import com.kompozith.komflow.exception.ObjectExistException;
+import com.kompozith.komflow.exception.ObjectNotFoundException;
+import com.kompozith.komflow.util.ErrorResponse;
+import com.kompozith.komflow.util.SimpleResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -58,7 +57,7 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
+    @ExceptionHandler({AccessDeniedException.class})
     public ErrorResponse handleAccessDeniedException(RuntimeException exception) {
         return new ErrorResponse("ACCESS_DENIED", "You are not authorized to access this resource");
     }

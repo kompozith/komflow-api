@@ -1,5 +1,6 @@
 package com.kompozith.komflow.features.personnel.repository;
 
+import com.kompozith.komflow.KomflowApplication;
 import com.kompozith.komflow.features.auth.entity.Role;
 import com.kompozith.komflow.features.auth.repository.RoleRepository;
 import com.kompozith.komflow.features.personnel.dto.UserDetailsInterfaceDto;
@@ -62,7 +63,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    void shouldFindUserByUsername() {
+    void shouldFindUserByUsernameAndReturnResultSuccessfully() {
 
         // Given or Arrange
         Person savedPerson = this.personRepository.save(person);

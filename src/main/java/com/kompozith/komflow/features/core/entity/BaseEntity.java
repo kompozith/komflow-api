@@ -31,15 +31,15 @@ public abstract class BaseEntity {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = Instant.now();
-    }
+//    @PrePersist
+//    protected void onCreate() {
+//        this.createdAt = Instant.now();
+//        this.updatedAt = Instant.now();
+//    }
+//
+//    @PreUpdate
+//    protected void onUpdate() {
+//        this.updatedAt = Instant.now();
+//    }
 
 }

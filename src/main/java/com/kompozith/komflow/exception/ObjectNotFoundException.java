@@ -1,4 +1,4 @@
-package com.kompozith.komflow.configuration.exception;
+package com.kompozith.komflow.exception;
 
 import java.util.HashMap;
 

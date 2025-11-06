@@ -1,8 +1,8 @@
 package com.kompozith.komflow.features.personnel.service;
 
 import com.kompozith.komflow.features.core.service.BaseService;
-import com.kompozith.komflow.configuration.util.RequireExist;
-import com.kompozith.komflow.configuration.util.SimpleResponse;
+import com.kompozith.komflow.util.RequireExist;
+import com.kompozith.komflow.util.SimpleResponse;
 import com.kompozith.komflow.features.personnel.dto.UserDetailsDto;
 import com.kompozith.komflow.features.personnel.entity.User;
 import com.kompozith.komflow.features.personnel.repository.PhoneNumberRepository;

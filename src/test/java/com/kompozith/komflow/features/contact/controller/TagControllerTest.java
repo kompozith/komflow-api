@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -26,7 +26,7 @@ class TagControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @MockBean
     private TagService tagService;
 
     TagDto tagDto1;
@@ -67,7 +67,7 @@ class TagControllerTest {
         when(tagService.findAll()).thenReturn(tagDtoList);
 
         // Act & Assert: perform the test request
-        mockMvc.perform(get(API_PREFIX_V1+"/tag"))
+        mockMvc.perform(get("/tag"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(tagDtoList.size()))
@@ -86,7 +86,7 @@ class TagControllerTest {
         when(tagService.findAll()).thenReturn(tagDtoList);
 
         // Act & Assert: perform the test request
-        mockMvc.perform(get(API_PREFIX_V1+"/tag"))
+        mockMvc.perform(get("/tag"))
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(tagService);
@@ -99,7 +99,7 @@ class TagControllerTest {
         when(tagService.findAll()).thenReturn(tagDtoList);
 
         // Act & Assert: perform the test request
-        mockMvc.perform(get(API_PREFIX_V1+"/tag"))
+        mockMvc.perform(get("/tag"))
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(tagService);

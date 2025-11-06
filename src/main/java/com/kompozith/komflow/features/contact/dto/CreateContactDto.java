@@ -1,11 +1,9 @@
 package com.kompozith.komflow.features.contact.dto;
 
-import com.kompozith.komflow.features.personnel.dto.PersonDto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.validation.constraints.NotNull;
-// Assuming TagDto is in the same package, otherwise add import
 
 import java.time.Instant;
 import java.util.List;
@@ -13,19 +11,14 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ContactDto {
-
-    private Long id;
+public class CreateContactDto {
 
     private boolean enabled;
 
     private Instant lastMessageReceivedAt;
 
-    private PersonDto person;
+    @NotNull(message = "contact.personId.notNull")
+    private Long personId; // Representing the Person relationship
 
-    private List<TagDto> tags;
-
-    private Instant createdAt;
-
-    private Instant updatedAt;
+    private List<Long> tagIds; // List of tag IDs
 }

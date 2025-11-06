@@ -24,12 +24,12 @@ public class Contact extends BaseEntity {
 
     private Instant lastMessageReceivedAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @JoinColumn(name = "prs_person_id", nullable = false)
     private Person person;
 
     //Tags linked to the contacts
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany
     @JoinTable(
             name = "cnt_contact_tags",
             joinColumns = @JoinColumn(name = "cnt_contact_id"),

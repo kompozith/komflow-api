@@ -1,7 +1,7 @@
 package com.kompozith.komflow.features.contact.service;
 
-import com.kompozith.komflow.configuration.exception.ObjectExistException;
-import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
+import com.kompozith.komflow.exception.ObjectExistException;
+import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
@@ -63,13 +63,16 @@ class TagServiceImplTest {
     @Test
     void shouldCreateSuccessfully() {
 
+        // Given
         when(tagRepository.findByName(tagDto.getName())).thenReturn(Optional.empty());
         when(tagMapper.tagDtoToTag(tagDto)).thenReturn(tag);
         when(tagRepository.save(any())).thenReturn(tag);
         when(tagMapper.tagToTagDto(any())).thenReturn(tagDto);
 
+        // When
         TagDto savedTag = tagService.create(tagDto);
 
+        // Then
         assertNotNull(savedTag);
         assert(savedTag.getId().equals(tagDto.getId()));
         assert(savedTag.getName().equals(tagDto.getName()));
@@ -85,12 +88,15 @@ class TagServiceImplTest {
     @Test
     void shouldReturnObjectExistExceptionOnCreateWhenAlreadyExistWithGivenName() {
 
+        // Given
         when(tagRepository.findByName(tagDto.getName())).thenReturn(Optional.of(tag));
 
+        // When
         ObjectExistException existException = assertThrows(ObjectExistException.class, () ->
                 tagService.create(tagDto)
         );
 
+        // Then
         assertEquals("Tag already exists with name " + tagDto.getName() + ".", existException.getMessage());
 
         verify(tagRepository).findByName(tagDto.getName());

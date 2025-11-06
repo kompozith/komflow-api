@@ -1,4 +1,4 @@
-package com.kompozith.komflow.configuration.util;
+package com.kompozith.komflow.util;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

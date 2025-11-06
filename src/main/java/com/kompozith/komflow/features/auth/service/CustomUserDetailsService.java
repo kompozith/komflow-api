@@ -1,13 +1,11 @@
 package com.kompozith.komflow.features.auth.service;
 
-import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
+import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.personnel.entity.User;
 import com.kompozith.komflow.features.personnel.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

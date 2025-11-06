@@ -1,6 +1,6 @@
-package com.kompozith.komflow.configuration.util;
+package com.kompozith.komflow.util;
 
-import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
+import com.kompozith.komflow.exception.ObjectNotFoundException;
 
 import java.util.Optional;
 

@@ -1,11 +1,9 @@
 package com.kompozith.komflow.features.contact.dto;
 
-import com.kompozith.komflow.features.personnel.dto.PersonDto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import jakarta.validation.constraints.NotNull;
-// Assuming TagDto is in the same package, otherwise add import
+import com.kompozith.komflow.features.personnel.dto.PersonDto;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,7 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ContactDto {
+public class ContactDetailsDto {
 
     private Long id;
 

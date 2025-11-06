@@ -1,7 +1,7 @@
 package com.kompozith.komflow.features.contact.service;
 
-import com.kompozith.komflow.configuration.exception.ObjectExistException;
-import com.kompozith.komflow.configuration.exception.ObjectNotFoundException;
+import com.kompozith.komflow.exception.ObjectExistException;
+import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
@@ -53,11 +53,11 @@ public class TagServiceImpl extends BaseService implements TagService {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
 
-        Tag alredyExistedTag = tagRepository.findByName(tagDto.getName()).orElse(null);
+        Tag alreadyExistedTag = tagRepository.findByName(tagDto.getName()).orElse(null);
 
         // Throw exception if the name is already assigned to another tag
         if(tagDto.getName() != null) {
-            if(alredyExistedTag != null && !alredyExistedTag.getId().equals(tag.getId()))
+            if(alreadyExistedTag != null && !alreadyExistedTag.getId().equals(tag.getId()))
                 throw new ObjectExistException(Tag.class.getSimpleName(), "name", tagDto.getName());
         }
 

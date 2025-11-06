@@ -38,7 +38,7 @@ public class User extends BaseEntity {
     @JoinColumn(name = "prs_person_id", nullable = false)
     private Person person;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     @JoinTable(
             name = "prs_user_roles",
             joinColumns = @JoinColumn(name = "prs_user_id"),
@@ -46,7 +46,7 @@ public class User extends BaseEntity {
     )
     private Set<Role> roles;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL)
     private List<AuditLog> logs;
 
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -1,4 +1,4 @@
-package com.kompozith.komflow.configuration.exception;
+package com.kompozith.komflow.exception;
 
 public class JwtAuthenticationException extends RuntimeException {
 

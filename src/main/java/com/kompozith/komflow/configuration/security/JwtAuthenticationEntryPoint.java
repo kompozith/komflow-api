@@ -1,7 +1,7 @@
 package com.kompozith.komflow.configuration.security;
 
-import com.kompozith.komflow.configuration.exception.JwtAuthenticationException;
-import com.kompozith.komflow.configuration.util.ErrorResponseWriter;
+import com.kompozith.komflow.exception.JwtAuthenticationException;
+import com.kompozith.komflow.util.ErrorResponseWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

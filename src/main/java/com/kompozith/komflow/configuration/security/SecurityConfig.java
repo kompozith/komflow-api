@@ -18,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import static com.kompozith.komflow.features.core.util.AppConstants.API_PREFIX_V1;
 
 @Configuration
 @EnableWebSecurity
@@ -58,14 +57,13 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                API_PREFIX_V1+"/auth/signup",
-                                API_PREFIX_V1+"/auth/login",
-                                "swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs"
-                        ).permitAll()
-                        .anyRequest().authenticated()
+//                        .requestMatchers(
+//                              "/auth/signup",
+//                              "/auth/login",
+//                               "/swagger-ui/**",
+//                              "/v3/api-docs/**"
+//                        ).authenticated()
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(
                         new JwtTokenFilter(jwtUtil, userDetailsService, new ObjectMapper()),

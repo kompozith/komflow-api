@@ -1,0 +1,64 @@
+# Server Configuration
+server:
+  port: ${SERVER_PORT:9001}
+  servlet:
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/api/v1}
+
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:Komflow}
+
+  # ===============================
+  # = DATA SOURCE
+  # ===============================
+  # Set here configurations for the database connection
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:komflow}
+    username: ${DB_USERNAME:komflow_user}
+    password: ${DB_PASSWORD:komflow_user}
+
+  sql:
+    init.mode: always
+    init.schema-locations: classpath:db/migration/schema.sql
+
+  # ===============================
+  # = JPA / HIBERNATE
+  # ===============================
+  # Show or not log for each sql query
+  jpa:
+    show-sql: true
+    hibernate.ddl-auto: update
+    properties.hibernate.default_schema: ${DB_SCHEMA:komflow}
+
+  flyway:
+    enabled: false
+    encoding: UTF-8
+    locations: classpath:db/migration
+    out-of-order: false
+    baseline-on-migrate: true
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:komflow}
+    default-schema: ${DB_SCHEMA:komflow}
+    user: ${DB_USERNAME:komflow_user}
+    password: ${DB_PASSWORD:komflow_user}
+
+
+# Swagger
+springdoc:
+  api-docs:
+    path: ${SPRINGDOC_API_DOCS_PATH:/v3/api-docs}
+  swagger-ui:
+    path: ${SPRINGDOC_SWAGGER_UI_PATH:/swagger-ui.html}
+
+# Configuration JWT
+jwt:
+  secret-key: "${JWT_SECRET:de717372299e516520195b110c787d30b004db006a9692498bb04914556eca1f}"
+  expiration-ms: ${JWT_EXPIRATION_MS:43200000}
+  issuer: ${JWT_ISSUER:komflow-app}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    com.kompozith.komflow.features.auth.CustomUserDetailsService: DEBUG

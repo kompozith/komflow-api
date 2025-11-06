@@ -1,4 +1,4 @@
-package com.kompozith.komflow.configuration.util;
+package com.kompozith.komflow.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
