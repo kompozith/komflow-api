@@ -43,6 +43,21 @@ spring:
     user: ${DB_USERNAME:komflow_user}
     password: ${DB_PASSWORD:komflow_user}
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:gilleskemgoum@gmail.com}
+    password: ${MAIL_PASSWORD:xvahdlfnnqzpgeva}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        connectiontimeout: 5000
+        timeout: 3000
+        writetimeout: 5000
 
 # Swagger
 springdoc:

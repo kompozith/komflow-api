@@ -17,7 +17,7 @@ public class SwaggerConfig {
     @Value("${server.servlet.context-path:/}")
     private String contextPath;
 
-    @Value("${server.port:8080}")
+    @Value("${server.port:9001}")
     private String serverPort;
 
     @Bean
@@ -43,6 +43,6 @@ public class SwaggerConfig {
                         )
                 )
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-                .addServersItem(new Server().url(serverUrl));
+                .addServersItem(new Server().url(serverUrl).description("Local Development Server"));
     }
 }

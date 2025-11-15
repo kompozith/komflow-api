@@ -8,6 +8,7 @@ import lombok.Setter;
 import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.core.entity.BaseEntity;
 
+import java.time.Instant;
 import java.util.List;
 
 @AllArgsConstructor
@@ -31,6 +32,12 @@ public class Campaign extends BaseEntity {
 
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Contact> contacts;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CampaignStatus status;
+
+    private Instant scheduledAt;
 
     // Cc du mail
     @ManyToMany(cascade = CascadeType.ALL)

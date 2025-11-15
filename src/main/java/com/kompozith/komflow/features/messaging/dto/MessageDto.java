@@ -1,32 +1,20 @@
 package com.kompozith.komflow.features.messaging.dto;
 
+import com.kompozith.komflow.features.messaging.entity.MessageType;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import com.kompozith.komflow.features.core.dto.FileDto;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessageDto {
-
     private Long id;
-
-    @NotBlank(message = "message.title.notBlank")
-    @Size(max = 255, message = "message.title.sizeExceeded")
     private String title;
-
-    @NotBlank(message = "message.body.notBlank")
     private String body;
-
-    private List<FileDto> attachments; // Using existing FileDto
-
+    private MessageType type;
     private Instant createdAt;
-
     private Instant updatedAt;
 }

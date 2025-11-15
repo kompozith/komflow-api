@@ -3,6 +3,7 @@ package com.kompozith.komflow.features.core.util;
 import com.kompozith.komflow.features.auth.entity.Role;
 import com.kompozith.komflow.features.auth.repository.RoleRepository;
 import com.kompozith.komflow.features.contact.permissions.ContactPermissionEnum;
+import com.kompozith.komflow.features.messaging.permissions.MessagePermissionEnum;
 import com.kompozith.komflow.features.personnel.entity.Person;
 import com.kompozith.komflow.features.personnel.entity.User;
 import com.kompozith.komflow.features.personnel.repository.PersonRepository;
@@ -41,7 +42,18 @@ public class DataInitializer {
             adminRole.setName(ADMIN_ROLE_NAME);
             adminRole.setDescription(ADMIN_ROLE_DESCRIPTION);
 
-            adminRole.setPermissions(new HashSet<>(ContactPermissionEnum.getAllCodes()));
+            Set<String> allPermissions = new HashSet<>();
+            allPermissions.addAll(ContactPermissionEnum.getAllCodes());
+            allPermissions.addAll(MessagePermissionEnum.getAllCodes());
+            adminRole.setPermissions(allPermissions);
+
+            roleRepository.save(adminRole);
+        } else {
+            // Update existing role with new permissions
+            Set<String> allPermissions = new HashSet<>();
+            allPermissions.addAll(ContactPermissionEnum.getAllCodes());
+            allPermissions.addAll(MessagePermissionEnum.getAllCodes());
+            adminRole.setPermissions(allPermissions);
 
             roleRepository.save(adminRole);
         }

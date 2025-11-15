@@ -27,6 +27,11 @@ public class Message extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String body;
 
+    // Type du message
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MessageType type;
+
     // Pièces jointes du mail
     @OneToMany(cascade = CascadeType.ALL)
     @JoinTable(
