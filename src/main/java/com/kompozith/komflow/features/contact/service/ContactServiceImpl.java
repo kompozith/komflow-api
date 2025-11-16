@@ -12,6 +12,8 @@ import com.kompozith.komflow.features.contact.mapper.TagMapper;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.core.service.BaseService;
+import com.kompozith.komflow.features.messaging.entity.Campaign;
+import com.kompozith.komflow.features.messaging.repository.CampaignRepository;
 import com.kompozith.komflow.features.personnel.dto.PersonDto;
 import com.kompozith.komflow.features.personnel.repository.PersonRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +21,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.hibernate.query.sqm.tree.SqmNode.log;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +36,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     private final ContactMapper contactMapper;
     private final PersonRepository personRepository;
     private final TagRepository tagRepository;
-    private final TagMapper tagMapper;
+    private final CampaignRepository campaignRepository;
 
     @Override
     public ContactDto create(CreateContactDto createContactDto) {
@@ -48,7 +54,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         // Set the tags
         if (createContactDto.getTagIds() != null && !createContactDto.getTagIds().isEmpty()) {
-            contact.setTags(tagRepository.findAllById(createContactDto.getTagIds()));
+            contact.setTags(new HashSet<>(tagRepository.findAllById(createContactDto.getTagIds())));
         }
 
         return contactMapper.contactToContactDto(
@@ -96,7 +102,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         // Update tags if tagIds provided
         if (createContactDto.getTagIds() != null) {
-            List<Tag> tags = tagRepository.findAllById(createContactDto.getTagIds());
+            Set<Tag> tags = new HashSet<>(tagRepository.findAllById(createContactDto.getTagIds()));
             contact.setTags(tags);
         }
 
@@ -107,9 +113,9 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
     @Override
     public void delete(Long id) {
-        if (!contactRepository.existsById(id)) {
-            throw new ObjectNotFoundException(Contact.class.getSimpleName(), id);
-        }
+        Contact contact = contactRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException(Contact.class.getSimpleName(), id));
+
         contactRepository.deleteById(id);
     }
 }

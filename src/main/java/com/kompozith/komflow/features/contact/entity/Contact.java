@@ -6,7 +6,8 @@ import com.kompozith.komflow.features.core.entity.BaseEntity;
 import com.kompozith.komflow.features.personnel.entity.Person;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,7 +25,7 @@ public class Contact extends BaseEntity {
 
     private Instant lastMessageReceivedAt;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "prs_person_id", nullable = false)
     private Person person;
 
@@ -35,5 +36,5 @@ public class Contact extends BaseEntity {
             joinColumns = @JoinColumn(name = "cnt_contact_id"),
             inverseJoinColumns = @JoinColumn(name = "cnt_tag_id")
     )
-    private List<Tag> tags;
+    private Set<Tag> tags;
 }

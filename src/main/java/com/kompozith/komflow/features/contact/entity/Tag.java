@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import com.kompozith.komflow.features.core.entity.BaseEntity;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,5 +33,5 @@ public class Tag extends BaseEntity {
     private boolean enabled;
 
     @ManyToMany(mappedBy = "tags")
-    private List<Contact> contacts;
+    private Set<Contact> contacts;
 }

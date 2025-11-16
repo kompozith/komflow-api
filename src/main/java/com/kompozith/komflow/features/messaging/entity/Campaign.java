@@ -30,7 +30,7 @@ public class Campaign extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Message message;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Contact> contacts;
 
     @Enumerated(EnumType.STRING)
@@ -40,7 +40,7 @@ public class Campaign extends BaseEntity {
     private Instant scheduledAt;
 
     // Cc du mail
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "msg_email_cc",
             joinColumns = @JoinColumn(name = "msg_campaign_id"),
@@ -49,7 +49,7 @@ public class Campaign extends BaseEntity {
     private List<Contact> mailCc;
 
     // Cci du mail
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "msg_email_cci",
             joinColumns = @JoinColumn(name = "msg_ampaign_id"),
