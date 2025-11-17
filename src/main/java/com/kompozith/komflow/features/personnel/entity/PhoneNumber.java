@@ -23,12 +23,12 @@ public class PhoneNumber extends BaseEntity {
     @Column(name = "number")
     private String number;
 
-    @Column(name = "is_number")
+    @Column(name = "is_whatsap_number")
     private String isWhatsapp;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private Person person;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private Contact contact;
 }

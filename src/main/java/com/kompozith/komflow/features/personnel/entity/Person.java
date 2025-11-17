@@ -36,12 +36,9 @@ public class Person extends BaseEntity {
 
     private String language;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "person")
     private List<PhoneNumber> phoneNumbers;
 
     @OneToOne(cascade = CascadeType.ALL)
     private User user;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    private Contact contact;
 }

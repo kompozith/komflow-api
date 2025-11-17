@@ -39,6 +39,8 @@ public class AuditLog {
 
     private String details;
 
+    private String channel; // For messaging operations
+
     private Instant date;
 
     @PrePersist
