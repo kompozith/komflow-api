@@ -1,0 +1,225 @@
+<!-- Store Information Header -->
+<div *ngIf="!isLoading && store" class="row mb-3">
+  <div class="col-12">
+    <mat-card class="cardWithShadow">
+      <mat-card-content class="p-4">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-16">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center f-w-600 overflow-hidden"
+              [ngClass]="getStoreBadgeClass(store.id)"
+              style="width: 80px; height: 80px; font-size: 32px;"
+            >
+              <img *ngIf="store.logoUrl" [src]="store.logoUrl" [alt]="store.name" class="w-100 h-100 object-fit-cover" />
+              <span *ngIf="!store.logoUrl">{{ getStoreInitials(store.name) }}</span>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-8 mb-1">
+                <h3 class="m-t-10 f-w-600 mb-0">{{ store.name }}</h3>
+              </div>
+              <p class="m-t-1 f-s-14 f-w-500 text-muted mb-2">{{ store.description || 'No description available' }}</p>
+            </div>
+          </div>
+          <div class="d-flex gap-8">
+            <button mat-flat-button color="primary" (click)="editStore()">
+              <tabler-icon name="edit" class="me-2"></tabler-icon>
+              Edit Store
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div *ngIf="!isLoading && store" class="row mb-3">
+  <div class="col-sm-6 col-lg-3">
+    <mat-card class="cardWithShadow cursor-pointer bg-light-primary shadow-none">
+      <mat-card-content class="d-flex align-items-center gap-16">
+        <div class="icon icon-38 rounded d-flex align-items-center justify-content-center bg-primary text-white">
+          <i-tabler name="users" class="icon-24 d-flex"></i-tabler>
+        </div>
+        <div class="info">
+          <h5 class="f-w-400 lh-sm f-s-14">Sellers</h5>
+          <h5 class="f-w-500 lh-sm f-s-14">{{ store.sellerCount }} sellers</h5>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <mat-card class="cardWithShadow cursor-pointer bg-light-success shadow-none">
+      <mat-card-content class="d-flex align-items-center gap-16">
+        <div class="icon icon-38 rounded d-flex align-items-center justify-content-center bg-success text-white">
+          <i-tabler name="package" class="icon-24 d-flex"></i-tabler>
+        </div>
+        <div class="info">
+          <h5 class="f-w-400 lh-sm f-s-14">Products</h5>
+          <h5 class="f-w-500 lh-sm f-s-14">{{ store.productCount }} products</h5>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <mat-card class="cardWithShadow cursor-pointer bg-light-error shadow-none">
+      <mat-card-content class="d-flex align-items-center gap-16">
+        <div class="icon icon-38 rounded d-flex align-items-center justify-content-center bg-error text-white">
+          <i-tabler name="folder" class="icon-24 d-flex"></i-tabler>
+        </div>
+        <div class="info">
+          <h5 class="f-w-400 lh-sm f-s-14">Categories</h5>
+          <h5 class="f-w-500 lh-sm f-s-14">{{ storeCategories?.length || 0 }} categories</h5>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <mat-card class="cardWithShadow cursor-pointer bg-light shadow-none">
+      <mat-card-content class="d-flex align-items-center gap-16">
+        <div class="icon icon-38 rounded d-flex align-items-center justify-content-center bg-info text-white">
+          <i-tabler name="map-pin" class="icon-24 d-flex"></i-tabler>
+        </div>
+        <div class="info">
+          <h5 class="f-w-400 lh-sm f-s-14">Location</h5>
+          <h5 class="f-w-500 lh-sm f-s-14">{{ store.address?.city || 'N/A' }}</h5>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
+<!-- Address Information -->
+<div *ngIf="!isLoading && store" class="row mb-3">
+  <div class="col-lg-6">
+    <mat-card class="cardWithShadow h-100">
+      <mat-card-header>
+        <mat-card-title>Address Information</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="row address-infos">
+          <div class="col-md-12 mb-3">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="map-pin" class="icon-map-pin"></i-tabler>Full Address</label>
+              <p class="mb-0 text-muted">{{ store.address?.fullAddress || store.address?.streetAddress || 'N/A' }}</p>
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="building" class="icon-building"></i-tabler>City</label>
+              <p class="mb-0 text-muted">{{ store.address?.city || 'N/A' }}</p>
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="map" class="icon-map"></i-tabler>Region</label>
+              <p class="mb-0 text-muted">{{ store.address?.region || 'N/A' }}</p>
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="world" class="icon-world"></i-tabler>Country</label>
+              <p class="mb-0 text-muted">{{ store.address?.country || 'N/A' }}</p>
+            </div>
+          </div>
+          <div class="col-md-6 mb-3" *ngIf="store.address?.postalCode">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="mail" class="icon-mail"></i-tabler>Postal Code</label>
+              <p class="mb-0 text-muted">{{ store.address.postalCode }}</p>
+            </div>
+          </div>
+          <div class="col-md-6 mb-3" *ngIf="store.address?.landmark">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="flag" class="icon-flag"></i-tabler>Landmark</label>
+              <p class="mb-0 text-muted">{{ store.address.landmark }}</p>
+            </div>
+          </div>
+          <div class="col-md-6" *ngIf="store.address?.hasCoordinates">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="compass" class="icon-compass"></i-tabler>Longitude</label>
+              <p class="mb-0 text-muted">{{ store.address.longitude }}</p>
+            </div>
+          </div>
+          <div class="col-md-6" *ngIf="store.address?.hasCoordinates">
+            <div class="address-field">
+              <label class="form-label fw-bold text-dark"><i-tabler name="compass" class="icon-compass"></i-tabler>Latitude</label>
+              <p class="mb-0 text-muted">{{ store.address.latitude }}</p>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="col-lg-6">
+    <mat-card class="cardWithShadow h-100">
+      <mat-card-header>
+        <mat-card-title>Store Details</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="row">
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Status</label>
+              <p class="mb-0">
+                <span class="badge" [ngClass]="getStatusBadgeClass(store.status)">{{ store.status }}</span>
+              </p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Brand</label>
+              <p class="mb-0 d-flex align-items-center gap-4">
+                <img *ngIf="store.brand?.logoUrl" [src]="store.brand.logoUrl" [alt]="store.brand.name" style="width: 24px; height: 24px; object-fit: contain;" />
+                <span>{{ store.brand?.name || 'N/A' }}</span>
+              </p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Brand Type</label>
+              <p class="mb-0">{{ store.brand?.type || 'N/A' }}</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Phone Number</label>
+              <p class="mb-0">{{ store.phone }}</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Created</label>
+              <p class="mb-0">{{ store.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Last Updated</label>
+              <p class="mb-0">{{ store.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+          </div>
+          <div class="col-12" *ngIf="store.address?.instructions">
+            <div class="">
+              <label class="form-label fw-bold text-dark">Delivery Instructions</label>
+              <p class="mb-0">{{ store.address.instructions }}</p>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
+<!-- Product Categories Management -->
+<app-product-categories
+  *ngIf="!isLoading && store"
+  [storeId]="store.id"
+  [storeName]="store.name">
+</app-product-categories>
+
+<div *ngIf="isLoading" class="loading-container">
+  <mat-spinner diameter="40"></mat-spinner>
+</div>

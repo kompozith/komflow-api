@@ -1,0 +1,10 @@
+<h5 mat-dialog-title class="mat-subtitle-1">Logout</h5>
+<div mat-dialog-content class="f-s-14 lh-16">
+  Would you actually like to logout ?
+</div>
+<mat-dialog-actions align="end" class="px-3 pb-3">
+  <button mat-flat-button mat-dialog-close>
+    No
+  </button>
+  <button mat-flat-button class="m-l-8 bg-error text-white" (click)="logout()" mat-dialog-close>Yes</button>
+</mat-dialog-actions>

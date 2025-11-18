@@ -1,0 +1,514 @@
+/* Custom Tab Switcher Styles - Material Design Inspired */
+.custom-tab-header {
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.tab-options {
+  display: flex;
+  position: relative;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  width: 100%;
+}
+
+.tab-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 0;
+  min-height: 48px;
+  flex: 1;
+  width: 50%;
+
+  &:hover {
+    background: rgba(25, 118, 210, 0.04);
+    color: rgba(25, 118, 210, 0.87);
+  }
+
+  &.active {
+    color: #1976d2;
+    font-weight: 500;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #1976d2;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
+
+  i {
+    font-size: 18px;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    background: rgba(25, 118, 210, 0.12);
+  }
+}
+
+/* forcer le composant à prendre 100% de la largeur du parent */
+:host ::ng-deep ngx-intl-tel-input {
+  display: block;
+  width: 100%;
+  height: 56px; /* Match form field height */
+}
+
+:host ::ng-deep ngx-intl-tel-input .iti {
+  width: 100% !important;
+  height: 56px !important;
+  border-radius: 4px !important;
+}
+
+:host ::ng-deep ngx-intl-tel-input input {
+  width: 100% !important;
+  height: 54px !important; /* Slightly less to account for border */
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+  line-height: 1.2 !important;
+  box-sizing: border-box !important;
+}
+
+/* dropdown country list styling */
+:host ::ng-deep .iti__country-list {
+  z-index: 2500 !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-radius: 4px !important;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 3px 14px 2px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: transparent !important;
+
+  /* Completely hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+/* Style the search input in country dropdown - Smaller and compact */
+:host ::ng-deep .iti__search-input {
+  /* Compact size for dropdown search */
+  width: 100% !important;
+  height: 40px !important; /* Smaller than main inputs */
+  padding: 8px 12px !important; /* Reduced padding */
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.42) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-size: 14px !important; /* Smaller font */
+  font-family: inherit !important;
+  color: inherit !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  transition: border-bottom-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+  &:focus {
+    border-bottom: 2px solid #1976d2 !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  &:focus-visible {
+    border-bottom: 2px solid #1976d2 !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  &::placeholder {
+    color: inherit !important;
+    font-size: 14px !important;
+  }
+
+  /* Remove all browser default styles */
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active,
+  &:-webkit-autofill:valid,
+  &:-webkit-autofill:invalid {
+    -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0) inset !important;
+    -webkit-text-fill-color: inherit !important;
+    background-color: inherit !important;
+    background-image: none !important;
+    background: inherit !important;
+    border-color: inherit !important;
+    transition: none !important;
+    color: inherit !important;
+    opacity: 1 !important;
+  }
+
+  /* Force remove any inherited borders */
+  &[style*="border"] {
+    border: none !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.42) !important;
+  }
+}
+
+/* Style the search container */
+:host ::ng-deep 
+.iti[_ngcontent-ng-c4036060811] input#country-search-box[_ngcontent-ng-c4036060811],
+.iti[_ngcontent-ng-c4036060811] input#country-search-box[_ngcontent-ng-c4036060811]:focus-visible {
+  display: block;
+  width: 100%;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bs-body-color);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: var(--bs-body-bg);
+  background-clip: padding-box;
+  border: var(--bs-border-width) solid var(--bs-border-color);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: var(--bs-border-radius);
+  transition: border-color .15s 
+  ease-in-out, box-shadow .15s 
+  ease-in-out;
+  height: 35px !important;
+}
+
+/* Style country list items */
+:host ::ng-deep .iti__country {
+  padding: 8px 16px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+
+  &:hover {
+    background: transparent !important;
+  }
+
+  &.iti__highlight {
+    background: transparent !important;
+  }
+}
+
+/* Style country names */
+:host ::ng-deep .iti__country-name {
+  color: inherit !important;
+  font-size: 14px !important;
+}
+
+/* Style dial codes */
+:host ::ng-deep .iti__dial-code {
+  color: inherit !important;
+  font-size: 13px !important;
+}
+
+/* Remove Bootstrap box-shadow from all inputs globally */
+:host ::ng-deep input,
+:host ::ng-deep ngx-intl-tel-input input {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+}
+
+/* Neutralize browser autofill styling - Enhanced */
+:host ::ng-deep input:-webkit-autofill,
+:host ::ng-deep input:-webkit-autofill:hover,
+:host ::ng-deep input:-webkit-autofill:focus,
+:host ::ng-deep input:-webkit-autofill:active,
+:host ::ng-deep input:-webkit-autofill:valid,
+:host ::ng-deep input:-webkit-autofill:invalid,
+:host ::ng-deep ngx-intl-tel-input input:-webkit-autofill,
+:host ::ng-deep ngx-intl-tel-input input:-webkit-autofill:hover,
+:host ::ng-deep ngx-intl-tel-input input:-webkit-autofill:focus,
+:host ::ng-deep ngx-intl-tel-input input:-webkit-autofill:active,
+:host ::ng-deep ngx-intl-tel-input input:-webkit-autofill:valid,
+:host ::ng-deep ngx-intl-tel-input input:-webkit-autofill:invalid {
+  -webkit-box-shadow: 0 0 0 1000px inherit inset !important;
+  -webkit-text-fill-color: inherit !important;
+  background-color: inherit !important;
+  background-image: none !important;
+  background: inherit !important;
+  border-color: inherit !important;
+  transition: none !important;
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+/* Additional autofill neutralization for different browsers */
+:host ::ng-deep input:-moz-autofill,
+:host ::ng-deep input:-moz-autofill:hover,
+:host ::ng-deep input:-moz-autofill:focus,
+:host ::ng-deep ngx-intl-tel-input input:-moz-autofill,
+:host ::ng-deep ngx-intl-tel-input input:-moz-autofill:hover,
+:host ::ng-deep ngx-intl-tel-input input:-moz-autofill:focus {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+:host ::ng-deep input:-ms-input-placeholder,
+:host ::ng-deep ngx-intl-tel-input input:-ms-input-placeholder {
+  color: inherit !important;
+  opacity: 0.6 !important;
+}
+
+/* Theme-aware placeholder colors for email input */
+:host ::ng-deep mat-form-field input::placeholder {
+  color: rgba(0, 0, 0, 0.38) !important;
+  opacity: 1 !important;
+}
+
+:host ::ng-deep mat-form-field input::-webkit-input-placeholder {
+  color: rgba(0, 0, 0, 0.38) !important;
+  opacity: 1 !important;
+}
+
+:host ::ng-deep mat-form-field input::-moz-placeholder {
+  color: rgba(0, 0, 0, 0.38) !important;
+  opacity: 1 !important;
+}
+
+:host ::ng-deep mat-form-field input:-ms-input-placeholder {
+  color: rgba(0, 0, 0, 0.38) !important;
+  opacity: 1 !important;
+}
+
+/* Dark theme placeholder colors */
+html.dark-theme :host ::ng-deep mat-form-field input::placeholder {
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1 !important;
+}
+
+html.dark-theme :host ::ng-deep mat-form-field input::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1 !important;
+}
+
+html.dark-theme :host ::ng-deep mat-form-field input::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1 !important;
+}
+
+html.dark-theme :host ::ng-deep mat-form-field input:-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1 !important;
+}
+
+/* Aggressive autofill background removal for login inputs */
+:host ::ng-deep .mat-mdc-input-element:-webkit-autofill,
+:host ::ng-deep .mat-mdc-input-element.cdk-text-field-autofilled,
+:host ::ng-deep .mdc-text-field__input:-webkit-autofill,
+:host ::ng-deep .mdc-text-field__input.cdk-text-field-autofilled,
+:host ::ng-deep input.mat-mdc-input-element:-webkit-autofill,
+:host ::ng-deep input.mat-mdc-input-element.cdk-text-field-autofilled {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  -webkit-text-fill-color: inherit !important;
+  caret-color: inherit !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Additional autofill override with high specificity */
+:host ::ng-deep mat-form-field input.mat-mdc-input-element:-webkit-autofill,
+:host ::ng-deep mat-form-field input.mat-mdc-input-element.cdk-text-field-autofilled {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Phone input wrapper styles - simulate mat-form-field behavior */
+.phone-input-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+/* Force red styling when phone input has errors - Material Design style */
+:host ::ng-deep ngx-intl-tel-input.phone-input-error .iti {
+  border: 1px solid #f44336 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+/* Ensure proper border-radius for internal elements */
+:host ::ng-deep ngx-intl-tel-input.phone-input-error .iti__flag-container {
+  border-top-left-radius: 3px !important;
+  border-bottom-left-radius: 3px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+:host ::ng-deep ngx-intl-tel-input.phone-input-error input {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-top-right-radius: 3px !important;
+  border-bottom-right-radius: 3px !important;
+}
+
+:host ::ng-deep ngx-intl-tel-input.phone-input-error input {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+:host ::ng-deep ngx-intl-tel-input.phone-input-error .iti__flag-container {
+  border-color: #f44336 !important;
+  background-color: transparent !important;
+}
+
+/* Also support the wrapper class approach as fallback */
+.phone-input-wrapper.phone-error {
+  :host ::ng-deep ngx-intl-tel-input .iti {
+    border: 1px solid #f44336 !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+
+  :host ::ng-deep ngx-intl-tel-input input {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+
+  :host ::ng-deep ngx-intl-tel-input .iti__flag-container {
+    border-color: #f44336 !important;
+    background-color: transparent !important;
+    border-top-left-radius: 3px !important;
+    border-bottom-left-radius: 3px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  :host ::ng-deep ngx-intl-tel-input input {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-top-right-radius: 3px !important;
+    border-bottom-right-radius: 3px !important;
+  }
+}
+
+.phone-error-messages {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-family: var(--mat-form-field-subscript-text-font, var(--mat-sys-body-small-font));
+    line-height: var(--mat-form-field-subscript-text-line-height, var(--mat-sys-body-small-line-height) 1rem);
+    font-size: var(--mat-form-field-subscript-text-size, var(--mat-sys-body-small-size));
+    letter-spacing: var(--mat-form-field-subscript-text-tracking, var(--mat-sys-body-small-tracking));
+    font-weight: var(--mat-form-field-subscript-text-weight, var(--mat-sys-body-small-weight));
+}
+
+.login-error-message {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: transparent;
+  border: 1px solid #f44336;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* Enhanced form field heights for better UX */
+:host ::ng-deep .mat-mdc-form-field {
+  height: 56px;
+}
+
+:host ::ng-deep .mat-mdc-text-field-wrapper {
+  height: 56px;
+  align-items: center !important;
+}
+
+:host ::ng-deep .mdc-text-field__input {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  line-height: 1.2;
+  height: 24px; /* Ensure proper line height for vertical centering */
+}
+
+/* OTP Input Styles */
+.otp-container {
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.otp-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: transparent;
+  color: rgba(0, 0, 0, 0.87);
+
+  &:focus {
+    border: 2px solid #1976d2;
+    box-shadow: none;
+  }
+
+  &:hover:not(:focus) {
+    border-color: rgba(0, 0, 0, 0.42);
+  }
+
+  &.otp-error {
+    border: 1px solid #f44336;
+
+    &:focus {
+      border: 2px solid #f44336;
+    }
+  }
+
+  /* Remove spinner buttons for number inputs */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type=number] {
+    -moz-appearance: textfield;
+  }
+}
+
+/* Responsive OTP inputs for smaller screens */
+@media (max-width: 576px) {
+  .otp-input {
+    width: 40px;
+    height: 48px;
+    font-size: 20px;
+  }
+  
+  .otp-container {
+    gap: 8px;
+  }
+}

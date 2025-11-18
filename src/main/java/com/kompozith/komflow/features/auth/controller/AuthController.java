@@ -1,8 +1,10 @@
 package com.kompozith.komflow.features.auth.controller;
 
 import com.kompozith.komflow.features.auth.dto.LoginDto;
+import com.kompozith.komflow.features.auth.dto.LoginResponseDto;
+import com.kompozith.komflow.features.auth.dto.RefreshTokenDto;
 import com.kompozith.komflow.features.auth.dto.SignUpDto;
-import com.kompozith.komflow.features.auth.dto.UserDetailsWithTokenDto;
+import com.kompozith.komflow.features.auth.dto.UserPermissionsDto;
 import com.kompozith.komflow.features.auth.service.AuthService;
 import com.kompozith.komflow.features.personnel.dto.UserDetailsDto;
 import com.kompozith.komflow.util.SimpleResponse;
@@ -12,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,8 +37,29 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticate user and return JWT token")
-    public ResponseEntity<SimpleResponse<UserDetailsWithTokenDto>> login(@Valid @RequestBody LoginDto loginDto) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(authService.login(loginDto));
+    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginDto loginDto) {
+        LoginResponseDto response = authService.loginForFrontend(loginDto);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh JWT token", description = "Refresh JWT token using refresh token")
+    public ResponseEntity<LoginResponseDto> refresh(@Valid @RequestBody RefreshTokenDto refreshTokenDto) {
+        LoginResponseDto response = authService.refreshTokenForFrontend(refreshTokenDto);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "User logout", description = "Invalidate server-side session/token")
+    public ResponseEntity<Void> logout() {
+        authService.logout();
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @GetMapping("/permissions")
+    @Operation(summary = "Get user permissions", description = "Retrieve current user's permissions and roles")
+    public ResponseEntity<UserPermissionsDto> getPermissions() {
+        UserPermissionsDto permissions = authService.getUserPermissions();
+        return ResponseEntity.status(HttpStatus.OK).body(permissions);
     }
 }

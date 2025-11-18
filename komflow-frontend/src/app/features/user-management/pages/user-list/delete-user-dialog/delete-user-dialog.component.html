@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Delete Confirmation</h2>
+<mat-dialog-content>
+  Would you like to delete
+  {{ itemCount > 1 ? "these users" : "this user" }}?
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-flat-button mat-dialog-close>Cancel</button>
+  <button
+    mat-button
+    mat-dialog-close
+    cdkFocusInitial
+    class="m-l-8 bg-error text-white"
+    (click)="confirmDelete()"
+  >
+    Delete
+  </button>
+</mat-dialog-actions>

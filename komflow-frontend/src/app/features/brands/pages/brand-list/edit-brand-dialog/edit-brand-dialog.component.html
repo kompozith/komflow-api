@@ -1,0 +1,71 @@
+<h2 mat-dialog-title>Edit Brand</h2>
+<mat-dialog-content>
+  <form>
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Brand Name</mat-label>
+      <input matInput [formControl]="nameControl" placeholder="Enter brand name">
+      <mat-error *ngIf="nameControl.hasError('required')">Brand name is required</mat-error>
+      <mat-error *ngIf="nameControl.hasError('minlength')">Brand name must be at least 2 characters</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Brand Type</mat-label>
+      <mat-select [formControl]="typeControl" disableOptionCentering>
+        @for (type of typeOptions; track type) {
+          <mat-option [value]="type">
+            {{ type }}
+          </mat-option>
+        }
+      </mat-select>
+      <mat-error *ngIf="typeControl.hasError('required')">Brand type is required</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Description (Optional)</mat-label>
+      <textarea
+        matInput
+        [formControl]="descriptionControl"
+        placeholder="Enter brand description"
+        rows="3"
+      ></textarea>
+    </mat-form-field>
+
+    <div class="f-s-14 f-w-600 m-b-8 d-block m-t-20">Brand Logo (Optional)</div>
+
+    <!-- Dropzone -->
+    <div class="custom-dropzone dropzone-box" ngx-dropzone [accept]="'image/*'" (change)="onSelect($event)" [multiple]="false">
+      <ngx-dropzone-label>
+        <div class="dropzone-content d-flex align-items-center justify-content-center flex-col">
+          <img src="assets/images/products/Screenshot_1.png" alt="Upload" width="80" class="upload-icon m-b-16" />
+          <p class="headline">Drop or select file</p>
+          <p class="subtext f-s-14">
+            Drop files here or click to
+            <span class="browse-link text-primary">browse</span> through your machine.
+          </p>
+        </div>
+      </ngx-dropzone-label>
+
+      @for (f of files; track f) {
+      <ngx-dropzone-image-preview ngProjectAs="ngx-dropzone-preview" [file]="f" [removable]="true" (removed)="onRemove(f)">
+        <ngx-dropzone-label></ngx-dropzone-label>
+      </ngx-dropzone-image-preview>
+      }
+    </div>
+    <div class="f-s-12 m-t-2">
+      Set the brand logo image. Only *.png, *.jpg and *.jpeg image files are accepted.
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button class="m-l-8 bg-secondary text-white" mat-dialog-close>Cancel</button>
+  <button
+    mat-button
+    mat-dialog-close
+    cdkFocusInitial
+    class="m-l-8 bg-primary text-white"
+    [disabled]="!isFormValid() || !hasChanges()"
+    (click)="confirmUpdate()"
+  >
+    Update Brand
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,35 @@
+.address-infos i-tabler {
+  font-size: 16px;
+  margin-right: 4px;
+  transform: translateX(-4px);
+  vertical-align: middle;
+}
+
+// Colors for each icon
+.icon-map-pin {
+  color: var(--mat-sys-primary);
+}
+
+.icon-building {
+  color: var(--mat-sys-secondary);
+}
+
+.icon-map {
+  color: #ff9800; // orange
+}
+
+.icon-world {
+  color: var(--mat-sys-tertiary);
+}
+
+.icon-mail {
+  color: #9c27b0; // purple
+}
+
+.icon-flag {
+  color: #f44336; // red
+}
+
+.icon-compass {
+  color: #4caf50; // green
+}

@@ -1,0 +1,9 @@
+/* Breadcrumb customization - Remove slash divider */
+.breadcrumb-item + .breadcrumb-item::before {
+   content: "" !important;
+   padding-right: 0 !important;
+}
+
+.breadcrumb-item.active {
+    color: inherit !important;
+}

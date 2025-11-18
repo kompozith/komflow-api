@@ -1,0 +1,172 @@
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="d-flex justify-content-end align-items-center mb-3">
+      <button mat-flat-button (click)="createContact()" color="primary">
+        Create Contact
+      </button>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Tag</mat-label>
+          <mat-select [(ngModel)]="selectedTagId" (selectionChange)="onTagFilterChange($event.value)">
+            <mat-option value="">All Tags</mat-option>
+            <!-- TODO: Load tags dynamically -->
+            <mat-option value="sample-tag-id">Sample Tag</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100 hide-hint">
+          <input
+            matInput
+            placeholder="Search Contact"
+            [(ngModel)]="searchText"
+            (input)="onSearchChange(searchText)"
+          />
+          <mat-icon matSuffix>
+            <i-tabler name="search" class="icon-20 d-flex m-t-2"></i-tabler>
+          </mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-100">
+        <ng-container matColumnDef="rowNumber">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">#</th>
+           <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 + (currentPage * pageSize) }}</td>
+         </ng-container>
+
+        <ng-container matColumnDef="name">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('firstName')" style="cursor: pointer;">
+             <div class="d-flex align-items-center gap-8">
+               <span>Name</span>
+               <mat-icon *ngIf="sortBy === 'firstName'" class="sort-icon">
+                 {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+               </mat-icon>
+             </div>
+           </th>
+           <td mat-cell *matCellDef="let element">
+             <div class="d-flex align-items-center gap-16">
+               <div
+                 class="rounded-circle d-flex align-items-center justify-content-center f-w-600"
+                 [ngClass]="getContactBadgeClass(element.id)"
+                 style="width: 45px; height: 45px; font-size: 18px;"
+               >
+                 {{ getContactInitials(element.firstName, element.lastName) }}
+               </div>
+               <div>
+                 <h6 class="f-w-600 f-s-16 m-t-0">
+                   {{ element.firstName }} {{ element.lastName }}
+                 </h6>
+               </div>
+             </div>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="email">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Email</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.email }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="phone">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Phone</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.phone || '-' }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="tags">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Tags</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             <div class="d-flex flex-wrap gap-1">
+               <app-badge
+                 *ngFor="let tag of element.tags"
+                 [variant]="'info'"
+                 [pill]="true"
+                 [content]="tag.name">
+               </app-badge>
+             </div>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('createdAt')" style="cursor: pointer;">
+             <div class="d-flex align-items-center gap-8">
+               <span>Created</span>
+               <mat-icon *ngIf="sortBy === 'createdAt'" class="sort-icon">
+                 {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+               </mat-icon>
+             </div>
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.createdAt | date:'dd/MM/yyyy HH:mm' }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef sticky class="f-w-600 mat-subtitle-1 f-s-14">
+            Action
+          </th>
+          <td mat-cell *matCellDef="let element" class="f-s-14" (click)="$event.stopPropagation()">
+            <button mat-icon-button [matMenuTriggerFor]="menu" type="button" aria-label="Example icon-button with a menu">
+              <mat-icon>
+                <tabler-icon name="dots-vertical"></tabler-icon>
+              </mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" class="cardWithShadow">
+              <button mat-menu-item>
+                <div class="d-flex align-items-center" (click)="viewContactDetails(element)">
+                  <tabler-icon name="eye" class="m-x-6"></tabler-icon>
+                  <span>View Details</span>
+                </div>
+              </button>
+              <button mat-menu-item>
+                <div class="d-flex align-items-center" (click)="editContact(element)">
+                  <tabler-icon name="edit" class="m-x-6"></tabler-icon>
+                  <span>Edit</span>
+                </div>
+              </button>
+              <button mat-menu-item>
+                <div class="d-flex align-items-center text-error" (click)="deleteContact(element)">
+                  <tabler-icon name="trash" class="m-x-6"></tabler-icon>
+                  <span>Delete</span>
+                </div>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <!-- Pagination Info -->
+      <div class="d-flex justify-content-between align-items-center mt-3 mb-3" *ngIf="!isLoading && totalElements > 0">
+        <div class="text-muted f-s-14">
+          Showing {{ getStartIndex() }} to {{ getEndIndex() }} of {{ totalElements }} entries
+        </div>
+        <div class="text-muted f-s-14">
+          Page {{ currentPage + 1 }} of {{ totalPages }}
+        </div>
+      </div>
+
+      <mat-paginator
+        #paginator
+        [length]="totalElements"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage"
+        (page)="onPageChange($event)"
+        [showFirstLastButtons]="true"
+        [hidePageSize]="false">
+      </mat-paginator>
+    </div>
+  </mat-card-content>
+</mat-card>

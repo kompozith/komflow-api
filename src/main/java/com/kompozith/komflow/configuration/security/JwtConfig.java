@@ -12,5 +12,8 @@ import org.springframework.stereotype.Component;
 public class JwtConfig {
     private String secretKey;
     private long expirationMs;
+    private long refreshExpirationMs;
     private String issuer;
+    // Durée d'expiration du token d'accès en secondes
+    private long accessTokenExpirationSeconds;
 }

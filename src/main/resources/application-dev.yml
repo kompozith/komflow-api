@@ -70,7 +70,10 @@ springdoc:
 jwt:
   secret-key: "${JWT_SECRET:de717372299e516520195b110c787d30b004db006a9692498bb04914556eca1f}"
   expiration-ms: ${JWT_EXPIRATION_MS:43200000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
   issuer: ${JWT_ISSUER:komflow-app}
+  # Durée d'expiration du token d'accès en secondes (2 heures = 7200 secondes)
+  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
 
 logging:
   level:

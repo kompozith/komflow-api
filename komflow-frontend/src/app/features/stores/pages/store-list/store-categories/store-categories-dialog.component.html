@@ -1,0 +1,78 @@
+<h2 mat-dialog-title>Manage Categories - {{ store.name }}</h2>
+<mat-dialog-content>
+  <!-- Add New Category Section -->
+  <div class="add-category-section">
+    <h3>Add New Category</h3>
+    <div class="row">
+      <div class="col-md-5">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Category Name</mat-label>
+          <input matInput [formControl]="newCategoryNameControl" placeholder="Enter category name">
+          <mat-error *ngIf="newCategoryNameControl.hasError('required')">Category name is required</mat-error>
+          <mat-error *ngIf="newCategoryNameControl.hasError('minlength')">Name must be at least 2 characters</mat-error>
+        </mat-form-field>
+      </div>
+      <div class="col-md-5">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Description (Optional)</mat-label>
+          <input matInput [formControl]="newCategoryDescriptionControl" placeholder="Category description">
+        </mat-form-field>
+      </div>
+      <div class="col-md-2">
+        <button
+          mat-raised-button
+          color="primary"
+          class="w-100 add-btn"
+          [disabled]="!newCategoryNameControl.valid"
+          (click)="addCategory()"
+        >
+          <mat-icon>add</mat-icon>
+          Add
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories List -->
+  <div class="categories-list">
+    <div class="list-header">
+      <h3>Categories ({{ totalElements }})</h3>
+      <mat-form-field appearance="outline" class="search-field">
+        <input matInput placeholder="Search categories" [(ngModel)]="searchText" (input)="onSearchChange(searchText)">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <div class="categories-container" *ngIf="!isLoading">
+      <mat-card *ngFor="let category of categories" class="category-card">
+        <mat-card-content>
+          <div class="category-info">
+            <div class="category-name">{{ category.name }}</div>
+            <div class="category-description" *ngIf="category.description">{{ category.description }}</div>
+            <div class="category-stats">
+              <span class="product-count">{{ category.productCount }} products</span>
+              <span class="created-date">Created: {{ category.createdAt | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+          <div class="category-actions">
+            <button mat-icon-button color="warn" (click)="deleteCategory(category)" matTooltip="Delete Category">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div *ngIf="categories.length === 0" class="no-categories">
+        <mat-icon>category</mat-icon>
+        <p>No categories found</p>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button mat-dialog-close (click)="close()">Close</button>
+</mat-dialog-actions>

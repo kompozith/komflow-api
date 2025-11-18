@@ -1,0 +1,43 @@
+/* Confirm Delete Dialog Styles */
+
+.alert {
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 12px;
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.alert-warning {
+  border-color: #ffc107;
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+}
+
+.text-error {
+  color: #f44336 !important;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+html.dark-theme {
+  .alert-warning {
+    border-color: #856404;
+    background-color: #3d2d1a;
+    color: #d4a574;
+  }
+
+  .bg-light {
+    background-color: #2a2d31 !important;
+  }
+
+  .text-muted {
+    color: #adb5bd !important;
+  }
+}

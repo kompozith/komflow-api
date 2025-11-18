@@ -1,0 +1,55 @@
+name: Deploy to staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    name: Build and Deploy Angular to VPS
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      # 3️⃣ Install dependencies & build
+      - name: Install & build
+        run: |
+          npm ci
+          npm run build -- --configuration=staging
+          
+      # 4️⃣ Setup SSH key
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+      # 5️⃣ Deploy to server
+      - name: Deploy to server
+        run: |
+          # Crée le dossier staging sur le serveur
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            sudo mkdir -p /var/www/staging/delivx-frontend
+            sudo chown ${{ secrets.VPS_USER }}:${{ secrets.VPS_USER }} /var/www/staging/delivx-frontend
+          "
+          
+          # Copie les fichiers buildés vers le serveur
+          rsync -avz --delete \
+            ./dist/delivx/browser/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/staging/delivx-frontend/
+          
+          # Configure les permissions
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            sudo chown -R www-data:www-data /var/www/staging/delivx-frontend
+            sudo chmod -R 755 /var/www/staging/delivx-frontend
+          "

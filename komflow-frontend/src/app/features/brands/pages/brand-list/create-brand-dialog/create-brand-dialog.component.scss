@@ -1,0 +1,13 @@
+ngx-dropzone-image-preview {
+  width: 100px !important;
+  height: 100px !important;
+  border-radius: 8px !important;
+  margin: 0 auto;
+}
+
+ngx-dropzone-image-preview img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 8px !important;
+}

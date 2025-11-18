@@ -1,8 +1,12 @@
 package com.kompozith.komflow.features.auth.service;
 
 import com.kompozith.komflow.features.auth.dto.LoginDto;
+import com.kompozith.komflow.features.auth.dto.LoginResponseDto;
+import com.kompozith.komflow.features.auth.dto.RefreshTokenDto;
 import com.kompozith.komflow.features.auth.dto.SignUpDto;
-import com.kompozith.komflow.features.auth.dto.UserDetailsWithTokenDto;
+import com.kompozith.komflow.features.auth.dto.UserPermissionsDto;
+import com.kompozith.komflow.features.auth.entity.RefreshToken;
+import com.kompozith.komflow.features.auth.repository.RefreshTokenRepository;
 import com.kompozith.komflow.exception.InvalidCredentialsException;
 import com.kompozith.komflow.exception.ObjectExistException;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
@@ -19,9 +23,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -33,6 +40,7 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public SimpleResponse<UserDetailsDto>  signUp(SignUpDto signUpDto) {
@@ -80,7 +88,7 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     }
 
     @Override
-    public SimpleResponse<UserDetailsWithTokenDto>  login(LoginDto loginDto) {
+    public SimpleResponse<UserDetailsDto>  login(LoginDto loginDto) {
 
         Optional<User> optUser = Optional.empty();
         User user = null;
@@ -114,9 +122,132 @@ public class AuthServiceImpl extends BaseService implements AuthService {
         // Generer le token de l'itilisateur a partir de son username
         String token = jwtUtil.generateToken(user.getUsername(), "");
 
+        // Generate refresh token
+        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
+
+        // Delete existing refresh token for user if exists and save new one
+        Optional<RefreshToken> existingToken = refreshTokenRepository.findByUser(user);
+        if (existingToken.isPresent()) {
+            refreshTokenRepository.delete(existingToken.get());
+            refreshTokenRepository.flush(); // Force immediate deletion
+        }
+
+        // Save new refresh token
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .token(refreshToken)
+                .user(user)
+                .expiryDate(Instant.now().plusMillis(jwtUtil.getConfig().getRefreshExpirationMs()))
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
         return new SimpleResponse<>(
                 "authentication.success",
-                UserDetailsWithTokenDto.mapToUserDetailsWithTokenDto(user, token)
+                UserDetailsDto.mapFromUser(user)
         );
+    }
+
+    @Override
+    public SimpleResponse<UserDetailsDto> refreshToken(RefreshTokenDto refreshTokenDto) {
+        Optional<RefreshToken> refreshTokenOpt = refreshTokenRepository.findByToken(refreshTokenDto.getRefreshToken());
+
+        if (refreshTokenOpt.isEmpty()) {
+            throw new InvalidCredentialsException("Invalid refresh token");
+        }
+
+        RefreshToken refreshToken = refreshTokenOpt.get();
+
+        if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
+            refreshTokenRepository.delete(refreshToken);
+            throw new InvalidCredentialsException("Refresh token expired");
+        }
+
+        User user = refreshToken.getUser();
+
+        // Generate new access token
+        String newToken = jwtUtil.generateToken(user.getUsername(), "");
+
+        // Generate new refresh token
+        String newRefreshToken = jwtUtil.generateRefreshToken(user.getUsername());
+
+        // Delete old refresh token and save new one
+        refreshTokenRepository.delete(refreshToken);
+        refreshTokenRepository.flush(); // Force immediate deletion
+
+        // Save new refresh token
+        RefreshToken newRefreshTokenEntity = RefreshToken.builder()
+                .token(newRefreshToken)
+                .user(user)
+                .expiryDate(Instant.now().plusMillis(jwtUtil.getConfig().getRefreshExpirationMs()))
+                .build();
+        refreshTokenRepository.save(newRefreshTokenEntity);
+
+        return new SimpleResponse<>(
+                "token.refreshed",
+                UserDetailsDto.mapFromUser(user)
+        );
+    }
+
+    @Override
+    public LoginResponseDto loginForFrontend(LoginDto loginDto) {
+        SimpleResponse<UserDetailsDto> response = this.login(loginDto);
+        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600);
+    }
+
+    @Override
+    public LoginResponseDto refreshTokenForFrontend(RefreshTokenDto refreshTokenDto) {
+        SimpleResponse<UserDetailsDto> response = this.refreshToken(refreshTokenDto);
+        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600);
+    }
+
+    @Override
+    public void logout() {
+        // Get current user from security context
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (username != null) {
+            // Find user by username
+            Optional<User> userOpt = userRepository.findByUsername(username);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                // Delete refresh token for the user
+                Optional<RefreshToken> existingToken = refreshTokenRepository.findByUser(user);
+                if (existingToken.isPresent()) {
+                    refreshTokenRepository.delete(existingToken.get());
+                    refreshTokenRepository.flush(); // Force immediate deletion
+                }
+            }
+        }
+    }
+
+    @Override
+    public UserPermissionsDto getUserPermissions() {
+        // Get current authenticated user
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (username == null) {
+            throw new InvalidCredentialsException("User not authenticated");
+        }
+
+        // Find user by username
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new ObjectNotFoundException(User.class.getSimpleName(), "username", username);
+        }
+
+        User user = userOpt.get();
+
+        // For now, return hardcoded permissions based on user existence
+        // In a real implementation, this would come from roles/permissions tables
+        // TODO: Implement proper role-based permissions system
+        List<String> permissions = List.of(
+            "CONTACT_LIST", "CONTACT_CREATE", "CONTACT_UPDATE", "CONTACT_DELETE", "CONTACT_SHOW",
+            "TAG_LIST", "TAG_CREATE", "TAG_UPDATE", "TAG_DELETE", "TAG_SHOW",
+            "MESSAGE_LIST", "MESSAGE_CREATE", "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_SHOW",
+            "CAMPAIGN_LIST", "CAMPAIGN_CREATE", "CAMPAIGN_UPDATE", "CAMPAIGN_DELETE", "CAMPAIGN_SHOW",
+            "FILE_LIST", "FILE_UPLOAD", "FILE_DELETE", "FILE_SHARE",
+            "AUDIT_LIST", "AUDIT_VIEW"
+        );
+
+        List<String> roles = List.of("USER"); // Default role
+
+        return new UserPermissionsDto(permissions, roles);
     }
 }

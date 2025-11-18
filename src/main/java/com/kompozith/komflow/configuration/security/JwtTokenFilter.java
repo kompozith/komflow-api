@@ -37,6 +37,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (
                 request.getRequestURI().equals("/auth/signup") ||
                 request.getRequestURI().equals("/auth/login") ||
+                request.getRequestURI().equals("/auth/refresh") ||
                 request.getRequestURI().contains("swagger")
         ) {
             filterChain.doFilter(request, response);

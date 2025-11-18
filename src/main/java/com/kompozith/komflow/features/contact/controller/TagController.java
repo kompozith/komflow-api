@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/tag")
+@RequestMapping("/tags")
 @Tag(name = "Tag Management", description = "APIs for managing tags")
 public class TagController {
 

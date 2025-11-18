@@ -1,0 +1,220 @@
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="d-flex justify-content-end align-items-center mb-3">
+      <button mat-flat-button (click)="createRole()" color="primary">
+        <mat-icon>add</mat-icon>
+        Add Role
+      </button>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-4">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Type</mat-label>
+          <mat-select [(ngModel)]="selectedType" (selectionChange)="onTypeFilterChange(selectedType)">
+            <mat-option value="">All Types</mat-option>
+            <mat-option value="system">System Roles</mat-option>
+            <mat-option value="custom">Custom Roles</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-md-4">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="selectedStatus" (selectionChange)="onStatusFilterChange(selectedStatus)">
+            <mat-option value="">All Status</mat-option>
+            <mat-option value="active">Active</mat-option>
+            <mat-option value="inactive">Inactive</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-md-4">
+        <mat-form-field appearance="outline" class="w-100 hide-hint">
+          <input
+            matInput
+            placeholder="Search Roles"
+            [(ngModel)]="searchText"
+            (input)="onSearchChange(searchText)"
+          />
+          <mat-icon matSuffix>
+            <i-tabler name="search" class="icon-20 d-flex m-t-2"></i-tabler>
+          </mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-100">
+        <ng-container matColumnDef="rowNumber">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">#</th>
+           <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 + (currentPage * pageSize) }}</td>
+         </ng-container>
+
+        <ng-container matColumnDef="name">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('name')" style="cursor: pointer;">
+             <div class="d-flex align-items-center gap-8">
+               <span>Name</span>
+               @if(sortBy === 'name') {
+                 <mat-icon class="sort-icon">
+                   {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                 </mat-icon>
+               }
+             </div>
+           </th>
+           <td mat-cell *matCellDef="let element">
+             <div class="d-flex align-items-center gap-16">
+               <div>
+                 <h6 class="f-w-600 f-s-16 m-t-0">
+                   {{ element.name }}
+                 </h6>
+                 <span class="f-s-14 text-muted">{{ element.displayName }}</span>
+               </div>
+             </div>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="type">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">
+             Type
+           </th>
+           <td mat-cell *matCellDef="let element">
+             <app-badge [variant]="getRoleTypeVariant(element.isSystem)" [pill]="true">
+               {{ element.isSystem ? 'System' : 'Custom' }}
+             </app-badge>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="description">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">
+             Description
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.description || '-' }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="userCount">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('userCount')" style="cursor: pointer;">
+             <div class="d-flex align-items-center gap-8">
+               <span>Users</span>
+               @if(sortBy === 'userCount') {
+                 <mat-icon class="sort-icon">
+                   {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                 </mat-icon>
+               }
+             </div>
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.userCount }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="policyCount">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('policyCount')" style="cursor: pointer;">
+             <div class="d-flex align-items-center gap-8">
+               <span>Policies</span>
+               @if(sortBy === 'policyCount') {
+                 <mat-icon class="sort-icon">
+                   {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                 </mat-icon>
+               }
+             </div>
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.policyCount }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="status">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">
+             Status
+           </th>
+           <td mat-cell *matCellDef="let element">
+             <app-badge [variant]="getRoleStatusVariant(element.isActive)" [pill]="true">
+               {{ element.isActive ? 'Active' : 'Inactive' }}
+             </app-badge>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('createdAt')" style="cursor: pointer;">
+             <div class="d-flex align-items-center gap-8">
+               <span>Created</span>
+               @if(sortBy === 'createdAt') {
+                 <mat-icon class="sort-icon">
+                   {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                 </mat-icon>
+               }
+             </div>
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.createdAt | date:'dd/MM/yyyy HH:mm' }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef sticky class="f-w-600 mat-subtitle-1 f-s-14">
+            Action
+          </th>
+          <td mat-cell *matCellDef="let element" class="f-s-14" (click)="$event.stopPropagation()">
+            <button mat-icon-button [matMenuTriggerFor]="menu" type="button" aria-label="Example icon-button with a menu">
+              <mat-icon>
+                <tabler-icon name="dots-vertical"></tabler-icon>
+              </mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" class="cardWithShadow">
+              <button mat-menu-item>
+                <div class="d-flex align-items-center" (click)="viewRoleDetails(element)">
+                  <tabler-icon name="eye" class="m-x-6"></tabler-icon>
+                  <span>View Details</span>
+                </div>
+              </button>
+              @if(!element.isSystem) {
+                <button mat-menu-item>
+                  <div class="d-flex align-items-center" (click)="editRole(element)">
+                    <tabler-icon name="edit" class="m-x-6"></tabler-icon>
+                    <span>Edit</span>
+                  </div>
+                </button>
+              }
+              @if(!element.isSystem) {
+                <button mat-menu-item>
+                  <div class="d-flex align-items-center text-error" (click)="openDialog(element)">
+                    <tabler-icon name="trash" class="m-x-6"></tabler-icon>
+                    <span>Delete</span>
+                  </div>
+                </button>
+              }
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <!-- Pagination Info -->
+      @if(!isLoading && totalElements > 0) {
+        <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+          <div class="text-muted f-s-14">
+            Showing {{ getStartIndex() }} to {{ getEndIndex() }} of {{ totalElements }} entries
+          </div>
+          <div class="text-muted f-s-14">
+            Page {{ currentPage + 1 }} of {{ totalPages }}
+          </div>
+        </div>
+      }
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageSizeOptions]="[5, 10, 20]"
+        [pageSize]="pageSize"
+        (page)="onPageChange($event)"
+        [showFirstLastButtons]="true"
+        [hidePageSize]="false">
+      </mat-paginator>
+    </div>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,207 @@
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="d-flex justify-content-end align-items-center mb-3">
+      <button mat-flat-button (click)="exportAuditLogs()" color="primary">
+        Export Logs
+      </button>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-3">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Action</mat-label>
+          <mat-select [(ngModel)]="selectedAction" (selectionChange)="onActionFilterChange($event.value)">
+            <mat-option value="">All Actions</mat-option>
+            <mat-option value="CREATE">Create</mat-option>
+            <mat-option value="UPDATE">Update</mat-option>
+            <mat-option value="DELETE">Delete</mat-option>
+            <mat-option value="READ">Read</mat-option>
+            <mat-option value="LOGIN">Login</mat-option>
+            <mat-option value="LOGOUT">Logout</mat-option>
+            <mat-option value="FILE_UPLOAD">File Upload</mat-option>
+            <mat-option value="FILE_DOWNLOAD">File Download</mat-option>
+            <mat-option value="CAMPAIGN_SEND">Campaign Send</mat-option>
+            <mat-option value="CAMPAIGN_CANCEL">Campaign Cancel</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-md-3">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Resource</mat-label>
+          <mat-select [(ngModel)]="selectedResource" (selectionChange)="onResourceFilterChange($event.value)">
+            <mat-option value="">All Resources</mat-option>
+            <mat-option value="CONTACT">Contact</mat-option>
+            <mat-option value="TAG">Tag</mat-option>
+            <mat-option value="MESSAGE">Message</mat-option>
+            <mat-option value="CAMPAIGN">Campaign</mat-option>
+            <mat-option value="USER">User</mat-option>
+            <mat-option value="FILE">File</mat-option>
+            <mat-option value="AUTH">Authentication</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-md-3">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="selectedSuccess" (selectionChange)="onSuccessFilterChange($event.value)">
+            <mat-option value="">All Status</mat-option>
+            <mat-option value="true">Success</mat-option>
+            <mat-option value="false">Failed</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-md-3">
+        <mat-form-field appearance="outline" class="w-100 hide-hint">
+          <input
+            matInput
+            placeholder="Search by username"
+            [(ngModel)]="searchText"
+            (input)="onSearchChange(searchText)"
+          />
+          <mat-icon matSuffix>
+            <i-tabler name="search" class="icon-20 d-flex m-t-2"></i-tabler>
+          </mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>From Date</mat-label>
+          <input matInput [matDatepicker]="fromPicker" [(ngModel)]="dateFrom" (dateChange)="onDateRangeChange()">
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>To Date</mat-label>
+          <input matInput [matDatepicker]="toPicker" [(ngModel)]="dateTo" (dateChange)="onDateRangeChange()">
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-100">
+        <ng-container matColumnDef="rowNumber">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">#</th>
+           <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 + (currentPage * pageSize) }}</td>
+         </ng-container>
+
+        <ng-container matColumnDef="timestamp">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('timestamp')" style="cursor: pointer;">
+             <div class="d-flex align-items-center gap-8">
+               <span>Timestamp</span>
+               <mat-icon *ngIf="sortBy === 'timestamp'" class="sort-icon">
+                 {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+               </mat-icon>
+             </div>
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="username">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">User</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             <div class="d-flex align-items-center gap-8">
+               <div
+                 class="rounded-circle d-flex align-items-center justify-content-center f-w-600"
+                 style="width: 30px; height: 30px; font-size: 12px; background-color: #e3f2fd; color: #1976d2;"
+               >
+                 {{ element.username.charAt(0).toUpperCase() }}
+               </div>
+               <span>{{ element.username }}</span>
+             </div>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="action">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Action</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             <div class="d-flex align-items-center gap-8">
+               <mat-icon [fontIcon]="getActionIcon(element.action)" class="text-muted" style="font-size: 18px;"></mat-icon>
+               <app-badge [variant]="getActionColor(element.action)" [pill]="true">{{ element.action }}</app-badge>
+             </div>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="resource">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Resource</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             <app-badge variant="info" [pill]="true">
+               {{ getResourceDisplayName(element.resource) }}
+             </app-badge>
+             <small class="text-muted d-block" *ngIf="element.resourceId">
+               ID: {{ element.resourceId }}
+             </small>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="success">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Status</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             <app-badge [variant]="element.success ? 'success' : 'error'" [pill]="true">
+               {{ element.success ? 'Success' : 'Failed' }}
+             </app-badge>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="ipAddress">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">IP Address</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.ipAddress || '-' }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="details">
+          <th mat-header-cell *matHeaderCellDef sticky class="f-w-600 mat-subtitle-1 f-s-14">
+            Details
+          </th>
+          <td mat-cell *matCellDef="let element" class="f-s-14" (click)="$event.stopPropagation()">
+            <button mat-icon-button [matMenuTriggerFor]="menu" type="button" aria-label="View details">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" class="cardWithShadow">
+              <button mat-menu-item (click)="viewAuditDetails(element)">
+                <div class="d-flex align-items-center">
+                  <mat-icon class="m-x-6">visibility</mat-icon>
+                  <span>View Details</span>
+                </div>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <!-- Pagination Info -->
+      <div class="d-flex justify-content-between align-items-center mt-3 mb-3" *ngIf="!isLoading && totalElements > 0">
+        <div class="text-muted f-s-14">
+          Showing {{ getStartIndex() }} to {{ getEndIndex() }} of {{ totalElements }} entries
+        </div>
+        <div class="text-muted f-s-14">
+          Page {{ currentPage + 1 }} of {{ totalPages }}
+        </div>
+      </div>
+
+      <mat-paginator
+        #paginator
+        [length]="totalElements"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage"
+        (page)="onPageChange($event)"
+        [showFirstLastButtons]="true"
+        [hidePageSize]="false">
+      </mat-paginator>
+    </div>
+  </mat-card-content>
+</mat-card>

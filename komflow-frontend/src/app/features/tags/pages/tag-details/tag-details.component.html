@@ -1,0 +1,125 @@
+<div class="row">
+  <div class="col-12">
+    <mat-card class="cardWithShadow">
+      <mat-card-header>
+        <mat-card-title>Tag Details</mat-card-title>
+        <mat-card-subtitle>View tag information</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content *ngIf="!isLoading && tag">
+        <div class="row">
+          <!-- Tag Color and Basic Info -->
+          <div class="col-md-4">
+            <div class="text-center mb-4">
+              <div
+                class="rounded mx-auto mb-3 d-flex align-items-center justify-content-center"
+                [style.background-color]="getColorPreview(tag.color)"
+                style="width: 80px; height: 80px;"
+              >
+                <span class="text-white f-s-24 f-w-600">{{ tag.name.charAt(0).toUpperCase() }}</span>
+              </div>
+              <h4 class="mb-1">{{ tag.name }}</h4>
+              <div class="d-flex align-items-center justify-content-center gap-8">
+                <div
+                  class="rounded"
+                  [style.background-color]="getColorPreview(tag.color)"
+                  style="width: 16px; height: 16px;"
+                ></div>
+                <span class="text-muted">{{ tag.color || 'Default Color' }}</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2 justify-content-center">
+              <button mat-stroked-button (click)="goBack()">
+                <mat-icon>arrow_back</mat-icon>
+                Back to List
+              </button>
+              <button mat-flat-button color="primary" (click)="editTag()">
+                <mat-icon>edit</mat-icon>
+                Edit Tag
+              </button>
+            </div>
+          </div>
+
+          <!-- Tag Details -->
+          <div class="col-md-8">
+            <div class="row">
+              <div class="col-12">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Name</mat-label>
+                  <input matInput [value]="tag.name" readonly>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Color</mat-label>
+                  <div class="d-flex align-items-center gap-8">
+                    <div
+                      class="rounded"
+                      [style.background-color]="getColorPreview(tag.color)"
+                      style="width: 24px; height: 24px; border: 1px solid #ddd;"
+                    ></div>
+                    <input matInput [value]="tag.color || 'Default'" readonly>
+                  </div>
+                </mat-form-field>
+              </div>
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Contacts Count</mat-label>
+                  <input matInput [value]="tag.contactCount" type="number" readonly>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Description</mat-label>
+                  <textarea
+                    matInput
+                    [value]="tag.description || 'No description provided'"
+                    readonly
+                    rows="3"
+                  ></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <!-- Timestamps -->
+            <div class="row mt-4">
+              <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                  <mat-icon class="mr-2 text-muted">schedule</mat-icon>
+                  <div>
+                    <small class="text-muted d-block">Created</small>
+                    <span>{{ tag.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                  <mat-icon class="mr-2 text-muted">update</mat-icon>
+                  <div>
+                    <small class="text-muted d-block">Last Updated</small>
+                    <span>{{ tag.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-content *ngIf="isLoading">
+        <div class="d-flex justify-content-center align-items-center p-4">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span class="ml-2">Loading tag details...</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

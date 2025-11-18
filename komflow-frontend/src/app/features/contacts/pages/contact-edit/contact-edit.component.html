@@ -1,0 +1,103 @@
+<div class="row">
+  <div class="col-12">
+    <mat-card class="cardWithShadow">
+      <mat-card-header>
+        <mat-card-title>Edit Contact</mat-card-title>
+        <mat-card-subtitle>Update contact information</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content *ngIf="!isLoading">
+        <form [formGroup]="contactForm" (ngSubmit)="onSubmit()">
+          <div class="row">
+            <div class="col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>First Name</mat-label>
+                <input matInput formControlName="firstName" placeholder="Enter first name">
+                <mat-error *ngIf="contactForm.get('firstName')?.invalid && contactForm.get('firstName')?.touched">
+                  <span *ngIf="contactForm.get('firstName')?.errors?.['required']">First name is required</span>
+                  <span *ngIf="contactForm.get('firstName')?.errors?.['minlength']">First name must be at least 2 characters</span>
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Last Name</mat-label>
+                <input matInput formControlName="lastName" placeholder="Enter last name">
+                <mat-error *ngIf="contactForm.get('lastName')?.invalid && contactForm.get('lastName')?.touched">
+                  <span *ngIf="contactForm.get('lastName')?.errors?.['required']">Last name is required</span>
+                  <span *ngIf="contactForm.get('lastName')?.errors?.['minlength']">Last name must be at least 2 characters</span>
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" placeholder="Enter email address">
+                <mat-icon matSuffix>
+                  <i-tabler name="mail" class="icon-20 d-flex m-t-2"></i-tabler>
+                </mat-icon>
+                <mat-error *ngIf="contactForm.get('email')?.invalid && contactForm.get('email')?.touched">
+                  <span *ngIf="contactForm.get('email')?.errors?.['required']">Email is required</span>
+                  <span *ngIf="contactForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Phone (Optional)</mat-label>
+                <input matInput formControlName="phone" placeholder="Enter phone number">
+                <mat-icon matSuffix>
+                  <i-tabler name="phone" class="icon-20 d-flex m-t-2"></i-tabler>
+                </mat-icon>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Tags</mat-label>
+                <mat-select formControlName="tagIds" multiple>
+                  <mat-option *ngFor="let tag of availableTags" [value]="tag.id">
+                    {{ tag.name }}
+                  </mat-option>
+                </mat-select>
+                <mat-hint>Select tags to categorize this contact</mat-hint>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="d-flex justify-content-end gap-2">
+                <button mat-stroked-button type="button" (click)="onCancel()">
+                  Cancel
+                </button>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="isSaving || contactForm.invalid">
+                  <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+                  <span *ngIf="!isSaving">Update Contact</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </mat-card-content>
+
+      <mat-card-content *ngIf="isLoading">
+        <div class="d-flex justify-content-center align-items-center p-4">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span class="ml-2">Loading contact...</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

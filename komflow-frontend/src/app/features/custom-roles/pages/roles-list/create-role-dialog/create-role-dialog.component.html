@@ -1,0 +1,75 @@
+<div class="d-flex align-items-center justify-content-between m-b-16 p-x-20 p-t-16">
+  <h3>Add Role</h3>
+  <button
+    mat-icon-button
+    mat-dialog-close
+    class="d-flex justify-content-center"
+  >
+    <i-tabler name="x" class="icon-20 d-flex"></i-tabler>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <form #roleForm="ngForm">
+    <div class="row">
+      <div class="col-12">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Role Name</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input
+            type="text"
+            matInput
+            required
+            id="name"
+            name="name"
+            [(ngModel)]="local_data.name"
+            placeholder="Enter role name"
+          />
+        </mat-form-field>
+      </div>
+      <div class="col-12">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Display Name</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input
+            type="text"
+            matInput
+            required
+            id="displayName"
+            name="displayName"
+            [(ngModel)]="local_data.displayName"
+            placeholder="Enter display name"
+          />
+        </mat-form-field>
+      </div>
+      <div class="col-12">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Description (Optional)</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <textarea
+            matInput
+            id="description"
+            name="description"
+            [(ngModel)]="local_data.description"
+            placeholder="Enter role description"
+            rows="3"
+          ></textarea>
+        </mat-form-field>
+      </div>
+    </div>
+    <div mat-dialog-actions align="end">
+      <button
+        mat-flat-button
+        class="m-l-8 bg-secondary text-white"
+        (click)="closeDialog()"
+      >
+        Cancel
+      </button>
+      <button
+        mat-flat-button
+        class="m-l-8 bg-primary text-white"
+        (click)="doAction()"
+        [disabled]="!roleForm.valid"
+      >
+        Add
+      </button>
+    </div>
+  </form>
+</mat-dialog-content>

@@ -1,0 +1,63 @@
+<div class="d-flex align-items-center justify-content-between mb-3 px-3 pt-3">
+  <h5 class="mb-0">Confirm Category Deletion</h5>
+  <button mat-icon-button mat-dialog-close>
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="px-3">
+  <div class="alert alert-warning mb-3">
+    <div class="d-flex align-items-center">
+      <mat-icon class="text-warning me-2">warning</mat-icon>
+      <strong>Danger Zone</strong>
+    </div>
+    <p class="mb-0 mt-2">
+      You are about to permanently delete the category <strong>{{category.name}}</strong>.
+      This action cannot be undone and will also remove all associated products.
+    </p>
+  </div>
+
+  <div class="category-info mb-3 p-3 bg-light rounded">
+    <h6 class="mb-2">Category Details:</h6>
+    <p class="mb-1"><strong>Name:</strong> {{ category.name }}</p>
+    <p class="mb-1"><strong>Description:</strong> {{ category.description || 'No description' }}</p>
+    <p class="mb-0"><strong>Products:</strong> {{ category.productCount }}</p>
+  </div>
+
+  <p class="mb-3">
+    To confirm deletion, please type the category name <strong>{{category.name}}</strong> in the field below:
+  </p>
+
+  <mat-form-field appearance="outline" class="w-100">
+    <mat-label>Type category name to confirm</mat-label>
+    <input
+      matInput
+      [(ngModel)]="confirmationText"
+      placeholder="Enter category name here"
+    />
+    <mat-hint *ngIf="!isConfirmationValid && confirmationText.length > 0" class="text-danger">
+      Category name doesn't match
+    </mat-hint>
+  </mat-form-field>
+
+  <div class="mt-3 p-3 bg-light rounded" *ngIf="confirmationText.length > 0">
+    <small class="text-muted">
+      Expected: <strong>{{category.name}}</strong><br>
+      You typed: <strong>{{confirmationText}}</strong>
+    </small>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="px-3 pb-3">
+  <button mat-button (click)="closeDialog()">
+    Cancel
+  </button>
+  <button
+    mat-flat-button
+    color="warn"
+    [disabled]="!isConfirmationValid"
+    (click)="doAction()"
+  >
+    Delete Category
+  </button>
+</mat-dialog-actions>

@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/contact")
+@RequestMapping("/contacts")
 @Tag(name = "Contact Management", description = "APIs for managing contacts")
 public class ContactController {
 

@@ -1,0 +1,162 @@
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="d-flex justify-content-end align-items-center mb-3">
+      <button mat-flat-button (click)="uploadFiles()" color="primary">
+        Upload Files
+      </button>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Category</mat-label>
+          <mat-select [(ngModel)]="selectedCategory" (selectionChange)="onCategoryFilterChange($event.value)">
+            <mat-option value="">All Categories</mat-option>
+            <mat-option value="DOCUMENT">Document</mat-option>
+            <mat-option value="IMAGE">Image</mat-option>
+            <mat-option value="VIDEO">Video</mat-option>
+            <mat-option value="AUDIO">Audio</mat-option>
+            <mat-option value="ARCHIVE">Archive</mat-option>
+            <mat-option value="OTHER">Other</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100 hide-hint">
+          <input
+            matInput
+            placeholder="Search Files"
+            [(ngModel)]="searchText"
+            (input)="onSearchChange(searchText)"
+          />
+          <mat-icon matSuffix>
+            <i-tabler name="search" class="icon-20 d-flex m-t-2"></i-tabler>
+          </mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-100" matSort>
+        <ng-container matColumnDef="rowNumber">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">#</th>
+           <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 + (currentPage * pageSize) }}</td>
+         </ng-container>
+
+        <ng-container matColumnDef="preview">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Preview</th>
+           <td mat-cell *matCellDef="let element">
+             <div class="d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+               <mat-icon *ngIf="!isImageFile(element)" [fontIcon]="getFileIcon(element)" class="text-muted"></mat-icon>
+               <img *ngIf="isImageFile(element)" [src]="element.thumbnailUrl || element.url" [alt]="element.name"
+                    style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" />
+             </div>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="name">
+           <th mat-header-cell *matHeaderCellDef mat-sort-header="name" class="f-w-600 mat-subtitle-1 f-s-14">
+             Name
+           </th>
+           <td mat-cell *matCellDef="let element">
+             <div class="d-flex flex-column">
+               <span class="f-w-600">{{ element.originalName }}</span>
+               <small class="text-muted" *ngIf="element.description">{{ element.description | slice:0:40 }}{{ element.description?.length > 40 ? '...' : '' }}</small>
+               <div class="d-flex gap-4 mt-1" *ngIf="element.tags && element.tags.length > 0">
+                 <small class="text-muted" *ngFor="let tag of element.tags.slice(0, 2)">#{{ tag }}</small>
+                 <small class="text-muted" *ngIf="element.tags.length > 2">+{{ element.tags.length - 2 }}</small>
+               </div>
+             </div>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="category">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Category</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             <app-badge [variant]="getCategoryColor(element.category)" [pill]="true">
+               {{ element.category }}
+             </app-badge>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="size">
+           <th mat-header-cell *matHeaderCellDef mat-sort-header="size" class="f-w-600 mat-subtitle-1 f-s-14">
+             Size
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ formatFileSize(element.size) }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="uploadedBy">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Uploaded By</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.uploadedBy }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="uploadedAt">
+           <th mat-header-cell *matHeaderCellDef mat-sort-header="uploadedAt" class="f-w-600 mat-subtitle-1 f-s-14">
+             Uploaded
+           </th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             {{ element.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef sticky class="f-w-600 mat-subtitle-1 f-s-14">
+            Action
+          </th>
+          <td mat-cell *matCellDef="let element" class="f-s-14" (click)="$event.stopPropagation()">
+            <button mat-icon-button [matMenuTriggerFor]="menu" type="button" aria-label="Example icon-button with a menu">
+              <mat-icon>
+                <tabler-icon name="dots-vertical"></tabler-icon>
+              </mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" class="cardWithShadow">
+              <button mat-menu-item>
+                <div class="d-flex align-items-center" (click)="downloadFile(element)">
+                  <tabler-icon name="download" class="m-x-6"></tabler-icon>
+                  <span>Download</span>
+                </div>
+              </button>
+              <button mat-menu-item>
+                <div class="d-flex align-items-center text-error" (click)="deleteFile(element)">
+                  <tabler-icon name="trash" class="m-x-6"></tabler-icon>
+                  <span>Delete</span>
+                </div>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <!-- Pagination Info -->
+      <div class="d-flex justify-content-between align-items-center mt-3 mb-3" *ngIf="!isLoading && totalElements > 0">
+        <div class="text-muted f-s-14">
+          Showing {{ getStartIndex() }} to {{ getEndIndex() }} of {{ totalElements }} entries
+        </div>
+        <div class="text-muted f-s-14">
+          Page {{ currentPage + 1 }} of {{ totalPages }}
+        </div>
+      </div>
+
+      <mat-paginator
+        #paginator
+        [length]="totalElements"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage"
+        (page)="onPageChange($event)"
+        [showFirstLastButtons]="true"
+        [hidePageSize]="false">
+      </mat-paginator>
+    </div>
+  </mat-card-content>
+</mat-card>

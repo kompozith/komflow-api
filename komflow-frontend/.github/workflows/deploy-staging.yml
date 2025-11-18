@@ -1,0 +1,62 @@
+name: Deploy to staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # 3️⃣ Install dependencies & build
+      - name: Install & build
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+
+      # 4️⃣ Setup SSH key
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+      - name: Deploy to server
+        run: |
+          # Crée le dossier staging sur le serveur
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            mkdir -p /var/www/staging/itcc-website-frontend
+          "
+
+          # Copie build, public, package.json, package-lock.json
+          rsync -avz --delete \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='node_modules' \
+          ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/staging/itcc-website-frontend/
+
+          # Déploiement PM2
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            cd /var/www/staging/itcc-website-frontend
+
+            pm2 stop itcc-website-frontend || true
+            rm -rf node_modules
+            npm ci --omit=dev --legacy-peer-deps
+            pm2 start npm --name itcc-website-frontend -- start
+            pm2 save
+          "

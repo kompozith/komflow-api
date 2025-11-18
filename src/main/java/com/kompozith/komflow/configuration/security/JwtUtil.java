@@ -13,6 +13,10 @@ import java.util.Date;
 public class JwtUtil {
     private final JwtConfig config;
 
+    public JwtConfig getConfig() {
+        return config;
+    }
+
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(config.getSecretKey().getBytes());
     }
@@ -24,6 +28,16 @@ public class JwtUtil {
                 .issuer(config.getIssuer())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + config.getExpirationMs()))
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    public String generateRefreshToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .issuer(config.getIssuer())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + config.getRefreshExpirationMs()))
                 .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
