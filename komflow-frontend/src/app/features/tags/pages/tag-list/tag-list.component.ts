@@ -16,6 +16,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { DatePipe } from '@angular/common';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MaterialModule } from 'src/app/material.module';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { CommonModule } from '@angular/common';
@@ -25,6 +27,8 @@ import { TagService } from '../../services/tag.service';
 import { Tag, TagPage, TagFilters } from '../../models/tag';
 import { BadgeComponent, BadgeVariant } from '../../../../shared/components/badge/badge.component';
 import { DeleteTagDialogComponent } from './delete-tag-dialog/delete-tag-dialog.component';
+import { TagCreateComponent } from '../tag-create/tag-create.component';
+import { TagEditComponent } from '../tag-edit/tag-edit.component';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 @Component({
@@ -52,9 +56,8 @@ export class TagListComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = [
     'rowNumber',
     'name',
-    'color',
     'contactCount',
-    'description',
+    'enabled',
     'createdAt',
     'actions',
   ];
@@ -69,6 +72,8 @@ export class TagListComponent implements OnInit, AfterViewInit {
 
   // Filters
   searchText = '';
+  startDate: Date | null = null;
+  endDate: Date | null = null;
   sortBy = 'name';
   sortDirection: 'asc' | 'desc' = 'asc';
 
@@ -120,6 +125,8 @@ export class TagListComponent implements OnInit, AfterViewInit {
       size: this.pageSize,
       sort: [`${this.sortBy},${this.sortDirection}`],
       search: this.searchText || undefined,
+      startDate: this.startDate ? this.startDate.toISOString().split('T')[0] : undefined,
+      endDate: this.endDate ? this.endDate.toISOString().split('T')[0] : undefined,
     };
 
     this.tagService.getTags(filters).subscribe({
@@ -162,6 +169,10 @@ export class TagListComponent implements OnInit, AfterViewInit {
     this.searchSubject.next(searchText);
   }
 
+  onDateFilterChange(): void {
+    this.loadTags();
+  }
+
   onSortChange(sortBy: string): void {
     if (this.sortBy === sortBy) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -173,11 +184,28 @@ export class TagListComponent implements OnInit, AfterViewInit {
   }
 
   createTag(): void {
-    this.router.navigate(['tags/create']);
+    const dialogRef = this.dialog.open(TagCreateComponent, {
+      width: '600px'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.event === 'Create') {
+        this.loadTags(this.currentPage);
+      }
+    });
   }
 
   editTag(tag: Tag): void {
-    this.router.navigate(['tags/edit', tag.id]);
+    const dialogRef = this.dialog.open(TagEditComponent, {
+      width: '600px',
+      data: { tag }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.event === 'Update') {
+        this.loadTags(this.currentPage);
+      }
+    });
   }
 
   viewTagDetails(tag: Tag): void {
@@ -199,5 +227,19 @@ export class TagListComponent implements OnInit, AfterViewInit {
 
   getColorPreview(colorCode?: string): string {
     return colorCode || '#007bff';
+  }
+
+  toggleTagStatus(tag: Tag): void {
+    const newStatus = !tag.enabled;
+    this.tagService.toggleTagStatus(tag.id.toString(), newStatus).subscribe({
+      next: (updatedTag) => {
+        tag.enabled = updatedTag.enabled;
+        this.snackBar.open(`Tag ${newStatus ? 'enabled' : 'disabled'} successfully`, 'Close', { duration: 3000 });
+      },
+      error: (error) => {
+        console.error('Error toggling tag status:', error);
+        this.snackBar.open('Error updating tag status', 'Close', { duration: 3000 });
+      }
+    });
   }
 }

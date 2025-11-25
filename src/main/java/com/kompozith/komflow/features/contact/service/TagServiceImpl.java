@@ -7,9 +7,16 @@ import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.core.service.BaseService;
+import com.kompozith.komflow.utils.SortHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,60 +29,129 @@ public class TagServiceImpl extends BaseService implements TagService {
 
     @Override
     public TagDto create(TagDto tagDto) {
-
-        // Verify that another tag didn't exist with yhe given name.
-        if(tagRepository.findByName(tagDto.getName()).isPresent()){
+        // Check if tag with same name already exists
+        if (tagRepository.findByName(tagDto.getName()).isPresent()) {
             throw new ObjectExistException(Tag.class.getSimpleName(), "name", tagDto.getName());
         }
 
         Tag tag = tagMapper.tagDtoToTag(tagDto);
-        return tagMapper.tagToTagDto(
-                tagRepository.save(tag)
-        );
+        tag.setEnabled(true); // Default to enabled
+        Tag savedTag = tagRepository.save(tag);
+        TagDto dto = tagMapper.tagToTagDto(savedTag);
+        // Calculate contact count for new tag (should be 0)
+        dto.setContactCount(0L);
+        return dto;
     }
 
     @Override
     public List<TagDto> findAll() {
-        return tagRepository.findAll().stream().map(
-                tagMapper::tagToTagDto
-        ).collect(Collectors.toList());
+        List<Object[]> results = tagRepository.findAllWithContactCount();
+        return results.stream()
+                .map(result -> {
+                    Tag tag = (Tag) result[0];
+                    Long contactCount = (Long) result[1];
+                    TagDto dto = tagMapper.tagToTagDto(tag);
+                    dto.setContactCount(contactCount);
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
-    public TagDto findById(Long id) { // Changed from int to Long
+    public Page<TagDto> findAll(Pageable pageable, String search, String sort, String startDate, String endDate) {
+        // Get all tags with contact count
+        List<TagDto> allTags = findAll();
+
+        // Apply search filter if provided
+        if (search != null && !search.trim().isEmpty()) {
+            allTags = allTags.stream()
+                    .filter(tag -> tag.getName().toLowerCase().contains(search.toLowerCase()) ||
+                                  (tag.getDescription() != null && tag.getDescription().toLowerCase().contains(search.toLowerCase())))
+                    .collect(Collectors.toList());
+        }
+
+        // Apply date filters if provided
+        if (startDate != null && !startDate.trim().isEmpty()) {
+            Instant startInstant = Instant.parse(startDate + "T00:00:00Z");
+            allTags = allTags.stream()
+                    .filter(tag -> tag.getCreatedAt() != null && !tag.getCreatedAt().isBefore(startInstant))
+                    .collect(Collectors.toList());
+        }
+        if (endDate != null && !endDate.trim().isEmpty()) {
+            Instant endInstant = Instant.parse(endDate + "T23:59:59Z");
+            allTags = allTags.stream()
+                    .filter(tag -> tag.getCreatedAt() != null && !tag.getCreatedAt().isAfter(endInstant))
+                    .collect(Collectors.toList());
+        }
+
+        // Apply sorting using SortHelper
+        if (sort != null && !sort.trim().isEmpty()) {
+            Comparator<TagDto> comparator = SortHelper.createComparator(sort, field -> {
+                switch (field) {
+                    case "name":
+                        return Comparator.comparing(TagDto::getName, String.CASE_INSENSITIVE_ORDER);
+                    case "createdAt":
+                        return Comparator.comparing(TagDto::getCreatedAt);
+                    default:
+                        return (a, b) -> 0;
+                }
+            });
+            allTags.sort(comparator);
+        }
+
+        // Apply pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), allTags.size());
+        List<TagDto> pageContent = allTags.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, allTags.size());
+    }
+
+    @Override
+    public TagDto findById(Long id) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
-        return tagMapper.tagToTagDto(tag);
+        TagDto dto = tagMapper.tagToTagDto(tag);
+        // Calculate contact count for this tag
+        dto.setContactCount(tag.getContacts() != null ? (long) tag.getContacts().size() : 0L);
+        return dto;
     }
 
     @Override
     public TagDto update(Long id, TagDto tagDto) {
-        Tag tag = tagRepository.findById(id)
+        Tag existingTag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
 
-        Tag alreadyExistedTag = tagRepository.findByName(tagDto.getName()).orElse(null);
-
-        // Throw exception if the name is already assigned to another tag
-        if(tagDto.getName() != null) {
-            if(alreadyExistedTag != null && !alreadyExistedTag.getId().equals(tag.getId()))
+        // Check if another tag with same name exists
+        tagRepository.findByName(tagDto.getName()).ifPresent(tag -> {
+            if (!tag.getId().equals(id)) {
                 throw new ObjectExistException(Tag.class.getSimpleName(), "name", tagDto.getName());
-        }
+            }
+        });
 
-        // Update fields
-        tag.setName(tagDto.getName());
-        tag.setDescription(tagDto.getDescription());
-        tag.setColorCode(tagDto.getColorCode());
+        existingTag.setName(tagDto.getName());
+        existingTag.setDescription(tagDto.getDescription());
+        existingTag.setColorCode(tagDto.getColorCode());
+        // Note: enabled field not in TagDto, assuming it's not updated via this method
 
-        // Assuming BaseEntity handles updatedAt automatically
-        Tag updatedTag = tagRepository.save(tag);
+        Tag updatedTag = tagRepository.save(existingTag);
         return tagMapper.tagToTagDto(updatedTag);
     }
 
     @Override
-    public void delete(Long id) { // Changed from int to Long
-        if (!tagRepository.existsById(id)) {
-            throw new ObjectNotFoundException(Tag.class.getSimpleName(), id);
-        }
+    public TagDto toggleStatus(Long id, boolean enabled) {
+        Tag existingTag = tagRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
+
+        existingTag.setEnabled(enabled);
+        Tag updatedTag = tagRepository.save(existingTag);
+        return tagMapper.tagToTagDto(updatedTag);
+    }
+
+    @Override
+    public void delete(Long id) {
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
         tagRepository.deleteById(id);
     }
 }

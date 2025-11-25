@@ -1,26 +1,37 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Component, Inject } from '@angular/core';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle,
+} from '@angular/material/dialog';
 import { MaterialModule } from 'src/app/material.module';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { CommonModule } from '@angular/common';
 import { TagService } from '../../services/tag.service';
 import { CreateTagRequest } from '../../models/tag';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-tag-create',
-  templateUrl: './tag-create.component.html',
-  styleUrls: [],
   imports: [
+    MatDialogActions,
+    MatDialogClose,
+    MatDialogTitle,
+    MatDialogContent,
     MaterialModule,
-    ReactiveFormsModule,
     FormsModule,
+    ReactiveFormsModule,
     TablerIconsModule,
     CommonModule,
   ],
+  templateUrl: './tag-create.component.html',
+  styleUrl: './tag-create.component.scss',
 })
-export class TagCreateComponent implements OnInit {
+export class TagCreateComponent {
   tagForm: FormGroup;
   isLoading = false;
 
@@ -39,10 +50,11 @@ export class TagCreateComponent implements OnInit {
   ];
 
   constructor(
+    public dialogRef: MatDialogRef<TagCreateComponent>,
     private fb: FormBuilder,
     private tagService: TagService,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.tagForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
@@ -51,8 +63,6 @@ export class TagCreateComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {}
-
   onSubmit(): void {
     if (this.tagForm.valid) {
       this.isLoading = true;
@@ -60,14 +70,14 @@ export class TagCreateComponent implements OnInit {
 
       const tagData: CreateTagRequest = {
         name: formValue.name,
-        color: formValue.color,
+        colorCode: formValue.color,
         description: formValue.description || undefined
       };
 
       this.tagService.createTag(tagData).subscribe({
         next: (tag) => {
           this.snackBar.open('Tag created successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/tags/list']);
+          this.dialogRef.close({ event: 'Create' });
         },
         error: (error) => {
           console.error('Error creating tag:', error);
@@ -81,7 +91,7 @@ export class TagCreateComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/tags/list']);
+    this.dialogRef.close({ event: 'Cancel' });
   }
 
   private markFormGroupTouched(): void {

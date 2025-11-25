@@ -16,6 +16,7 @@ import { AppSideTwoStepsComponent } from './pages/side-two-steps/side-two-steps.
 import { PasswordResetInitiateComponent } from './pages/password-reset-initiate/password-reset-initiate.component';
 import { PasswordResetVerifyComponent } from './pages/password-reset-verify/password-reset-verify.component';
 import { PasswordResetCompleteComponent } from './pages/password-reset-complete/password-reset-complete.component';
+import {AuthGuard} from "./guards/auth.guard";
 
 export const AuthenticationRoutes: Routes = [
   {
@@ -44,6 +45,11 @@ export const AuthenticationRoutes: Routes = [
       {
         path: 'error',
         component: AppErrorComponent,
+      },
+      {
+        path: 'forbidden',
+        component: AppErrorComponent,
+        canActivate: [AuthGuard],
       },
       {
         path: 'maintenance',

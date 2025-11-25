@@ -1,6 +1,7 @@
 package com.kompozith.komflow.features.contact.controller;
 
 import com.kompozith.komflow.features.contact.dto.TagDto;
+import com.kompozith.komflow.features.contact.dto.TagStatusUpdateRequest;
 import com.kompozith.komflow.features.contact.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.ArrayList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 
 @RestController
@@ -30,9 +36,17 @@ public class TagController {
 
     @PreAuthorize("hasAuthority('TAG_LIST')")
     @GetMapping
-    @Operation(summary = "Get all tags", description = "Retrieve a list of all tags")
-    public List<TagDto> findAll() {
-        return tagService.findAll();
+    @Operation(summary = "Get all tags", description = "Retrieve a paginated list of tags with optional search and date filters")
+    public Page<TagDto> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return tagService.findAll(pageable, search, sort, startDate, endDate);
     }
 
     @PreAuthorize("hasAuthority('TAG_SHOW')")
@@ -48,6 +62,13 @@ public class TagController {
     public TagDto update(@PathVariable Long id, @Valid @RequestBody TagDto tagDto) {
         tagDto.setId(id);
         return tagService.update(id, tagDto);
+    }
+
+    @PreAuthorize("hasAuthority('TAG_UPDATE')")
+    @PutMapping("/{id}/toggle-status")
+    @Operation(summary = "Toggle tag status", description = "Toggle the enabled/disabled status of a tag")
+    public TagDto toggleStatus(@PathVariable Long id, @RequestBody TagStatusUpdateRequest request) {
+        return tagService.toggleStatus(id, request.enabled());
     }
 
     @PreAuthorize("hasAuthority('TAG_DELETE')")

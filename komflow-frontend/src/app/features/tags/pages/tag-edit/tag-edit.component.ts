@@ -1,30 +1,40 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Component, Inject } from '@angular/core';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle,
+} from '@angular/material/dialog';
 import { MaterialModule } from 'src/app/material.module';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { CommonModule } from '@angular/common';
 import { TagService } from '../../services/tag.service';
 import { Tag, UpdateTagRequest } from '../../models/tag';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-tag-edit',
-  templateUrl: './tag-edit.component.html',
-  styleUrls: [],
   imports: [
+    MatDialogActions,
+    MatDialogClose,
+    MatDialogTitle,
+    MatDialogContent,
     MaterialModule,
-    ReactiveFormsModule,
     FormsModule,
+    ReactiveFormsModule,
     TablerIconsModule,
     CommonModule,
   ],
+  templateUrl: './tag-edit.component.html',
+  styleUrl: './tag-edit.component.scss',
 })
-export class TagEditComponent implements OnInit {
+export class TagEditComponent {
   tagForm: FormGroup;
   isLoading = false;
   isSaving = false;
-  tagId: string = '';
   tag: Tag | null = null;
 
   // Predefined color options
@@ -42,41 +52,17 @@ export class TagEditComponent implements OnInit {
   ];
 
   constructor(
+    public dialogRef: MatDialogRef<TagEditComponent>,
     private fb: FormBuilder,
     private tagService: TagService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    @Inject(MAT_DIALOG_DATA) public data: { tag: Tag }
   ) {
+    this.tag = data.tag;
     this.tagForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      color: ['#007bff'],
-      description: ['', [Validators.maxLength(255)]]
-    });
-  }
-
-  ngOnInit(): void {
-    this.tagId = this.route.snapshot.params['id'];
-    this.loadTag();
-  }
-
-  loadTag(): void {
-    this.isLoading = true;
-    this.tagService.getTagById(this.tagId).subscribe({
-      next: (tag) => {
-        this.tag = tag;
-        this.tagForm.patchValue({
-          name: tag.name,
-          color: tag.color || '#007bff',
-          description: tag.description || ''
-        });
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading tag:', error);
-        this.snackBar.open('Error loading tag', 'Close', { duration: 3000 });
-        this.isLoading = false;
-      }
+      name: [data.tag.name, [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      color: [data.tag.color || '#007bff'],
+      description: [data.tag.description || '', [Validators.maxLength(255)]]
     });
   }
 
@@ -87,14 +73,14 @@ export class TagEditComponent implements OnInit {
 
       const tagData: UpdateTagRequest = {
         name: formValue.name,
-        color: formValue.color,
+        colorCode: formValue.color,
         description: formValue.description || undefined
       };
 
-      this.tagService.updateTag(this.tagId, tagData).subscribe({
+      this.tagService.updateTag(this.tag!.id.toString(), tagData).subscribe({
         next: (tag) => {
           this.snackBar.open('Tag updated successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/tags/list']);
+          this.dialogRef.close({ event: 'Update' });
         },
         error: (error) => {
           console.error('Error updating tag:', error);
@@ -108,7 +94,7 @@ export class TagEditComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/tags/list']);
+    this.dialogRef.close({ event: 'Cancel' });
   }
 
   private markFormGroupTouched(): void {

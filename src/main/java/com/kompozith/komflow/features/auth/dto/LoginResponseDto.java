@@ -13,14 +13,16 @@ public class LoginResponseDto {
     private String tokenType;
     private Integer expiresIn;
     private UserDetailsDto user;
+    private UserPermissionsDto permissions;
 
-    public static LoginResponseDto fromUserDetailsDto(UserDetailsDto userDetails, String accessToken, String refreshToken, Integer expiresIn) {
+    public static LoginResponseDto fromUserDetailsDto(UserDetailsDto userDetails, String accessToken, String refreshToken, Integer expiresIn, UserPermissionsDto permissions) {
         return LoginResponseDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .expiresIn(expiresIn)
                 .user(userDetails)
+                .permissions(permissions)
                 .build();
     }
 }

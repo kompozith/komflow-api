@@ -1,75 +1,57 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Component, Inject } from '@angular/core';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle,
+} from '@angular/material/dialog';
 import { MaterialModule } from 'src/app/material.module';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { CommonModule } from '@angular/common';
 import { ContactService } from '../../services/contact.service';
 import { Contact, UpdateContactRequest } from '../../models/contact';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-contact-edit',
-  templateUrl: './contact-edit.component.html',
-  styleUrls: [],
   imports: [
+    MatDialogActions,
+    MatDialogClose,
+    MatDialogTitle,
+    MatDialogContent,
     MaterialModule,
-    ReactiveFormsModule,
     FormsModule,
+    ReactiveFormsModule,
     TablerIconsModule,
     CommonModule,
   ],
+  templateUrl: './contact-edit.component.html',
+  styleUrl: './contact-edit.component.scss',
 })
-export class ContactEditComponent implements OnInit {
+export class ContactEditComponent {
   contactForm: FormGroup;
   isLoading = false;
   isSaving = false;
-  contactId: string = '';
   contact: Contact | null = null;
   availableTags: any[] = []; // TODO: Load from service
 
   constructor(
+    public dialogRef: MatDialogRef<ContactEditComponent>,
     private fb: FormBuilder,
     private contactService: ContactService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    @Inject(MAT_DIALOG_DATA) public data: { contact: Contact }
   ) {
+    this.contact = data.contact;
     this.contactForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      phone: [''],
-      tagIds: [[]]
-    });
-  }
-
-  ngOnInit(): void {
-    this.contactId = this.route.snapshot.params['id'];
-    this.loadContact();
-    // TODO: Load available tags
-    // this.loadTags();
-  }
-
-  loadContact(): void {
-    this.isLoading = true;
-    this.contactService.getContactById(this.contactId).subscribe({
-      next: (contact) => {
-        this.contact = contact;
-        this.contactForm.patchValue({
-          firstName: contact.firstName,
-          lastName: contact.lastName,
-          email: contact.email,
-          phone: contact.phone || '',
-          tagIds: contact.tags.map(tag => tag.id)
-        });
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading contact:', error);
-        this.snackBar.open('Error loading contact', 'Close', { duration: 3000 });
-        this.isLoading = false;
-      }
+      firstName: [data.contact.firstName, [Validators.required, Validators.minLength(2)]],
+      lastName: [data.contact.lastName, [Validators.required, Validators.minLength(2)]],
+      email: [data.contact.email, [Validators.required, Validators.email]],
+      phone: [data.contact.phone || ''],
+      tagIds: [data.contact.tags.map(tag => tag.id)]
     });
   }
 
@@ -86,10 +68,10 @@ export class ContactEditComponent implements OnInit {
         tagIds: formValue.tagIds || []
       };
 
-      this.contactService.updateContact(this.contactId, contactData).subscribe({
+      this.contactService.updateContact(this.contact!.id, contactData).subscribe({
         next: (contact) => {
           this.snackBar.open('Contact updated successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/contacts/list']);
+          this.dialogRef.close({ event: 'Update' });
         },
         error: (error) => {
           console.error('Error updating contact:', error);
@@ -103,7 +85,7 @@ export class ContactEditComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/contacts/list']);
+    this.dialogRef.close({ event: 'Cancel' });
   }
 
   private markFormGroupTouched(): void {
@@ -112,11 +94,4 @@ export class ContactEditComponent implements OnInit {
       control?.markAsTouched();
     });
   }
-
-  // TODO: Implement tag loading
-  // private loadTags(): void {
-  //   this.tagService.getTags().subscribe(tags => {
-  //     this.availableTags = tags;
-  //   });
-  // }
 }

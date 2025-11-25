@@ -13,7 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     <mat-dialog-content>
       <p>Are you sure you want to delete the tag <strong>{{ data.tag.name }}</strong>?</p>
       <p class="text-muted">This action cannot be undone. The tag will be removed from all associated contacts.</p>
-      <p *ngIf="data.tag.contactCount > 0" class="text-warning">
+      <p *ngIf="data.tag.contactCount && data.tag.contactCount > 0" class="text-warning">
         <mat-icon>warning</mat-icon>
         This tag is currently assigned to {{ data.tag.contactCount }} contact{{ data.tag.contactCount > 1 ? 's' : '' }}.
       </p>
@@ -44,7 +44,7 @@ export class DeleteTagDialogComponent {
 
   onConfirm(): void {
     this.isDeleting = true;
-    this.tagService.deleteTag(this.data.tag.id).subscribe({
+    this.tagService.deleteTag(this.data.tag.id.toString()).subscribe({
       next: () => {
         this.snackBar.open('Tag deleted successfully', 'Close', { duration: 3000 });
         this.dialogRef.close({ event: 'Delete' });

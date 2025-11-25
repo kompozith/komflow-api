@@ -18,6 +18,8 @@ import { ContactService } from '../../services/contact.service';
 import { Contact, ContactPage, ContactFilters } from '../../models/contact';
 import { BadgeComponent } from '../../../../shared/components/badge/badge.component';
 import { DeleteContactDialogComponent } from './delete-contact-dialog/delete-contact-dialog.component';
+import { ContactCreateComponent } from '../contact-create/contact-create.component';
+import { ContactEditComponent } from '../contact-edit/contact-edit.component';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import {MatTableDataSource} from "@angular/material/table";
 
@@ -193,7 +195,16 @@ export class ContactListComponent implements OnInit {
   }
 
   createContact(): void {
-    this.router.navigate(['contacts/create']);
+    const dialogRef = this.dialog.open(ContactCreateComponent, {
+      width: '600px',
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.event === 'Create') {
+        this.loadContacts(this.currentPage);
+      }
+    });
   }
 
   editContact(contact: Contact): void {

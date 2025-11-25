@@ -1,12 +1,12 @@
+<div class="d-flex justify-content-end align-items-center mb-3">
+  <button mat-flat-button (click)="createTag()" color="primary">
+    Create Tag
+  </button>
+</div>
 <mat-card class="cardWithShadow">
   <mat-card-content>
-    <div class="d-flex justify-content-end align-items-center mb-3">
-      <button mat-flat-button (click)="createTag()" color="primary">
-        Create Tag
-      </button>
-    </div>
     <div class="row mt-3">
-      <div class="col-md-12">
+      <div class="col-md-4">
         <mat-form-field appearance="outline" class="w-100 hide-hint">
           <input
             matInput
@@ -19,6 +19,29 @@
           </mat-icon>
         </mat-form-field>
       </div>
+      <div class="col-md-4">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Start Date</mat-label>
+          <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" (dateChange)="onDateFilterChange()">
+          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <div class="col-md-4">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>End Date</mat-label>
+          <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" (dateChange)="onDateFilterChange()">
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-md-12 d-flex justify-content-end">
+        <button mat-button color="success" (click)="onDateFilterChange()">
+          Apply Filters
+        </button>
+      </div>
     </div>
   </mat-card-content>
 </mat-card>
@@ -29,7 +52,7 @@
         <ng-container matColumnDef="rowNumber">
            <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">#</th>
            <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 + (currentPage * pageSize) }}</td>
-         </ng-container>
+        </ng-container>
 
         <ng-container matColumnDef="name">
            <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14 sortable-header" (click)="onSortChange('name')" style="cursor: pointer;">
@@ -41,41 +64,34 @@
              </div>
            </th>
            <td mat-cell *matCellDef="let element">
-             <div class="d-flex align-items-center gap-8">
-               <div
-                 class="rounded-circle"
-                 [style.background-color]="getColorPreview(element.colorCode)"
-                 style="width: 16px; height: 16px;"
-               ></div>
-               <span class="f-w-600">{{ element.name }}</span>
-             </div>
-           </td>
-         </ng-container>
-
-        <ng-container matColumnDef="color">
-           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Color</th>
-           <td mat-cell *matCellDef="let element" class="f-s-14">
-             <div class="d-flex align-items-center gap-8">
-               <div
-                 class="rounded"
-                 [style.background-color]="getColorPreview(element.colorCode)"
-                 style="width: 24px; height: 24px; border: 1px solid #ddd;"
-               ></div>
-               <span class="text-muted">{{ element.colorCode || 'Default' }}</span>
+             <div class="d-flex flex-column">
+               <div class="d-flex align-items-center gap-8">
+                 <div
+                   class="rounded-circle"
+                   [style.background-color]="getColorPreview(element.colorCode)"
+                   style="width: 16px; height: 16px;"
+                 ></div>
+                 <span class="f-w-600">{{ element.name }}</span>
+               </div>
+               <div class="text-muted f-s-12 mt-1" *ngIf="element.description">
+                 {{ element.description | slice:0:50 }}{{ element.description?.length > 50 ? '...' : '' }}
+               </div>
              </div>
            </td>
          </ng-container>
 
 
-        <ng-container matColumnDef="description">
-           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Description</th>
+        <ng-container matColumnDef="contactCount">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Contacts</th>
            <td mat-cell *matCellDef="let element" class="f-s-14">
-             <span *ngIf="element.description; else noDescription">
-               {{ element.description | slice:0:50 }}{{ element.description?.length > 50 ? '...' : '' }}
-             </span>
-             <ng-template #noDescription>
-               <span class="text-muted">-</span>
-             </ng-template>
+             <span class="f-w-600">{{ element.contactCount || 0 }}</span>
+           </td>
+         </ng-container>
+
+        <ng-container matColumnDef="enabled">
+           <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">Status</th>
+           <td mat-cell *matCellDef="let element" class="f-s-14">
+             <app-badge [variant]="element.enabled ? 'success' : 'error'" [content]="element.enabled ? 'Enabled' : 'Disabled'" [pill]="true"></app-badge>
            </td>
          </ng-container>
 
@@ -114,6 +130,18 @@
                 <div class="d-flex align-items-center" (click)="editTag(element)">
                   <tabler-icon name="edit" class="m-x-6"></tabler-icon>
                   <span>Edit</span>
+                </div>
+              </button>
+              <button mat-menu-item *ngIf="element.enabled">
+                <div class="d-flex align-items-center" (click)="toggleTagStatus(element)">
+                  <tabler-icon name="eye-off" class="m-x-6"></tabler-icon>
+                  <span>Disable</span>
+                </div>
+              </button>
+              <button mat-menu-item *ngIf="!element.enabled">
+                <div class="d-flex align-items-center" (click)="toggleTagStatus(element)">
+                  <tabler-icon name="eye" class="m-x-6"></tabler-icon>
+                  <span>Enable</span>
                 </div>
               </button>
               <button mat-menu-item>

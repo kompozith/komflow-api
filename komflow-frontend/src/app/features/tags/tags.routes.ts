@@ -24,45 +24,6 @@ export const TagsRoutes: Routes = [
         },
       },
       {
-        path: 'details/:id',
-        component: TagDetailsComponent,
-        canActivate: [PermissionGuard],
-        data: {
-          title: 'Tag Details',
-          permissions: ['TAG_SHOW'],
-          urls: [
-            { title: 'Tags', url: 'tags/list' },
-            { title: 'Tag Details' },
-          ],
-        },
-      },
-      {
-        path: 'create',
-        component: TagCreateComponent,
-        canActivate: [PermissionGuard],
-        data: {
-          title: 'Create Tag',
-          permissions: ['TAG_CREATE'],
-          urls: [
-            { title: 'Tags', url: 'tags/list' },
-            { title: 'Create Tag' },
-          ],
-        },
-      },
-      {
-        path: 'edit/:id',
-        component: TagEditComponent,
-        canActivate: [PermissionGuard],
-        data: {
-          title: 'Edit Tag',
-          permissions: ['TAG_UPDATE'],
-          urls: [
-            { title: 'Tags', url: 'tags/list' },
-            { title: 'Edit Tag' },
-          ],
-        },
-      },
-      {
         path: '',
         redirectTo: 'list',
         pathMatch: 'full',

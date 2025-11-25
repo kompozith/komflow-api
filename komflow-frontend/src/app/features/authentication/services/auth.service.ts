@@ -12,6 +12,17 @@ import { AUTH_API, AUTH_CONFIG } from '../auth.constants';
 import { Router } from '@angular/router';
 import { PermissionService } from '../../../services/permission.service';
 
+interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumbers?: any[];
+  permissions: string[];
+  roles: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -46,15 +57,17 @@ export class AuthService {
    */
   login(credentials: LoginRequest, rememberMe: boolean = false): Observable<LoginResponse> {
     const loginData = {
-      login: credentials.login,
+      login: credentials.emailOrPhone,
       password: credentials.password
     };
 
     return this.http.post<LoginResponse>(`${this.API_BASE_URL}/login`, loginData, { headers: this.getDefaultHeaders() }).pipe(
       tap(response => {
         this.setSession(response, rememberMe);
-        // Load permissions after successful login
-        this.loadUserPermissions().subscribe();
+        // Set permissions from login response
+        if (response.permissions) {
+          this.permissionService.updatePermissions(response.permissions.permissions);
+        }
       }),
       catchError(this.handleError)
     );
@@ -146,6 +159,11 @@ export class AuthService {
     ).pipe(
       tap(response => {
         this.updateAccessToken(response.accessToken, response.expiresIn);
+        // Update permissions and roles from refresh response if available
+        if (response.permissions) {
+          this.permissionService.updatePermissions(response.permissions.permissions);
+          this.permissionService.updateRoles(response.permissions.roles);
+        }
       }),
       catchError(err => {
         this.logout();
@@ -403,9 +421,29 @@ export class AuthService {
 
   private clearPermissions(): void {
     this.permissionService.clearPermissions();
+    this.permissionService.clearRoles();
+  }
+
+  /**
+   * Load user profile and permissions from backend
+   */
+  private loadUserProfile(): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`${environment.apiUrl}/users/profile`).pipe(
+      tap(profile => {
+        // Set permissions in PermissionService
+        this.permissionService.updatePermissions(profile.permissions);
+      }),
+      catchError(err => {
+        console.error('Failed to load user profile:', err);
+        // Clear permissions on error
+        this.permissionService.clearPermissions();
+        return throwError(() => err);
+      })
+    );
   }
 
   private loadUserPermissions(): Observable<any> {
     return this.permissionService.loadUserPermissions();
   }
 }
+

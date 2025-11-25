@@ -51,4 +51,8 @@ export class TagService {
   deleteTag(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
   }
+
+  toggleTagStatus(id: string, enabled: boolean): Observable<Tag> {
+    return this.http.put<Tag>(`${this.apiUrl}/${id}/toggle-status`, { enabled }, { headers: this.getAuthHeaders() });
+  }
 }

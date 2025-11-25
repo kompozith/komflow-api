@@ -190,13 +190,17 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     @Override
     public LoginResponseDto loginForFrontend(LoginDto loginDto) {
         SimpleResponse<UserDetailsDto> response = this.login(loginDto);
-        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600);
+        // Set the authenticated user in SecurityContext
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(response.getData().getUsername(), null, List.of()));
+        UserPermissionsDto permissions = this.getUserPermissions();
+        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600, permissions);
     }
 
     @Override
     public LoginResponseDto refreshTokenForFrontend(RefreshTokenDto refreshTokenDto) {
         SimpleResponse<UserDetailsDto> response = this.refreshToken(refreshTokenDto);
-        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600);
+        UserPermissionsDto permissions = this.getUserPermissions();
+        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600, permissions);
     }
 
     @Override

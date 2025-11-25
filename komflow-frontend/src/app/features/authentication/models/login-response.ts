@@ -12,5 +12,9 @@ export interface LoginResponse {
     lastName: string;
     createdAt: string;
     phoneNumbers?: any[];
-  }
+  };
+  permissions: {
+    permissions: string[];
+    roles: string[];
+  };
 }

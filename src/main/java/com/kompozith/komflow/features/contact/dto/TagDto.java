@@ -21,6 +21,12 @@ public class TagDto {
     @NotBlank(message = "tag.colorCode.blank")
     private String colorCode;
 
+    @Schema(description = "Number of contacts associated with this tag", example = "5")
+    private Long contactCount;
+
+    @Schema(description = "Whether the tag is enabled", example = "true")
+    private Boolean enabled;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

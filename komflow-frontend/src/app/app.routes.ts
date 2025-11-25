@@ -9,6 +9,11 @@ export const routes: Routes = [
     component: FullComponent,
     children: [
       {
+        path: '',
+        redirectTo: '/dashboards/dashboard1',
+        pathMatch: 'full',
+      },
+      {
         path: 'user-management',
         loadChildren: () =>
           import('./features/user-management/user-management.routes').then(
@@ -20,20 +25,6 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/custom-roles/roles.routes').then(
             (m) => m.RolesRoutes
-          ),
-      },
-      {
-        path: 'brands',
-        loadChildren: () =>
-          import('./features/brands/brands.routes').then(
-            (m) => m.BrandsRoutes
-          ),
-      },
-      {
-        path: 'stores',
-        loadChildren: () =>
-          import('./features/stores/stores.routes').then(
-            (m) => m.StoresRoutes
           ),
       },
       {
@@ -77,16 +68,6 @@ export const routes: Routes = [
           import('./features/audit/audit.routes').then(
             (m) => m.AuditRoutes
           ),
-      },
-      {
-        path: '',
-        redirectTo: '/dashboards/dashboard1',
-        pathMatch: 'full',
-      },
-      {
-        path: 'starter',
-        loadChildren: () =>
-          import('./features/features.routes').then((m) => m.PagesRoutes),
       },
       {
         path: 'dashboards',

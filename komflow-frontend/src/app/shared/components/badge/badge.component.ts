@@ -24,11 +24,10 @@ export class BadgeComponent {
   @Input() title?: string;
 
   getBadgeClasses(): string[] {
-    const classes = [`bg-light-${this.variant}`,`text-${this.variant}`];
+    const classes = [];
     if (this.variant === 'info') {
         classes.push(`bg-light`);
-    }
-    else {
+    } else {
         classes.push(`bg-light-${this.variant}`);
     }
 
@@ -36,6 +35,8 @@ export class BadgeComponent {
 
     if (this.pill) {
       classes.push('rounded-pill f-w-600 p-6 p-y-4 f-s-12');
+    } else {
+      classes.push('badge f-w-600 p-6 p-y-4 f-s-12');
     }
     return classes;
   }

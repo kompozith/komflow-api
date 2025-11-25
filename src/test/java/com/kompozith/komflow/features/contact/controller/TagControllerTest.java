@@ -64,18 +64,19 @@ class TagControllerTest {
     void shouldReturnTagList_whenUserIsAuthenticatedAndHasPermission() throws Exception {
 
         // Arrange : mock tagService
-        when(tagService.findAll()).thenReturn(tagDtoList);
+        org.springframework.data.domain.Page<TagDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
+        when(tagService.findAll(any(), any(), any(), any(), any())).thenReturn(page);
 
         // Act & Assert: perform the test request
-        mockMvc.perform(get("/tag"))
+        mockMvc.perform(get("/tags"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(tagDtoList.size()))
-                .andExpect(jsonPath("$.[0].id").value(tagDto1.getId()))
-                .andExpect(jsonPath("$.[0].name").value(tagDto1.getName()))
-                .andExpect(jsonPath("$.[1].id").value(tagDto2.getId()));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(tagDtoList.size()))
+                .andExpect(jsonPath("$.content[0].id").value(tagDto1.getId()))
+                .andExpect(jsonPath("$.content[0].name").value(tagDto1.getName()))
+                .andExpect(jsonPath("$.content[1].id").value(tagDto2.getId()));
 
-        verify(tagService).findAll();
+        verify(tagService).findAll(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -96,10 +97,11 @@ class TagControllerTest {
     void shouldReturn401Error_whenUserIsNotAuthenticated() throws Exception {
 
         // Arrange : mock tagService
-        when(tagService.findAll()).thenReturn(tagDtoList);
+        org.springframework.data.domain.Page<TagDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
+        when(tagService.findAll(any(), any(), any(), any(), any())).thenReturn(page);
 
         // Act & Assert: perform the test request
-        mockMvc.perform(get("/tag"))
+        mockMvc.perform(get("/tags"))
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(tagService);

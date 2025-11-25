@@ -19,7 +19,6 @@ export class PermissionGuard implements CanActivate {
   ): Observable<boolean> | Promise<boolean> | boolean {
 
     const requiredPermissions = route.data['permissions'] as string[];
-    const requireAll = route.data['requireAll'] as boolean || false; // Default to OR logic
 
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return true; // No permissions required
@@ -28,23 +27,13 @@ export class PermissionGuard implements CanActivate {
     return this.permissionService.permissions$.pipe(
       take(1),
       map(permissions => {
-        if (requireAll) {
-          // User must have ALL specified permissions
-          const hasAllPermissions = this.permissionService.hasAllPermissions(requiredPermissions);
-          if (!hasAllPermissions) {
-            this.router.navigate(['/authentication/login']);
-            return false;
-          }
-          return true;
-        } else {
           // User must have at least ONE of the specified permissions (OR logic)
           const hasAnyPermission = this.permissionService.hasAnyPermission(requiredPermissions);
           if (!hasAnyPermission) {
-            this.router.navigate(['/authentication/login']);
+            this.router.navigate(['/authentication/forbidden']);
             return false;
           }
           return true;
-        }
       })
     );
   }

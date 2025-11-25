@@ -30,7 +30,7 @@ public class Tag extends BaseEntity {
     // Description du tag
     private String description;
 
-    private boolean enabled;
+    private boolean enabled = true;
 
     @ManyToMany(mappedBy = "tags")
     private Set<Contact> contacts;

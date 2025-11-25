@@ -187,25 +187,25 @@ class TagServiceImplTest {
 
     @Test
     void shouldDeleteTagSuccessfully() {
-        when(tagRepository.existsById(tagDto.getId())).thenReturn(true);
+        when(tagRepository.findById(tagDto.getId())).thenReturn(Optional.of(tag));
         doNothing().when(tagRepository).deleteById(tagDto.getId());
 
         tagService.delete(tagDto.getId());
 
-        verify(tagRepository).existsById(tagDto.getId());
+        verify(tagRepository).findById(tagDto.getId());
         verify(tagRepository).deleteById(tagDto.getId());
     }
 
     @Test
     void shouldReturnObjectNotFoundExceptionWhenDeletingByNotFoundId() {
-        when(tagRepository.existsById(tagDto.getId())).thenReturn(false);
+        when(tagRepository.findById(tagDto.getId())).thenReturn(Optional.empty());
 
         ObjectNotFoundException objectNotFoundException = assertThrows(ObjectNotFoundException.class, () ->
                 tagService.delete(tagDto.getId())
         );
 
         assertEquals("Tag not found with id " + tagDto.getId() + ".", objectNotFoundException.getMessage());
-        verify(tagRepository).existsById(tagDto.getId());
+        verify(tagRepository).findById(tagDto.getId());
         verify(tagRepository, never()).deleteById(tagDto.getId());
     }
 }

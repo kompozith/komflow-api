@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, map } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AUTH_CONFIG } from '../features/authentication/auth.constants';
 
 export interface Permission {
   code: string;
@@ -22,16 +23,22 @@ export class PermissionService {
   private permissionsSubject = new BehaviorSubject<string[]>([]);
   public permissions$ = this.permissionsSubject.asObservable();
 
+  private rolesSubject = new BehaviorSubject<string[]>([]);
+  public roles$ = this.rolesSubject.asObservable();
+
   private readonly API_BASE_URL = `${environment.apiUrl}/auth`;
 
   constructor(private http: HttpClient) {
-    this.loadUserPermissions();
+    // Load permissions and roles from storage on initialization
+    this.loadFromStorage();
   }
 
   /**
-   * Load user permissions from backend
+   * Load user permissions from backend (deprecated - use AuthService.loadUserProfile instead)
+   * @deprecated This method is deprecated. Permissions are now loaded via AuthService.loadUserProfile()
    */
   loadUserPermissions(): Observable<UserPermissions> {
+    console.warn('PermissionService.loadUserPermissions() is deprecated. Use AuthService.loadUserProfile() instead.');
     return this.http.get<UserPermissions>(`${this.API_BASE_URL}/permissions`).pipe(
       map(response => {
         this.permissionsSubject.next(response.permissions);
@@ -64,9 +71,31 @@ export class PermissionService {
 
   /**
    * Get all user permissions
+    */
+   getPermissions(): string[] {
+     return this.permissionsSubject.value;
+   }
+
+  /**
+   * Get all user roles
    */
-  getPermissions(): string[] {
-    return this.permissionsSubject.value;
+  getRoles(): string[] {
+    return this.rolesSubject.value;
+  }
+
+  /**
+   * Check if user has a specific role
+   */
+  hasRole(roleCode: string): boolean {
+    const roles = this.rolesSubject.value;
+    return roles.includes(roleCode);
+  }
+
+  /**
+   * Check if user has any of the specified roles
+   */
+  hasAnyRole(roleCodes: string[]): boolean {
+    return roleCodes.some(code => this.hasRole(code));
   }
 
   /**
@@ -238,16 +267,72 @@ export class PermissionService {
   }
 
   /**
-   * Clear permissions (on logout)
+   * Load permissions and roles from localStorage
    */
-  clearPermissions(): void {
-    this.permissionsSubject.next([]);
+  private loadFromStorage(): void {
+    const permissions = localStorage.getItem('user_permissions');
+    if (permissions) {
+      this.permissionsSubject.next(JSON.parse(permissions));
+    }
+    const roles = localStorage.getItem('user_roles');
+    if (roles) {
+      this.rolesSubject.next(JSON.parse(roles));
+    }
+  }
+
+  /**
+   * Save permissions and roles to localStorage
+   */
+  private saveToStorage(): void {
+    localStorage.setItem('user_permissions', JSON.stringify(this.permissionsSubject.value));
+    localStorage.setItem('user_roles', JSON.stringify(this.rolesSubject.value));
+  }
+
+  /**
+   * Clear permissions (on logout)
+    */
+   clearPermissions(): void {
+     this.permissionsSubject.next([]);
+     localStorage.removeItem('user_permissions');
+   }
+
+  /**
+   * Clear roles (on logout)
+   */
+  clearRoles(): void {
+    this.rolesSubject.next([]);
+    localStorage.removeItem('user_roles');
   }
 
   /**
    * Update permissions (after login or role change)
+    */
+   updatePermissions(permissions: string[]): void {
+     this.permissionsSubject.next(permissions);
+     this.saveToStorage();
+   }
+
+  /**
+   * Update roles (after login or role change)
    */
-  updatePermissions(permissions: string[]): void {
-    this.permissionsSubject.next(permissions);
+  updateRoles(roles: string[]): void {
+    this.rolesSubject.next(roles);
+    this.saveToStorage();
+  }
+
+  /**
+   * Set permissions directly (used by AuthService)
+    */
+   setPermissions(permissions: string[]): void {
+     this.permissionsSubject.next(permissions);
+     this.saveToStorage();
+   }
+
+  /**
+   * Set roles directly (used by AuthService)
+   */
+  setRoles(roles: string[]): void {
+    this.rolesSubject.next(roles);
+    this.saveToStorage();
   }
 }

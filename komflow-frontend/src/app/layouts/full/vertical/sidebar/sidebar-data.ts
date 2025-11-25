@@ -2,12 +2,12 @@ import { NavItem } from './nav-item/nav-item';
 
 export const navItems: NavItem[] = [
    {
-     navCap: 'Komflow',
-   },
-   {
      displayName: 'Dashboard',
      iconName: 'aperture',
      route: '/dashboards/dashboard1',
+   },
+   {
+     navCap: 'Marketing',
    },
    {
      displayName: 'Contacts',
@@ -40,17 +40,7 @@ export const navItems: NavItem[] = [
      route: 'audit',
    },
    {
-     navCap: 'Management',
-   },
-   {
-     displayName: 'Brands',
-     iconName: 'building',
-     route: 'brands',
-   },
-   {
-     displayName: 'Stores',
-     iconName: 'shopping-bag',
-     route: 'stores',
+     navCap: 'Administration',
    },
    {
      displayName: 'User Management',

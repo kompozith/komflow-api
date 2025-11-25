@@ -36,9 +36,7 @@ export class AuthGuard implements CanActivate, CanActivateChild {
     // Fall back to root ('/') if state.url is falsy.
     const returnUrl = state && state.url ? state.url : '/';
     console.debug('AuthGuard.checkAuth: redirecting to login with returnUrl =', returnUrl);
-    // Use router.navigate to include the returnUrl as a query param.
-    this.router.navigate(['/authentication/login'], { queryParams: { returnUrl } });
-
-    return false;
+    // Return UrlTree to include the returnUrl as a query param.
+    return this.router.createUrlTree(['/authentication/login'], { queryParams: { returnUrl } });
   }
 }
