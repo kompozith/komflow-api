@@ -12,14 +12,15 @@ import com.kompozith.komflow.features.messaging.entity.Message;
 import com.kompozith.komflow.features.messaging.entity.MessageChannel;
 import com.kompozith.komflow.features.messaging.mapper.MessageMapper;
 import com.kompozith.komflow.features.messaging.repository.MessageRepository;
-import com.kompozith.komflow.features.messaging.service.EmailService;
-import com.kompozith.komflow.features.messaging.service.MessageDispatcherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +62,19 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<MessageDto> findAll(Pageable pageable, MessageChannel channel, String search, Instant createdAtFrom, Instant createdAtTo) {
+
+        return messageRepository.findWithFilters(
+                channel != null ? channel.name() : null,
+                search,
+                createdAtFrom,
+                createdAtTo,
+                pageable
+        ).map(messageMapper::messageToMessageDto);
+    }
+
+    @Override
     public MessageDto findById(Long id) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), id));
@@ -73,8 +87,8 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), id));
 
         message.setTitle(createMessageDto.getTitle());
-        message.setBody(createMessageDto.getBody());
-        message.setType(createMessageDto.getType());
+        message.setContent(createMessageDto.getContent());
+        message.setChannel(createMessageDto.getChannel());
 
         Message updatedMessage = messageRepository.save(message);
 

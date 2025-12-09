@@ -3,11 +3,11 @@ package com.kompozith.komflow.features.contact.service;
 import com.kompozith.komflow.exception.ObjectExistException;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
+import com.kompozith.komflow.features.contact.dto.TagWithCountDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.core.service.BaseService;
-import com.kompozith.komflow.utils.SortHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -58,53 +58,9 @@ public class TagServiceImpl extends BaseService implements TagService {
     }
 
     @Override
-    public Page<TagDto> findAll(Pageable pageable, String search, String sort, String startDate, String endDate) {
+    public Page<TagWithCountDto> findAll(Pageable pageable, String search, Instant startDate, Instant endDate, Boolean enabled) {
         // Get all tags with contact count
-        List<TagDto> allTags = findAll();
-
-        // Apply search filter if provided
-        if (search != null && !search.trim().isEmpty()) {
-            allTags = allTags.stream()
-                    .filter(tag -> tag.getName().toLowerCase().contains(search.toLowerCase()) ||
-                                  (tag.getDescription() != null && tag.getDescription().toLowerCase().contains(search.toLowerCase())))
-                    .collect(Collectors.toList());
-        }
-
-        // Apply date filters if provided
-        if (startDate != null && !startDate.trim().isEmpty()) {
-            Instant startInstant = Instant.parse(startDate + "T00:00:00Z");
-            allTags = allTags.stream()
-                    .filter(tag -> tag.getCreatedAt() != null && !tag.getCreatedAt().isBefore(startInstant))
-                    .collect(Collectors.toList());
-        }
-        if (endDate != null && !endDate.trim().isEmpty()) {
-            Instant endInstant = Instant.parse(endDate + "T23:59:59Z");
-            allTags = allTags.stream()
-                    .filter(tag -> tag.getCreatedAt() != null && !tag.getCreatedAt().isAfter(endInstant))
-                    .collect(Collectors.toList());
-        }
-
-        // Apply sorting using SortHelper
-        if (sort != null && !sort.trim().isEmpty()) {
-            Comparator<TagDto> comparator = SortHelper.createComparator(sort, field -> {
-                switch (field) {
-                    case "name":
-                        return Comparator.comparing(TagDto::getName, String.CASE_INSENSITIVE_ORDER);
-                    case "createdAt":
-                        return Comparator.comparing(TagDto::getCreatedAt);
-                    default:
-                        return (a, b) -> 0;
-                }
-            });
-            allTags.sort(comparator);
-        }
-
-        // Apply pagination
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), allTags.size());
-        List<TagDto> pageContent = allTags.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, allTags.size());
+        return tagRepository.findWithFiltersAndContactCount(search, startDate, endDate, enabled, pageable);
     }
 
     @Override

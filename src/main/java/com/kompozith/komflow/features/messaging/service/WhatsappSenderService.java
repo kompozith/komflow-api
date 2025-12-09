@@ -58,6 +58,6 @@ public class WhatsappSenderService extends MessageSender {
     @Override
     protected String prepareContent(Message message) {
         // WhatsApp messages are typically shorter, but we'll use the body as is
-        return message.getBody();
+        return message.getContent();
     }
 }

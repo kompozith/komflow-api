@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface MessageMapper {
 
+    @Mapping(target = "attachmentCount", expression = "java(message.getAttachments() != null ? message.getAttachments().size() : 0)")
     MessageDto messageToMessageDto(Message message);
 
     @Mapping(target = "id", ignore = true)

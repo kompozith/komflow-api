@@ -58,7 +58,7 @@ public class SmsSenderService extends MessageSender {
     @Override
     protected String prepareContent(Message message) {
         // SMS messages have length limits, truncate if necessary
-        String content = message.getBody();
+        String content = message.getContent();
         if (content.length() > 160) {
             content = content.substring(0, 157) + "...";
             log.warn("SMS content truncated to fit length limit");

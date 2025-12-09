@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.contact.controller;
 
-import com.kompozith.komflow.features.contact.dto.TagDto;
+import com.kompozith.komflow.features.contact.dto.TagWithCountDto;
 import com.kompozith.komflow.features.contact.service.TagService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static com.kompozith.komflow.features.core.util.AppConstants.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,27 +28,27 @@ class TagControllerTest {
     @MockBean
     private TagService tagService;
 
-    TagDto tagDto1;
-    TagDto tagDto2;
-    TagDto tagDto3;
-    List<TagDto> tagDtoList;
+    TagWithCountDto tagDto1;
+    TagWithCountDto tagDto2;
+    TagWithCountDto tagDto3;
+    List<TagWithCountDto> tagDtoList;
 
     @BeforeEach
     void setUp() {
 
-        tagDto1 = new TagDto();
+        tagDto1 = new TagWithCountDto();
         tagDto1.setId(1L);
         tagDto1.setName("Tag 1");
         tagDto1.setColorCode("F435A090");
         tagDto1.setDescription("Tag 1 Description");
 
-        tagDto2 = new TagDto();
+        tagDto2 = new TagWithCountDto();
         tagDto2.setId(2L);
         tagDto2.setName("Tag 2");
         tagDto2.setColorCode("F435A091");
         tagDto2.setDescription("Tag 2 Description");
 
-        tagDto3 = new TagDto();
+        tagDto3 = new TagWithCountDto();
         tagDto3.setId(3L);
         tagDto3.setName("Tag 3");
         tagDto3.setColorCode("F435A092");
@@ -64,7 +63,7 @@ class TagControllerTest {
     void shouldReturnTagList_whenUserIsAuthenticatedAndHasPermission() throws Exception {
 
         // Arrange : mock tagService
-        org.springframework.data.domain.Page<TagDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
+        org.springframework.data.domain.Page<TagWithCountDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
         when(tagService.findAll(any(), any(), any(), any(), any())).thenReturn(page);
 
         // Act & Assert: perform the test request
@@ -84,7 +83,7 @@ class TagControllerTest {
     void shouldReturn403ForbiddenError_whenUserIsAuthenticatedButDontHaveRequiredPermission() throws Exception {
 
         // Arrange : mock tagService
-        when(tagService.findAll()).thenReturn(tagDtoList);
+        when(tagService.findAll()).thenReturn(List.of(tagDto1));
 
         // Act & Assert: perform the test request
         mockMvc.perform(get("/tag"))
@@ -97,7 +96,7 @@ class TagControllerTest {
     void shouldReturn401Error_whenUserIsNotAuthenticated() throws Exception {
 
         // Arrange : mock tagService
-        org.springframework.data.domain.Page<TagDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
+        org.springframework.data.domain.Page<TagWithCountDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
         when(tagService.findAll(any(), any(), any(), any(), any())).thenReturn(page);
 
         // Act & Assert: perform the test request

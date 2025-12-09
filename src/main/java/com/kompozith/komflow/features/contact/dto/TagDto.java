@@ -8,25 +8,25 @@ import java.time.Instant;
 
 @Data
 public class TagDto {
-    private Long id;
+    protected Long id;
 
     @Schema(description = "Tag name", example = "Tag test")
     @NotBlank(message = "tag.name.blank")
-    private String name;
+    protected String name;
 
     @Schema(description = "Tag description", example = "Web app service customers")
-    private String description;
+    protected String description;
 
     @Schema(description = "Tag color code", example = "#FFF6754B")
     @NotBlank(message = "tag.colorCode.blank")
-    private String colorCode;
+    protected String colorCode;
 
     @Schema(description = "Number of contacts associated with this tag", example = "5")
-    private Long contactCount;
+    protected Long contactCount;
 
     @Schema(description = "Whether the tag is enabled", example = "true")
-    private Boolean enabled;
+    protected Boolean enabled;
 
-    private Instant createdAt;
-    private Instant updatedAt;
+    protected Instant createdAt;
+    protected Instant updatedAt;
 }

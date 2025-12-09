@@ -6,6 +6,7 @@ import com.kompozith.komflow.features.auth.dto.RefreshTokenDto;
 import com.kompozith.komflow.features.auth.dto.SignUpDto;
 import com.kompozith.komflow.features.auth.dto.UserPermissionsDto;
 import com.kompozith.komflow.features.auth.entity.RefreshToken;
+import com.kompozith.komflow.features.auth.entity.Role;
 import com.kompozith.komflow.features.auth.repository.RefreshTokenRepository;
 import com.kompozith.komflow.exception.InvalidCredentialsException;
 import com.kompozith.komflow.exception.ObjectExistException;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -238,19 +240,15 @@ public class AuthServiceImpl extends BaseService implements AuthService {
 
         User user = userOpt.get();
 
-        // For now, return hardcoded permissions based on user existence
-        // In a real implementation, this would come from roles/permissions tables
-        // TODO: Implement proper role-based permissions system
-        List<String> permissions = List.of(
-            "CONTACT_LIST", "CONTACT_CREATE", "CONTACT_UPDATE", "CONTACT_DELETE", "CONTACT_SHOW",
-            "TAG_LIST", "TAG_CREATE", "TAG_UPDATE", "TAG_DELETE", "TAG_SHOW",
-            "MESSAGE_LIST", "MESSAGE_CREATE", "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_SHOW",
-            "CAMPAIGN_LIST", "CAMPAIGN_CREATE", "CAMPAIGN_UPDATE", "CAMPAIGN_DELETE", "CAMPAIGN_SHOW",
-            "FILE_LIST", "FILE_UPLOAD", "FILE_DELETE", "FILE_SHARE",
-            "AUDIT_LIST", "AUDIT_VIEW"
-        );
+        // Get roles and permissions from user's roles
+        List<String> roles = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toList());
 
-        List<String> roles = List.of("USER"); // Default role
+        List<String> permissions = user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .distinct()
+                .collect(Collectors.toList());
 
         return new UserPermissionsDto(permissions, roles);
     }

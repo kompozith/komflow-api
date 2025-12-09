@@ -15,11 +15,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
 
 import java.util.Arrays;
 import java.util.List;
@@ -44,8 +47,13 @@ public class MessageController {
     @PreAuthorize("hasAuthority('MESSAGE_LIST')")
     @GetMapping
     @Operation(summary = "Get all messages", description = "Retrieve a paginated list of all messages")
-    public ResponseEntity<Page<MessageDto>> findAll(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
-        Page<MessageDto> messages = messageService.findAll(pageable);
+    public ResponseEntity<Page<MessageDto>> findAll(
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) MessageChannel channel,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Instant createdAtFrom,
+            @RequestParam(required = false) Instant createdAtTo) {
+        Page<MessageDto> messages = messageService.findAll(pageable, channel, search, createdAtFrom, createdAtTo);
         return ResponseEntity.ok(messages);
     }
 

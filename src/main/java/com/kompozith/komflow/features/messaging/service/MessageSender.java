@@ -38,7 +38,7 @@ public abstract class MessageSender {
     protected String prepareContent(Message message) {
         // Default implementation: return body as is
         // Subclasses can override for channel-specific formatting
-        return message.getBody();
+        return message.getContent();
     }
 
     /**

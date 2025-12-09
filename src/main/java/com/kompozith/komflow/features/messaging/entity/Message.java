@@ -25,12 +25,12 @@ public class Message extends BaseEntity {
     // Contenue du message
     @Lob
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String body;
+    private String content;
 
     // Type du message
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MessageType type;
+    private MessageChannel channel = MessageChannel.EMAIL;
 
     // Pièces jointes du mail
     @OneToMany(cascade = CascadeType.ALL)

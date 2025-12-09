@@ -14,7 +14,7 @@ import java.util.Set;
 @Entity
 @Setter
 @Getter
-@Table(name = "cnt_contats")
+@Table(name = "cnt_contacts")
 public class Contact extends BaseEntity {
 
     @Id

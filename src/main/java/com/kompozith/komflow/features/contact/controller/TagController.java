@@ -2,6 +2,7 @@ package com.kompozith.komflow.features.contact.controller;
 
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.dto.TagStatusUpdateRequest;
+import com.kompozith.komflow.features.contact.dto.TagWithCountDto;
 import com.kompozith.komflow.features.contact.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.ArrayList;
 import org.springframework.data.domain.Page;
@@ -36,17 +38,17 @@ public class TagController {
 
     @PreAuthorize("hasAuthority('TAG_LIST')")
     @GetMapping
-    @Operation(summary = "Get all tags", description = "Retrieve a paginated list of tags with optional search and date filters")
-    public Page<TagDto> findAll(
+    @Operation(summary = "Get all tags", description = "Retrieve a paginated list of tags with optional search, date and status filters")
+    public Page<TagWithCountDto> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sort,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
+            @RequestParam(required = false) Instant createdAtFrom,
+            @RequestParam(required = false) Instant createdAtTo,
+            @RequestParam(required = false) Boolean enabled) {
 
         Pageable pageable = PageRequest.of(page, size);
-        return tagService.findAll(pageable, search, sort, startDate, endDate);
+        return tagService.findAll(pageable, search, createdAtFrom, createdAtTo, enabled);
     }
 
     @PreAuthorize("hasAuthority('TAG_SHOW')")

@@ -55,14 +55,14 @@ public class MessageDispatcherService {
 
         try {
             // Parse template variables
-            String personalizedContent = templateParserService.parseTemplate(message.getBody(), contact);
+            String personalizedContent = templateParserService.parseTemplate(message.getContent(), contact);
 
             // Create a personalized message object
             Message personalizedMessage = new Message();
             personalizedMessage.setId(message.getId());
             personalizedMessage.setTitle(message.getTitle());
-            personalizedMessage.setBody(personalizedContent);
-            personalizedMessage.setType(message.getType());
+            personalizedMessage.setContent(personalizedContent);
+            personalizedMessage.setChannel(message.getChannel());
             personalizedMessage.setAttachments(message.getAttachments());
 
             sender.sendMessage(contact, personalizedMessage);

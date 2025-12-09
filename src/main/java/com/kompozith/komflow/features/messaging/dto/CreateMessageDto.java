@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.messaging.dto;
 
-import com.kompozith.komflow.features.messaging.entity.MessageType;
+import com.kompozith.komflow.features.messaging.entity.MessageChannel;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -15,8 +15,8 @@ public class CreateMessageDto {
     private String title;
 
     @NotBlank(message = "Body is required")
-    private String body;
+    private String content;
 
-    @NotNull(message = "Type is required")
-    private MessageType type;
+    @NotNull(message = "Channel is required")
+    private MessageChannel channel = MessageChannel.EMAIL;
 }
