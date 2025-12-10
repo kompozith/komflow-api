@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.contact.controller;
 
-import com.kompozith.komflow.features.contact.dto.TagWithCountDto;
+import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
 import com.kompozith.komflow.features.contact.service.TagService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,27 +28,27 @@ class TagControllerTest {
     @MockBean
     private TagService tagService;
 
-    TagWithCountDto tagDto1;
-    TagWithCountDto tagDto2;
-    TagWithCountDto tagDto3;
-    List<TagWithCountDto> tagDtoList;
+    TagWithContactCountDto tagDto1;
+    TagWithContactCountDto tagDto2;
+    TagWithContactCountDto tagDto3;
+    List<TagWithContactCountDto> tagDtoList;
 
     @BeforeEach
     void setUp() {
 
-        tagDto1 = new TagWithCountDto();
+        tagDto1 = new TagWithContactCountDto();
         tagDto1.setId(1L);
         tagDto1.setName("Tag 1");
         tagDto1.setColorCode("F435A090");
         tagDto1.setDescription("Tag 1 Description");
 
-        tagDto2 = new TagWithCountDto();
+        tagDto2 = new TagWithContactCountDto();
         tagDto2.setId(2L);
         tagDto2.setName("Tag 2");
         tagDto2.setColorCode("F435A091");
         tagDto2.setDescription("Tag 2 Description");
 
-        tagDto3 = new TagWithCountDto();
+        tagDto3 = new TagWithContactCountDto();
         tagDto3.setId(3L);
         tagDto3.setName("Tag 3");
         tagDto3.setColorCode("F435A092");
@@ -63,7 +63,7 @@ class TagControllerTest {
     void shouldReturnTagList_whenUserIsAuthenticatedAndHasPermission() throws Exception {
 
         // Arrange : mock tagService
-        org.springframework.data.domain.Page<TagWithCountDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
+        org.springframework.data.domain.Page<TagWithContactCountDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
         when(tagService.findAll(any(), any(), any(), any(), any())).thenReturn(page);
 
         // Act & Assert: perform the test request
@@ -96,7 +96,7 @@ class TagControllerTest {
     void shouldReturn401Error_whenUserIsNotAuthenticated() throws Exception {
 
         // Arrange : mock tagService
-        org.springframework.data.domain.Page<TagWithCountDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
+        org.springframework.data.domain.Page<TagWithContactCountDto> page = new org.springframework.data.domain.PageImpl<>(tagDtoList);
         when(tagService.findAll(any(), any(), any(), any(), any())).thenReturn(page);
 
         // Act & Assert: perform the test request

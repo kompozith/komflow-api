@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.contact.repository;
 
-import com.kompozith.komflow.features.contact.dto.TagWithCountDto;
+import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,9 +41,9 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     GROUP BY t.id, t.name, t.description, t.color_code, t.enabled, t.created_at, t.updated_at
     """,
             nativeQuery = true)
-    Page<TagWithCountDto> findWithFiltersAndContactCount(@Param("search") String search,
-                                                         @Param("createdAtFrom") Instant createdAtFrom,
-                                                         @Param("createdAtTo") Instant createdAtTo,
-                                                         @Param("enabled") Boolean enabled,
-                                                         Pageable pageable);
+    Page<TagWithContactCountDto> findWithFiltersAndContactCount(@Param("search") String search,
+                                                                @Param("createdAtFrom") Instant createdAtFrom,
+                                                                @Param("createdAtTo") Instant createdAtTo,
+                                                                @Param("enabled") Boolean enabled,
+                                                                Pageable pageable);
 }

@@ -1,16 +1,14 @@
 package com.kompozith.komflow.features.contact.service;
-
 import com.kompozith.komflow.exception.ObjectExistException;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
-import com.kompozith.komflow.features.contact.dto.ContactDetailsDto;
-import com.kompozith.komflow.features.contact.dto.ContactDto;
-import com.kompozith.komflow.features.contact.dto.CreateContactDto;
+import com.kompozith.komflow.features.contact.dto.*;
 import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.ContactMapper;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
+import com.kompozith.komflow.features.contact.service.ContactService;
 import com.kompozith.komflow.features.core.service.BaseService;
 import com.kompozith.komflow.features.messaging.entity.Campaign;
 import com.kompozith.komflow.features.messaging.repository.CampaignRepository;
@@ -18,8 +16,11 @@ import com.kompozith.komflow.features.personnel.dto.PersonDto;
 import com.kompozith.komflow.features.personnel.repository.PersonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -67,6 +68,15 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         return contactRepository.findAll().stream().map(
                 contactMapper::contactToContactDto
         ).collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<ContactWithTagCountDto> findAll(Pageable pageable, String search, Boolean enabled, Instant createdAtFrom, Instant createdAtTo, String tagIds) {
+        // Handle empty tagIds list to avoid SQL IN () error
+        if (tagIds != null && tagIds.isEmpty()) {
+            tagIds = null;
+        }
+        return contactRepository.findWithFiltersAndTagCount(search, enabled, createdAtFrom, createdAtTo, tagIds, pageable);
     }
 
     @Override

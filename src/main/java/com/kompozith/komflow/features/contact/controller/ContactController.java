@@ -2,16 +2,22 @@ package com.kompozith.komflow.features.contact.controller;
 
 import com.kompozith.komflow.features.contact.dto.ContactDetailsDto;
 import com.kompozith.komflow.features.contact.dto.ContactDto;
+import com.kompozith.komflow.features.contact.dto.ContactWithTagCountDto;
 import com.kompozith.komflow.features.contact.dto.CreateContactDto;
 import com.kompozith.komflow.features.contact.service.ContactService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 
@@ -32,9 +38,18 @@ public class ContactController {
 
     @PreAuthorize("hasAuthority('CONTACT_LIST')")
     @GetMapping
-    @Operation(summary = "Get all contacts", description = "Retrieve a list of all contacts")
-    public List<ContactDto> findAll() {
-        return contactService.findAll();
+    @Operation(summary = "Get all contacts", description = "Retrieve a paginated list of contacts with optional search, date and status filters")
+    public Page<ContactWithTagCountDto> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Instant createdAtFrom,
+            @RequestParam(required = false) Instant createdAtTo,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) String tagIds) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return contactService.findAll(pageable, search, enabled, createdAtFrom, createdAtTo, tagIds);
     }
 
     @PreAuthorize("hasAuthority('CONTACT_SHOW')")

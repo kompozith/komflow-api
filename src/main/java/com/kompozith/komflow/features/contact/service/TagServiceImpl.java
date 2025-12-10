@@ -3,20 +3,17 @@ package com.kompozith.komflow.features.contact.service;
 import com.kompozith.komflow.exception.ObjectExistException;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
-import com.kompozith.komflow.features.contact.dto.TagWithCountDto;
+import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.core.service.BaseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,7 +55,7 @@ public class TagServiceImpl extends BaseService implements TagService {
     }
 
     @Override
-    public Page<TagWithCountDto> findAll(Pageable pageable, String search, Instant startDate, Instant endDate, Boolean enabled) {
+    public Page<TagWithContactCountDto> findAll(Pageable pageable, String search, Instant startDate, Instant endDate, Boolean enabled) {
         // Get all tags with contact count
         return tagRepository.findWithFiltersAndContactCount(search, startDate, endDate, enabled, pageable);
     }

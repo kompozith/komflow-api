@@ -1,14 +1,16 @@
 package com.kompozith.komflow.features.personnel.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PersonDto {
+public class PersonDetailsDto {
 
     private Long id;
 
@@ -20,7 +22,7 @@ public class PersonDto {
 
     private String language;
 
-    private String phoneNumber; // Embed PhoneNumberDto
+    private List<PhoneNumberDto> phoneNumbers; // Embed PhoneNumberDto
 
     private Instant createdAt;
     private Instant updatedAt;

@@ -1,14 +1,16 @@
 package com.kompozith.komflow.features.contact.service;
 
-import com.kompozith.komflow.features.contact.dto.ContactDetailsDto;
-import com.kompozith.komflow.features.contact.dto.ContactDto;
-import com.kompozith.komflow.features.contact.dto.CreateContactDto;
+import com.kompozith.komflow.features.contact.dto.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface ContactService {
     ContactDto create (CreateContactDto createContactDto);
     List<ContactDto> findAll();
+    Page<ContactWithTagCountDto> findAll(Pageable pageable, String search, Boolean enabled, Instant createdAtFrom, Instant createdAtTo, String tagIds);
     ContactDetailsDto findById(Long id);
     ContactDto update(Long id, CreateContactDto createContactDto);
     void delete(Long id);

@@ -5,10 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.validation.constraints.NotNull;
-// Assuming TagDto is in the same package, otherwise add import
 
 import java.time.Instant;
 import java.util.List;
+// Assuming TagDto is in the same package, otherwise add import
+
 
 @Data
 @NoArgsConstructor
@@ -23,7 +24,7 @@ public class ContactDto {
 
     private PersonDto person;
 
-    private List<TagDto> tags;
+    private Integer tagCount;
 
     private Instant createdAt;
 
