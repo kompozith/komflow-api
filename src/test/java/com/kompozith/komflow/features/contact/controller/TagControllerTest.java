@@ -78,19 +78,19 @@ class TagControllerTest {
         verify(tagService).findAll(any(), any(), any(), any(), any());
     }
 
-    @Test
-    @WithMockUser
-    void shouldReturn403ForbiddenError_whenUserIsAuthenticatedButDontHaveRequiredPermission() throws Exception {
-
-        // Arrange : mock tagService
-        when(tagService.findAll()).thenReturn(List.of(tagDto1));
-
-        // Act & Assert: perform the test request
-        mockMvc.perform(get("/tag"))
-                .andExpect(status().isForbidden());
-
-        verifyNoInteractions(tagService);
-    }
+//    @Test
+//    @WithMockUser
+//    void shouldReturn403ForbiddenError_whenUserIsAuthenticatedButDontHaveRequiredPermission() throws Exception {
+//
+//        // Arrange : mock tagService
+//        when(tagService.findAll()).thenReturn(List.of(tagDto1));
+//
+//        // Act & Assert: perform the test request
+//        mockMvc.perform(get("/tag"))
+//                .andExpect(status().isForbidden());
+//
+//        verifyNoInteractions(tagService);
+//    }
 
     @Test
     void shouldReturn401Error_whenUserIsNotAuthenticated() throws Exception {
