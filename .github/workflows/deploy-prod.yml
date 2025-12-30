@@ -113,7 +113,7 @@ jobs:
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "\
             for i in {1..10}; do \
               echo '⏳ Checking health (attempt '$i')...'; \
-              if curl -fs http://localhost:${{ secrets.KOMFLOW_API_SERVER_PORT }}/api/v1/actuator; then \
+              if curl -fs http://localhost:${{ secrets.KOMFLOW_API_SERVER_PORT }}/api/v1/swagger-ui/index.html; then \
                 echo '✅ App is healthy!'; exit 0; \
               fi; \
               sleep 10; \
