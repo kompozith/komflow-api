@@ -6,7 +6,7 @@ server:
 
 spring:
   application:
-    name: ${SPRING_APPLICATION_NAME}
+    name: ${APP_NAME}
 
   # ===============================
   # = DATA SOURCE
