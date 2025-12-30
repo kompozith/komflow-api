@@ -1,8 +1,10 @@
 package com.kompozith.komflow.features.messaging.entity;
 
 public enum CampaignStatus {
-    READY,
+    DRAFT,
     SCHEDULED,
-    SENT,
+    RUNNING,
+    PARTIAL_SUCCESS,
+    SUCCESS,
     FAILED
 }

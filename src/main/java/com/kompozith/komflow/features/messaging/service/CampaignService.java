@@ -2,6 +2,7 @@ package com.kompozith.komflow.features.messaging.service;
 
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
+import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -11,7 +12,7 @@ public interface CampaignService {
     CampaignDto create(CreateCampaignDto createCampaignDto);
     List<CampaignDto> findAll();
     Page<CampaignDto> findAll(Pageable pageable);
-    CampaignDto findById(Long id);
+    CampaignDetailsDto findById(Long id);
     CampaignDto update(Long id, CreateCampaignDto createCampaignDto);
     void delete(Long id);
     void sendCampaign(Long campaignId);

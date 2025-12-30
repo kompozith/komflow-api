@@ -23,9 +23,12 @@ public class CreateCampaignDto {
     private Long messageId;
 
     private List<Long> contactIds;
+    private List<Long> tagIds;
     private List<Long> mailCcIds;
     private List<Long> mailCciIds;
+    private List<Long> mailCcTagIds;
+    private List<Long> mailCciTagIds;
 
-    private CampaignStatus status = CampaignStatus.READY;
+    private CampaignStatus status = CampaignStatus.DRAFT;
     private Instant scheduledAt;
 }

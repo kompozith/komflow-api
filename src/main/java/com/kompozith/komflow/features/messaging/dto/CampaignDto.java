@@ -17,8 +17,11 @@ public class CampaignDto {
     private String description;
     private MessageDto message;
     private List<Long> contactIds;
-    private List<Long> mailCcIds;
-    private List<Long> mailCciIds;
+    private List<Long> tagIds;
+    private List<Long> mailCcContactIds;
+    private List<Long> mailCciContactIds;
+    private List<Long> mailCcTagIds;
+    private List<Long> mailCciTagIds;
     private CampaignStatus status;
     private Instant scheduledAt;
     private Instant createdAt;

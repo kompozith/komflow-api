@@ -1,5 +1,6 @@
 package com.kompozith.komflow.features.messaging.controller;
 
+import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.service.CampaignService;
@@ -42,10 +43,10 @@ public class CampaignController {
 
     @PreAuthorize("hasAuthority('CAMPAIGN_SHOW')")
     @GetMapping("/{id}")
-    @Operation(summary = "Get campaign by ID", description = "Retrieve a specific campaign by its ID")
-    public ResponseEntity<CampaignDto> findById(@PathVariable Long id) {
-        CampaignDto campaignDto = campaignService.findById(id);
-        return ResponseEntity.ok(campaignDto);
+    @Operation(summary = "Get campaign details by ID", description = "Retrieve a specific campaign with all its constituent elements (contacts, tags, CC, CCI)")
+    public ResponseEntity<CampaignDetailsDto> getCampaignById(@PathVariable Long id) {
+        CampaignDetailsDto campaignDetailsDto = campaignService.findById(id);
+        return ResponseEntity.ok(campaignDetailsDto);
     }
 
     @PreAuthorize("hasAuthority('CAMPAIGN_UPDATE')")
@@ -64,11 +65,11 @@ public class CampaignController {
         return ResponseEntity.ok(new SimpleResponse<>("Campaign deleted successfully", null));
     }
 
-    @PreAuthorize("hasAuthority('CAMPAIGN_SEND')")
-    @PostMapping("/{id}/send")
-    @Operation(summary = "Send campaign", description = "Send an email campaign to all associated contacts")
+    @PreAuthorize("hasAuthority('CAMPAIGN_SUBMIT')")
+    @PutMapping("/{id}/submit")
+    @Operation(summary = "Submit campaign", description = "Submit campaign to all associated contacts")
     public ResponseEntity<SimpleResponse> sendCampaign(@PathVariable Long id) {
         campaignService.sendCampaign(id);
-        return ResponseEntity.ok(new SimpleResponse<>("Campaign sent successfully", null));
+        return ResponseEntity.ok(new SimpleResponse<>("Campaign submitted successfully", null));
     }
 }

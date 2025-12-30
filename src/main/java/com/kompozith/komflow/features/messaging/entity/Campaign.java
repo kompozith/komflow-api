@@ -1,5 +1,6 @@
 package com.kompozith.komflow.features.messaging.entity;
 
+import com.kompozith.komflow.features.contact.entity.Tag;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,8 +31,11 @@ public class Campaign extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Message message;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Contact> contacts;
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Tag> tags;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -42,18 +46,36 @@ public class Campaign extends BaseEntity {
     // Cc du mail
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-            name = "msg_email_cc",
+            name = "msg_email_cc_contacts",
             joinColumns = @JoinColumn(name = "msg_campaign_id"),
             inverseJoinColumns = @JoinColumn(name = "cnt_contact_id")
     )
-    private List<Contact> mailCc;
+    private List<Contact> mailCcContacts;
 
     // Cci du mail
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-            name = "msg_email_cci",
-            joinColumns = @JoinColumn(name = "msg_ampaign_id"),
+            name = "msg_email_cci_contacts",
+            joinColumns = @JoinColumn(name = "msg_campaign_id"),
             inverseJoinColumns = @JoinColumn(name = "cnt_contact_id")
     )
-    private List<Contact> mailCci;
+    private List<Contact> mailCciContacts;
+
+    // Tags pour CC du mail
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "msg_campaign_cc_tags",
+            joinColumns = @JoinColumn(name = "msg_campaign_id"),
+            inverseJoinColumns = @JoinColumn(name = "cnt_tag_id")
+    )
+    private List<com.kompozith.komflow.features.contact.entity.Tag> mailCcTags;
+
+    // Tags pour CCI du mail
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "msg_campaign_cci_tags",
+            joinColumns = @JoinColumn(name = "msg_campaign_id"),
+            inverseJoinColumns = @JoinColumn(name = "cnt_tag_id")
+    )
+    private List<com.kompozith.komflow.features.contact.entity.Tag> mailCciTags;
 }

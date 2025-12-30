@@ -23,7 +23,7 @@ public enum MessagePermissionEnum {
     CAMPAIGN_CREATE("CAMPAIGN_CREATE", "Campaign create", "Create a campaign"),
     CAMPAIGN_UPDATE("CAMPAIGN_UPDATE", "Campaign edit", "Edit a campaign"),
     CAMPAIGN_DELETE("CAMPAIGN_DELETE", "Campaign delete", "Delete a campaign"),
-    CAMPAIGN_SEND("CAMPAIGN_SEND", "Campaign send", "Send a campaign");
+    CAMPAIGN_SUBMIT("CAMPAIGN_SUBMIT", "Campaign submit", "Submit a campaign");
 
     private final String code;
 
