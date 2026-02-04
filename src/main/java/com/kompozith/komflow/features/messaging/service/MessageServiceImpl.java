@@ -41,6 +41,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public MessageDto create(CreateMessageDto createMessageDto) {
+        validateCreateMessage(createMessageDto);
         Message message = messageMapper.createMessageDtoToMessage(createMessageDto);
         Message savedMessage = messageRepository.save(message);
 
@@ -83,6 +84,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public MessageDto update(Long id, CreateMessageDto createMessageDto) {
+        validateCreateMessage(createMessageDto);
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), id));
 
@@ -192,5 +194,24 @@ public class MessageServiceImpl implements MessageService {
         messageDispatcherService.sendToContact(contact, message, channel);
 
         log.info("{} sent successfully to contact {} with message {}", channel, contactId, messageId);
+    }
+
+    private void validateCreateMessage(CreateMessageDto createMessageDto) {
+        if (createMessageDto == null) {
+            throw new IllegalArgumentException("Message payload is required");
+        }
+        if (isBlank(createMessageDto.getTitle())) {
+            throw new IllegalArgumentException("Title is required");
+        }
+        if (isBlank(createMessageDto.getContent())) {
+            throw new IllegalArgumentException("Body is required");
+        }
+        if (createMessageDto.getChannel() == null) {
+            throw new IllegalArgumentException("Channel is required");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

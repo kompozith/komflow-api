@@ -3,6 +3,7 @@ package com.kompozith.komflow.features.messaging.controller;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
+import com.kompozith.komflow.features.messaging.service.CampaignEventStreamService;
 import com.kompozith.komflow.features.messaging.service.CampaignService;
 import com.kompozith.komflow.util.SimpleResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,9 +13,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/campaigns")
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class CampaignController {
 
     private final CampaignService campaignService;
+    private final CampaignEventStreamService campaignEventStreamService;
 
     @PreAuthorize("hasAuthority('CAMPAIGN_CREATE')")
     @PostMapping
@@ -71,5 +75,12 @@ public class CampaignController {
     public ResponseEntity<SimpleResponse> sendCampaign(@PathVariable Long id) {
         campaignService.sendCampaign(id);
         return ResponseEntity.ok(new SimpleResponse<>("Campaign submitted successfully", null));
+    }
+
+    @PreAuthorize("hasAuthority('CAMPAIGN_SHOW')")
+    @GetMapping(value = "/{id}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "Campaign events", description = "Stream campaign execution events in real time")
+    public SseEmitter streamCampaignEvents(@PathVariable Long id) {
+        return campaignEventStreamService.subscribe(id);
     }
 }

@@ -12,7 +12,6 @@ import com.kompozith.komflow.features.messaging.service.MessageService;
 import com.kompozith.komflow.util.SimpleResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
@@ -39,7 +38,7 @@ public class MessageController {
     @PreAuthorize("hasAuthority('MESSAGE_CREATE')")
     @PostMapping
     @Operation(summary = "Create a new message", description = "Create a new message in the system")
-    public ResponseEntity<MessageDto> create(@Valid @RequestBody CreateMessageDto createMessageDto) {
+    public ResponseEntity<MessageDto> create(@RequestBody CreateMessageDto createMessageDto) {
         MessageDto messageDto = messageService.create(createMessageDto);
         return ResponseEntity.ok(messageDto);
     }
@@ -68,7 +67,7 @@ public class MessageController {
     @PreAuthorize("hasAuthority('MESSAGE_UPDATE')")
     @PutMapping("/{id}")
     @Operation(summary = "Update message", description = "Update an existing message by its ID")
-    public ResponseEntity<MessageDto> update(@PathVariable Long id, @Valid @RequestBody CreateMessageDto createMessageDto) {
+    public ResponseEntity<MessageDto> update(@PathVariable Long id, @RequestBody CreateMessageDto createMessageDto) {
         MessageDto messageDto = messageService.update(id, createMessageDto);
         return ResponseEntity.ok(messageDto);
     }

@@ -10,7 +10,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
-@Mapper(componentModel = "spring", uses = TagMapper.class)
+@Mapper(uses = TagMapper.class)
 public interface ContactMapper {
 
     ContactMapper INSTANCE = Mappers.getMapper(ContactMapper.class);
@@ -19,6 +19,8 @@ public interface ContactMapper {
     @Mapping(target = "tags", ignore = true)
     Contact contactDtoToContact(ContactDto contactDto);
 
+    @Mapping(target = "person", ignore = true)
+    @Mapping(target = "tags", ignore = true)
     Contact createContactDtoToContact(CreateContactDto createContactDto);
 
     ContactDto contactToContactDto(Contact contact);

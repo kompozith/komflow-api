@@ -13,6 +13,11 @@ import com.kompozith.komflow.features.core.service.BaseService;
 import com.kompozith.komflow.features.messaging.entity.Campaign;
 import com.kompozith.komflow.features.messaging.repository.CampaignRepository;
 import com.kompozith.komflow.features.personnel.dto.PersonDto;
+import com.kompozith.komflow.features.personnel.dto.CreatePersonDto;
+import com.kompozith.komflow.features.personnel.dto.CreatePhoneNumberDto;
+import com.kompozith.komflow.features.personnel.entity.Person;
+import com.kompozith.komflow.features.personnel.entity.PhoneNumber;
+import com.kompozith.komflow.features.personnel.repository.PhoneNumberRepository;
 import com.kompozith.komflow.features.personnel.repository.PersonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -37,21 +42,17 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     private final ContactMapper contactMapper;
     private final PersonRepository personRepository;
     private final TagRepository tagRepository;
+    private final PhoneNumberRepository phoneNumberRepository;
     private final CampaignRepository campaignRepository;
 
     @Override
     public ContactDto create(CreateContactDto createContactDto) {
 
-        // Verify that another contact didn't exist with the given personId.
-        if(contactRepository.findByPersonId(createContactDto.getPersonId()).isPresent()){
-            throw new ObjectExistException(Contact.class.getSimpleName(), "personId", createContactDto.getPersonId().toString());
-        }
-
         Contact contact = contactMapper.createContactDtoToContact(createContactDto);
 
-        // Set the person
-        contact.setPerson(personRepository.findById(createContactDto.getPersonId())
-                .orElseThrow(() -> new ObjectNotFoundException("Person", createContactDto.getPersonId())));
+        // Determine person source
+        Person person = resolvePersonForCreate(createContactDto);
+        contact.setPerson(person);
 
         // Set the tags
         if (createContactDto.getTagIds() != null && !createContactDto.getTagIds().isEmpty()) {
@@ -127,5 +128,55 @@ public class ContactServiceImpl extends BaseService implements ContactService {
                 .orElseThrow(() -> new ObjectNotFoundException(Contact.class.getSimpleName(), id));
 
         contactRepository.deleteById(id);
+    }
+
+    private Person resolvePersonForCreate(CreateContactDto createContactDto) {
+        if (createContactDto.getPersonId() != null) {
+            // Verify that another contact didn't exist with the given personId.
+            if (contactRepository.findByPersonId(createContactDto.getPersonId()).isPresent()) {
+                throw new ObjectExistException(Contact.class.getSimpleName(), "personId", createContactDto.getPersonId().toString());
+            }
+
+            return personRepository.findById(createContactDto.getPersonId())
+                    .orElseThrow(() -> new ObjectNotFoundException("Person", createContactDto.getPersonId()));
+        }
+
+        CreatePersonDto personDto = createContactDto.getPerson();
+        if (personDto == null) {
+            throw new IllegalArgumentException("contact.person.selection.invalid");
+        }
+
+        if (personRepository.findByEmail(personDto.getEmail()).isPresent()) {
+            throw new ObjectExistException(Person.class.getSimpleName(), "email", personDto.getEmail());
+        }
+
+        Person person = new Person();
+        person.setEmail(personDto.getEmail());
+        person.setFirstName(personDto.getFirstName());
+        person.setLastName(personDto.getLastName());
+        person.setLanguage(personDto.getLanguage());
+
+        if (createContactDto.getPhoneNumbers() != null && !createContactDto.getPhoneNumbers().isEmpty()) {
+            List<PhoneNumber> phoneNumbers = new ArrayList<>();
+            for (CreatePhoneNumberDto phoneDto : createContactDto.getPhoneNumbers()) {
+                if (phoneDto.getNumber() == null || phoneDto.getNumber().isBlank()) {
+                    continue;
+                }
+
+                phoneNumberRepository.findByNumber(phoneDto.getNumber()).ifPresent(existing -> {
+                    throw new IllegalArgumentException("Phone number already exists: " + phoneDto.getNumber());
+                });
+
+                PhoneNumber phoneNumber = new PhoneNumber();
+                phoneNumber.setNumber(phoneDto.getNumber());
+                phoneNumber.setIsWhatsapp(phoneDto.getIsWhatsapp() != null ? phoneDto.getIsWhatsapp().toString() : "false");
+                phoneNumber.setPerson(person);
+                phoneNumbers.add(phoneNumber);
+            }
+
+            person.setPhoneNumbers(phoneNumbers);
+        }
+
+        return personRepository.save(person);
     }
 }

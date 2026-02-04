@@ -8,10 +8,6 @@ import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
-import com.kompozith.komflow.features.contact.dto.ContactDetailsDto;
-import com.kompozith.komflow.features.contact.dto.TagDto;
-import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
-import com.kompozith.komflow.features.personnel.dto.PersonDto;
 import com.kompozith.komflow.features.messaging.entity.Campaign;
 import com.kompozith.komflow.features.messaging.entity.CampaignStatus;
 import com.kompozith.komflow.features.messaging.mapper.CampaignMapper;
@@ -23,9 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,7 +32,7 @@ public class CampaignServiceImpl implements CampaignService {
     private final MessageService messageService;
     private final ContactRepository contactRepository;
     private final TagRepository tagRepository;
-    private final MessageDispatcherService messageDispatcherService;
+    private final CampaignExecutionService campaignExecutionService;
 
     @Override
     @Transactional
@@ -175,60 +169,6 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional
     public void sendCampaign(Long campaignId) {
-        Campaign campaign = campaignRepository.findById(campaignId)
-                .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), campaignId));
-
-        if ((campaign.getContacts() == null || campaign.getContacts().isEmpty()) &&
-            (campaign.getTags() == null || campaign.getTags().isEmpty())) {
-            throw new IllegalStateException("Campaign has no contacts or tags to send to");
-        }
-
-        // Set status to RUNNING before starting the send process
-        campaign.setStatus(CampaignStatus.RUNNING);
-        campaignRepository.save(campaign);
-
-        // TODO: Implement asynchronous sending with cron job to check status every 10 seconds
-        // For now, keeping synchronous implementation but with RUNNING status
-        int successCount = 0;
-        int failureCount = 0;
-
-        // Collect all unique contacts from direct contacts and tags
-        Set<Contact> uniqueContacts = new HashSet<>();
-        if (campaign.getContacts() != null) {
-            uniqueContacts.addAll(campaign.getContacts());
-        }
-        if (campaign.getTags() != null) {
-            for (Tag tag : campaign.getTags()) {
-                if (tag.getContacts() != null) {
-                    uniqueContacts.addAll(tag.getContacts());
-                }
-            }
-        }
-
-        for (Contact contact : uniqueContacts) {
-            try {
-                if (messageDispatcherService.canSendToContact(contact, campaign.getMessage().getChannel())) {
-                    messageDispatcherService.sendToContact(contact, campaign.getMessage(), campaign.getMessage().getChannel());
-                    successCount++;
-                } else {
-                    failureCount++;
-                    log.warn("Contact {} has no valid {} information", contact.getId(), campaign.getMessage().getChannel());
-                }
-            } catch (Exception e) {
-                log.error("Failed to send message to contact {} in campaign {}: {}", contact.getId(), campaignId, e.getMessage());
-                failureCount++;
-            }
-        }
-
-        // Update campaign status based on results
-        if (failureCount == 0) {
-            campaign.setStatus(CampaignStatus.SUCCESS);
-        } else if (successCount == 0) {
-            campaign.setStatus(CampaignStatus.FAILED);
-        } else {
-            campaign.setStatus(CampaignStatus.PARTIAL_SUCCESS);
-        }
-
-        campaignRepository.save(campaign);
+        campaignExecutionService.startCampaign(campaignId);
     }
 }

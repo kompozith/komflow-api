@@ -62,7 +62,7 @@ public class ContactController {
     @PreAuthorize("hasAuthority('CONTACT_UPDATE')")
     @PutMapping("/{id}")
     @Operation(summary = "Update contact", description = "Update an existing contact by its ID")
-    public ContactDto update(@PathVariable Long id, @Valid @RequestBody CreateContactDto createContactDto) {
+    public ContactDto update(@PathVariable Long id, @RequestBody CreateContactDto createContactDto) {
         return contactService.update(id, createContactDto);
     }
 

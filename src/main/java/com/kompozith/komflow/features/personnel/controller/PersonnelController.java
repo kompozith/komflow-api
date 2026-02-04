@@ -2,7 +2,12 @@ package com.kompozith.komflow.features.personnel.controller;
 
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.personnel.dto.CreatePhoneNumberDto;
+import com.kompozith.komflow.features.personnel.dto.CreatePersonDto;
+import com.kompozith.komflow.features.personnel.dto.PersonDetailsDto;
+import com.kompozith.komflow.features.personnel.dto.PersonDto;
 import com.kompozith.komflow.features.personnel.dto.PhoneNumberDto;
+import com.kompozith.komflow.features.personnel.dto.UpdatePersonDto;
+import com.kompozith.komflow.features.personnel.service.PersonService;
 import com.kompozith.komflow.features.personnel.service.PhoneNumberService;
 import com.kompozith.komflow.util.SimpleResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +31,40 @@ import java.util.List;
 @Tag(name = "Personnel Management", description = "APIs for managing personnel data")
 public class PersonnelController {
 
+    private final PersonService personService;
     private final PhoneNumberService phoneNumberService;
+
+    @PreAuthorize("hasAuthority('PERSONNEL_MANAGE')")
+    @PostMapping("/persons")
+    @Operation(summary = "Create a new person", description = "Create a new person in the system")
+    public PersonDto createPerson(@Valid @RequestBody CreatePersonDto createPersonDto) {
+        return personService.create(createPersonDto);
+    }
+
+    @PreAuthorize("hasAuthority('PERSONNEL_VIEW')")
+    @GetMapping("/persons")
+    @Operation(summary = "Get all persons", description = "Retrieve a paginated list of persons with optional search")
+    public Page<PersonDto> findAllPersons(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size);
+        return personService.findAll(pageable, search);
+    }
+
+    @PreAuthorize("hasAuthority('PERSONNEL_VIEW')")
+    @GetMapping("/persons/{id}")
+    @Operation(summary = "Get person by ID", description = "Retrieve a specific person by its ID")
+    public PersonDetailsDto findPersonById(@PathVariable Long id) {
+        return personService.findById(id);
+    }
+
+    @PreAuthorize("hasAuthority('PERSONNEL_MANAGE')")
+    @PutMapping("/persons/{id}")
+    @Operation(summary = "Update person", description = "Update an existing person by its ID")
+    public PersonDto updatePerson(@PathVariable Long id, @Valid @RequestBody UpdatePersonDto updatePersonDto) {
+        return personService.update(id, updatePersonDto);
+    }
 
     @PreAuthorize("hasAuthority('PERSONNEL_MANAGE')")
     @PostMapping("/{personId}/phone-numbers")

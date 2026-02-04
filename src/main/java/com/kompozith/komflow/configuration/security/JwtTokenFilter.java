@@ -1,17 +1,12 @@
 package com.kompozith.komflow.configuration.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kompozith.komflow.util.ErrorResponse;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
+import com.kompozith.komflow.exception.JwtAuthenticationException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,54 +16,55 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
-    private static final String AUTH_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
-    private final ObjectMapper objectMapper;
 
     @SneakyThrows
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) {
-        // Liste des routes à ignorer
-        if (
-                request.getRequestURI().equals("/auth/signup") ||
-                request.getRequestURI().equals("/auth/login") ||
-                request.getRequestURI().equals("/auth/refresh") ||
-                request.getRequestURI().contains("swagger")
-        ) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         try {
-            String header = request.getHeader(AUTH_HEADER);
-            if (header == null || !header.startsWith(BEARER_PREFIX)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
+            String token = resolveToken(request);
 
-            String token = header.substring(BEARER_PREFIX.length());
-            Claims claims = jwtUtil.extractAllClaims(token);
+            if (token != null && jwtUtil.validateToken(token)) {
+                String username = jwtUtil.getUsernameFromToken(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(claims.getSubject());
-
-            if (jwtUtil.isTokenValid(token, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
-
-            filterChain.doFilter(request, response);
-        } catch (JwtException | AuthenticationException e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            ErrorResponse errorResponse = new ErrorResponse("AUTHENTICATION_FAILED",e.getMessage());
-
-            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+        } catch (JwtAuthenticationException ex) {
+            request.setAttribute("jwtError", ex);
+        } catch (Exception ex) {
+            request.setAttribute("authError", ex);
         }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        String token = jwtUtil.extractTokenFromHeader(header);
+
+        if (token != null) {
+            return token;
+        }
+
+        if (isSseCampaignEventsRequest(request)) {
+            String queryToken = request.getParameter("token");
+            if (queryToken != null && !queryToken.isBlank()) {
+                return queryToken;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isSseCampaignEventsRequest(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri != null && uri.contains("/campaigns/") && uri.endsWith("/events");
     }
 }

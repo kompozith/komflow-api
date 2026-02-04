@@ -195,14 +195,26 @@ public class AuthServiceImpl extends BaseService implements AuthService {
         // Set the authenticated user in SecurityContext
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(response.getData().getUsername(), null, List.of()));
         UserPermissionsDto permissions = this.getUserPermissions();
-        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600, permissions);
+        return LoginResponseDto.fromUserDetailsDto(
+                response.getData(),
+                jwtUtil.generateToken(response.getData().getUsername(), ""),
+                jwtUtil.generateRefreshToken(response.getData().getUsername()),
+                Math.toIntExact(jwtUtil.getConfig().getAccessTokenExpirationSeconds()),
+                permissions
+        );
     }
 
     @Override
     public LoginResponseDto refreshTokenForFrontend(RefreshTokenDto refreshTokenDto) {
         SimpleResponse<UserDetailsDto> response = this.refreshToken(refreshTokenDto);
         UserPermissionsDto permissions = this.getUserPermissions();
-        return LoginResponseDto.fromUserDetailsDto(response.getData(), jwtUtil.generateToken(response.getData().getUsername(), ""), jwtUtil.generateRefreshToken(response.getData().getUsername()), 3600, permissions);
+        return LoginResponseDto.fromUserDetailsDto(
+                response.getData(),
+                jwtUtil.generateToken(response.getData().getUsername(), ""),
+                jwtUtil.generateRefreshToken(response.getData().getUsername()),
+                Math.toIntExact(jwtUtil.getConfig().getAccessTokenExpirationSeconds()),
+                permissions
+        );
     }
 
     @Override

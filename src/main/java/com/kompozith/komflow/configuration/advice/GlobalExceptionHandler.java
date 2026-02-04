@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -30,9 +32,24 @@ public class GlobalExceptionHandler {
     public SimpleResponse<Map<String, String>> handleInvalidArgumentException(MethodArgumentNotValidException ex){
         Map<String, String> errorMap = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> {
+            log.warn("Validation error field='{}' message='{}' codes='{}' object='{}'",
+                error.getField(),
+                error.getDefaultMessage(),
+                String.join(",", error.getCodes() != null ? error.getCodes() : new String[0]),
+                error.getObjectName());
             errorMap.put(error.getField(), error.getDefaultMessage());
         });
 
+        return new SimpleResponse<>("INVALID_DATA", errorMap);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public SimpleResponse<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex){
+        Map<String, String> errorMap = new HashMap<>();
+        String message = ex.getMessage() != null ? ex.getMessage() : "INVALID_DATA";
+        errorMap.put("personId", message);
+        errorMap.put("person", message);
         return new SimpleResponse<>("INVALID_DATA", errorMap);
     }
 
