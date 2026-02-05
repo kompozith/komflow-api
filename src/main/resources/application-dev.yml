@@ -47,7 +47,7 @@ spring:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:gilleskemgoum@gmail.com}
-    password: ${MAIL_PASSWORD:xvahdlfnnqzpgeva}
+    password: ${MAIL_PASSWORD:tasl nkgx ynnk dgjm}
     properties:
       mail:
         smtp:
@@ -55,9 +55,14 @@ spring:
           starttls:
             enable: true
             required: true
-        connectiontimeout: 5000
-        timeout: 3000
-        writetimeout: 5000
+          ssl:
+            trust: "*"
+            protocols: "TLSv1.2"
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+        debug: true  # Enable debug in dev
+    test-connection: false  # Disable connection test in dev
 
 # Swagger
 springdoc:
