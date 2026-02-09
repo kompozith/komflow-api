@@ -3,9 +3,11 @@ package com.kompozith.komflow.features.messaging.service;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
+import com.kompozith.komflow.features.messaging.dto.ScheduleCampaignDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface CampaignService {
@@ -16,4 +18,6 @@ public interface CampaignService {
     CampaignDto update(Long id, CreateCampaignDto createCampaignDto);
     void delete(Long id);
     void sendCampaign(Long campaignId);
+    CampaignDto scheduleCampaign(Long campaignId, Instant scheduledAt);
+    CampaignDto cancelSchedule(Long campaignId);
 }

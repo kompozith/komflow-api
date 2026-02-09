@@ -3,6 +3,7 @@ package com.kompozith.komflow.features.messaging.controller;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
+import com.kompozith.komflow.features.messaging.dto.ScheduleCampaignDto;
 import com.kompozith.komflow.features.messaging.service.CampaignEventStreamService;
 import com.kompozith.komflow.features.messaging.service.CampaignService;
 import com.kompozith.komflow.util.SimpleResponse;
@@ -71,10 +72,26 @@ public class CampaignController {
 
     @PreAuthorize("hasAuthority('CAMPAIGN_SUBMIT')")
     @PutMapping("/{id}/submit")
-    @Operation(summary = "Submit campaign", description = "Submit campaign to all associated contacts")
+    @Operation(summary = "Submit campaign", description = "Submit campaign to all associated contacts. If scheduled date is set, campaign will be scheduled for that time.")
     public ResponseEntity<SimpleResponse> sendCampaign(@PathVariable Long id) {
         campaignService.sendCampaign(id);
         return ResponseEntity.ok(new SimpleResponse<>("Campaign submitted successfully", null));
+    }
+
+    @PreAuthorize("hasAuthority('CAMPAIGN_SUBMIT')")
+    @PutMapping("/{id}/schedule")
+    @Operation(summary = "Schedule campaign", description = "Schedule a campaign to be sent at a specific date and time")
+    public ResponseEntity<CampaignDto> scheduleCampaign(@PathVariable Long id, @Valid @RequestBody ScheduleCampaignDto scheduleDto) {
+        CampaignDto campaignDto = campaignService.scheduleCampaign(id, scheduleDto.getScheduledAt());
+        return ResponseEntity.ok(campaignDto);
+    }
+
+    @PreAuthorize("hasAuthority('CAMPAIGN_SUBMIT')")
+    @PutMapping("/{id}/cancel-schedule")
+    @Operation(summary = "Cancel campaign schedule", description = "Cancel a scheduled campaign and return it to DRAFT status. Only applicable if the scheduled date has not yet been reached.")
+    public ResponseEntity<SimpleResponse<CampaignDto>> cancelSchedule(@PathVariable Long id) {
+        CampaignDto campaignDto = campaignService.cancelSchedule(id);
+        return ResponseEntity.ok(new SimpleResponse<>("Campaign schedule cancelled successfully", campaignDto));
     }
 
     @PreAuthorize("hasAuthority('CAMPAIGN_SHOW')")

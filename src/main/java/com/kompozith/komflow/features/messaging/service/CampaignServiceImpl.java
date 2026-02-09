@@ -8,6 +8,7 @@ import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
+import com.kompozith.komflow.features.messaging.dto.ScheduleCampaignDto;
 import com.kompozith.komflow.features.messaging.entity.Campaign;
 import com.kompozith.komflow.features.messaging.entity.CampaignStatus;
 import com.kompozith.komflow.features.messaging.mapper.CampaignMapper;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -169,6 +171,85 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional
     public void sendCampaign(Long campaignId) {
-        campaignExecutionService.startCampaign(campaignId);
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), campaignId));
+
+        // If campaign has a scheduled date in the future, set it to SCHEDULED status
+        if (campaign.getScheduledAt() != null && campaign.getScheduledAt().isAfter(Instant.now())) {
+            campaign.setStatus(CampaignStatus.SCHEDULED);
+            campaignRepository.save(campaign);
+            log.info("Campaign {} scheduled for {}", campaignId, campaign.getScheduledAt());
+        } else {
+            // Send immediately
+            campaignExecutionService.startCampaign(campaignId);
+        }
+    }
+
+    @Override
+    @Transactional
+    public CampaignDto scheduleCampaign(Long campaignId, Instant scheduledAt) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), campaignId));
+
+        // Only DRAFT or SCHEDULED campaigns can be rescheduled
+        if (campaign.getStatus() != CampaignStatus.DRAFT && campaign.getStatus() != CampaignStatus.SCHEDULED) {
+            throw new IllegalStateException("Only DRAFT or SCHEDULED campaigns can be rescheduled");
+        }
+
+        // Validate scheduled date is in the future
+        if (scheduledAt == null || !scheduledAt.isAfter(Instant.now())) {
+            throw new IllegalArgumentException("Scheduled date must be in the future");
+        }
+
+        campaign.setScheduledAt(scheduledAt);
+        campaign.setStatus(CampaignStatus.SCHEDULED);
+        
+        Campaign updatedCampaign = campaignRepository.save(campaign);
+        log.info("Campaign {} scheduled for {}", campaignId, scheduledAt);
+        
+        return campaignMapper.campaignToCampaignDto(updatedCampaign);
+    }
+
+    @Override
+    @Transactional
+    public CampaignDto cancelSchedule(Long campaignId) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), campaignId));
+
+        // SECURE VALIDATION: Campaign must be in SCHEDULED status
+        if (campaign.getStatus() != CampaignStatus.SCHEDULED) {
+            throw new IllegalStateException("Only SCHEDULED campaigns can have their schedule cancelled. Current status: " + campaign.getStatus());
+        }
+
+        // SECURE VALIDATION: Scheduled date must be in the future
+        if (campaign.getScheduledAt() == null) {
+            throw new IllegalStateException("Campaign has no scheduled date to cancel");
+        }
+
+        if (!campaign.getScheduledAt().isAfter(Instant.now())) {
+            throw new IllegalStateException("Cannot cancel schedule: the scheduled time has already passed. Campaign execution may be in progress.");
+        }
+
+        // SECURE VALIDATION: Double-check that campaign is not already running
+        // (race condition protection)
+        if (campaign.getStatus() == CampaignStatus.RUNNING) {
+            throw new IllegalStateException("Cannot cancel schedule: campaign is already running");
+        }
+
+        // SECURE VALIDATION: Check that campaign has not already completed or failed
+        if (campaign.getStatus() == CampaignStatus.SUCCESS || 
+            campaign.getStatus() == CampaignStatus.PARTIAL_SUCCESS ||
+            campaign.getStatus() == CampaignStatus.FAILED) {
+            throw new IllegalStateException("Cannot cancel schedule: campaign has already completed with status: " + campaign.getStatus());
+        }
+
+        // Reset campaign to DRAFT status and clear scheduled date
+        campaign.setStatus(CampaignStatus.DRAFT);
+        campaign.setScheduledAt(null);
+        
+        Campaign updatedCampaign = campaignRepository.save(campaign);
+        log.info("Campaign {} schedule cancelled successfully. Returned to DRAFT status", campaignId);
+        
+        return campaignMapper.campaignToCampaignDto(updatedCampaign);
     }
 }

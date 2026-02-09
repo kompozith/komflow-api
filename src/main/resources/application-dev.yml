@@ -80,6 +80,20 @@ jwt:
   # Durée d'expiration du token d'accès en secondes (2 heures = 7200 secondes)
   access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
 
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:4200
+      - http://127.0.0.1:4200
+
+auth:
+  cookie:
+    name: ${AUTH_REFRESH_COOKIE_NAME:refresh_token}
+    path: ${AUTH_REFRESH_COOKIE_PATH:/api/v1}
+    same-site: ${AUTH_REFRESH_COOKIE_SAMESITE:Lax}
+    secure: ${AUTH_REFRESH_COOKIE_SECURE:false}
+    http-only: ${AUTH_REFRESH_COOKIE_HTTPONLY:true}
+
 logging:
   level:
     root: INFO

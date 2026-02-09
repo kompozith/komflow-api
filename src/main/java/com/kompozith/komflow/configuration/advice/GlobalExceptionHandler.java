@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
         return new ErrorResponse("RESOURCE_NOT_FOUND", exception.getMessage());
     }
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(InvalidCredentialsException.class)
     public ErrorResponse handleInvalidCredentialsException(InvalidCredentialsException exception) {
         return new ErrorResponse("INVALID_CREDENTIALS", exception.getMessage());
