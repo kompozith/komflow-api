@@ -1,6 +1,7 @@
 package com.kompozith.komflow.features.core.util;
 
 import com.kompozith.komflow.features.auth.entity.Role;
+import com.kompozith.komflow.features.auth.entity.RoleType;
 import com.kompozith.komflow.features.auth.repository.RoleRepository;
 import com.kompozith.komflow.features.contact.permissions.ContactPermissionEnum;
 import com.kompozith.komflow.features.messaging.permissions.MessagePermissionEnum;
@@ -29,9 +30,31 @@ public class DataInitializer {
 
     @PostConstruct
     public void init() {
+        backfillRoleTypes();
+        backfillRoleStatuses();
         initAdminRole();
         initAdminUser();
         assignAdminRoleToAdmin();
+    }
+
+    void backfillRoleTypes() {
+        var rolesWithoutType = roleRepository.findByTypeIsNull();
+        if (rolesWithoutType.isEmpty()) {
+            return;
+        }
+
+        rolesWithoutType.forEach(role -> role.setType(RoleType.CUSTOM));
+        roleRepository.saveAll(rolesWithoutType);
+    }
+
+    void backfillRoleStatuses() {
+        var rolesWithoutStatus = roleRepository.findByActiveIsNull();
+        if (rolesWithoutStatus.isEmpty()) {
+            return;
+        }
+
+        rolesWithoutStatus.forEach(role -> role.setActive(true));
+        roleRepository.saveAll(rolesWithoutStatus);
     }
 
     void initAdminRole() {
@@ -42,12 +65,15 @@ public class DataInitializer {
             adminRole = new Role();
             adminRole.setName(ADMIN_ROLE_NAME);
             adminRole.setDescription(ADMIN_ROLE_DESCRIPTION);
+            adminRole.setType(RoleType.SYSTEM);
+            adminRole.setActive(true);
 
             Set<String> allPermissions = new HashSet<>();
             allPermissions.addAll(ContactPermissionEnum.getAllCodes());
             allPermissions.addAll(MessagePermissionEnum.getAllCodes());
             allPermissions.addAll(PersonnelPermissionEnum.getAllCodes());
             adminRole.setPermissions(allPermissions);
+            adminRole.setType(RoleType.SYSTEM);
 
             roleRepository.save(adminRole);
         } else {
@@ -57,6 +83,8 @@ public class DataInitializer {
             allPermissions.addAll(MessagePermissionEnum.getAllCodes());
             allPermissions.addAll(PersonnelPermissionEnum.getAllCodes());
             adminRole.setPermissions(allPermissions);
+            adminRole.setType(RoleType.SYSTEM);
+            adminRole.setActive(true);
 
             roleRepository.save(adminRole);
         }

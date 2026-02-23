@@ -27,6 +27,13 @@ public class Role extends BaseEntity {
 
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = true, columnDefinition = "varchar(255) default 'CUSTOM'")
+    private RoleType type = RoleType.CUSTOM;
+
+    @Column(name = "active", nullable = true, columnDefinition = "boolean default true")
+    private Boolean active = true;
+
     @ElementCollection
     @CollectionTable(
             name = "aut_role_permissions",
@@ -34,4 +41,15 @@ public class Role extends BaseEntity {
     )
     @Column(name = "aut_permission_code")
     private Set<String> permissions = new HashSet<>();
+
+    @PrePersist
+    @PreUpdate
+    public void ensureTypeDefault() {
+        if (type == null) {
+            type = RoleType.CUSTOM;
+        }
+        if (active == null) {
+            active = true;
+        }
+    }
 }

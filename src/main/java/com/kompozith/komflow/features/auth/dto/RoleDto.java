@@ -1,5 +1,6 @@
 package com.kompozith.komflow.features.auth.dto;
 
+import com.kompozith.komflow.features.auth.entity.RoleType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,9 @@ public class RoleDto {
 
     @Size(max = 255, message = "Description cannot exceed 255 characters")
     private String description;
+
+    private RoleType type;
+    private Boolean active;
 
     private List<String> permissionCodeList;
 

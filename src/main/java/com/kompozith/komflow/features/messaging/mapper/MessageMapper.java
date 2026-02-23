@@ -2,6 +2,7 @@ package com.kompozith.komflow.features.messaging.mapper;
 
 import com.kompozith.komflow.features.core.dto.FileDto;
 import com.kompozith.komflow.features.core.entity.File;
+import com.kompozith.komflow.features.core.entity.FileMediaType;
 import com.kompozith.komflow.features.messaging.dto.CreateMessageDto;
 import com.kompozith.komflow.features.messaging.dto.EventDto;
 import com.kompozith.komflow.features.messaging.dto.MessageDto;
@@ -54,6 +55,7 @@ public interface MessageMapper {
                 file.getId(),
                 file.getName(),
                 file.getUrl(),
+                FileMediaType.fromFileName(file.getName()),
                 file.getCreatedAt(),
                 file.getUpdatedAt()
         );

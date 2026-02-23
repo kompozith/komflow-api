@@ -1,5 +1,6 @@
 package com.kompozith.komflow.features.core.dto;
 
+import com.kompozith.komflow.features.core.entity.FileMediaType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,8 @@ public class FileDto {
     @NotBlank(message = "file.url.notBlank")
     @URL(message = "file.url.invalidFormat")
     private String url;
+
+    private FileMediaType mediaType;
 
     private Instant createdAt;
 
