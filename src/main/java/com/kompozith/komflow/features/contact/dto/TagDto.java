@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 public class TagDto {
@@ -26,6 +27,9 @@ public class TagDto {
 
     @Schema(description = "Whether the tag is enabled", example = "true")
     protected Boolean enabled;
+
+    @Schema(description = "IDs of contacts linked to this tag")
+    protected List<Long> contactIds;
 
     protected Instant createdAt;
     protected Instant updatedAt;

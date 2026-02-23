@@ -19,6 +19,9 @@ public class PersonDto {
     private String lastName;
 
     private String language;
+    private String country;
+    private String city;
+    private String timezone;
 
     private String phoneNumber; // Embed PhoneNumberDto
 

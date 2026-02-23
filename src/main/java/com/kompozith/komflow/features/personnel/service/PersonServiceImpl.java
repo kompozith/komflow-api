@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +34,10 @@ public class PersonServiceImpl implements PersonService {
         person.setEmail(createPersonDto.getEmail());
         person.setFirstName(createPersonDto.getFirstName());
         person.setLastName(createPersonDto.getLastName());
-        person.setLanguage(createPersonDto.getLanguage());
+        person.setLanguage(normalizeLanguage(createPersonDto.getLanguage()));
+        person.setCountry(createPersonDto.getCountry());
+        person.setCity(createPersonDto.getCity());
+        person.setTimezone(createPersonDto.getTimezone());
 
         Person saved = personRepository.save(person);
         return mapToPersonDto(saved);
@@ -66,7 +70,10 @@ public class PersonServiceImpl implements PersonService {
         person.setEmail(updatePersonDto.getEmail());
         person.setFirstName(updatePersonDto.getFirstName());
         person.setLastName(updatePersonDto.getLastName());
-        person.setLanguage(updatePersonDto.getLanguage());
+        person.setLanguage(normalizeLanguage(updatePersonDto.getLanguage()));
+        person.setCountry(updatePersonDto.getCountry());
+        person.setCity(updatePersonDto.getCity());
+        person.setTimezone(updatePersonDto.getTimezone());
 
         Person saved = personRepository.save(person);
         return mapToPersonDto(saved);
@@ -83,6 +90,9 @@ public class PersonServiceImpl implements PersonService {
                 person.getFirstName(),
                 person.getLastName(),
                 person.getLanguage(),
+                person.getCountry(),
+                person.getCity(),
+                person.getTimezone(),
                 primaryPhone,
                 person.getCreatedAt(),
                 person.getUpdatedAt()
@@ -102,6 +112,9 @@ public class PersonServiceImpl implements PersonService {
                 person.getFirstName(),
                 person.getLastName(),
                 person.getLanguage(),
+                person.getCountry(),
+                person.getCity(),
+                person.getTimezone(),
                 phoneNumbers,
                 person.getCreatedAt(),
                 person.getUpdatedAt()
@@ -118,5 +131,21 @@ public class PersonServiceImpl implements PersonService {
                 phoneNumber.getCreatedAt(),
                 phoneNumber.getUpdatedAt()
         );
+    }
+
+    private String normalizeLanguage(String rawLanguage) {
+        if (rawLanguage == null || rawLanguage.isBlank()) {
+            return null;
+        }
+
+        String normalized = rawLanguage.trim().toLowerCase(Locale.ROOT);
+        if (normalized.startsWith("fr")) {
+            return "fr";
+        }
+        if (normalized.startsWith("en")) {
+            return "en";
+        }
+
+        return normalized;
     }
 }

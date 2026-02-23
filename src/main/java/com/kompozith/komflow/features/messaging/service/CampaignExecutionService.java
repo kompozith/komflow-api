@@ -92,7 +92,7 @@ public class CampaignExecutionService {
 
             try {
                 if (messageDispatcherService.canSendToContact(contact, executionData.message.getChannel())) {
-                    messageDispatcherService.sendToContact(contact, executionData.message, executionData.message.getChannel());
+                    messageDispatcherService.sendToContact(contact, executionData.message, executionData.message.getChannel(), executionData.eventInstantUtc);
                     successCount++;
                     campaignEventStreamService.emit(campaignId, CampaignEventDto.builder()
                             .type(CampaignEventType.SUCCESS)
@@ -172,6 +172,9 @@ public class CampaignExecutionService {
         if (message != null) {
             message.getChannel();
             message.getContent();
+            if (message.getAttachments() != null) {
+                message.getAttachments().size();
+            }
         }
 
         Set<Contact> uniqueContacts = new HashSet<>();
@@ -195,16 +198,27 @@ public class CampaignExecutionService {
             }
         }
 
-        return new ExecutionData(message, uniqueContacts);
+        // Event-local variables must reflect the linked event date/time, not campaign scheduling time.
+        Instant eventInstantUtc = null;
+        if (message != null && message.getEvent() != null && message.getEvent().getStartAt() != null) {
+            eventInstantUtc = message.getEvent().getStartAt();
+        } else if (campaign.getScheduledAt() != null) {
+            eventInstantUtc = campaign.getScheduledAt();
+        } else {
+            eventInstantUtc = Instant.now();
+        }
+        return new ExecutionData(message, uniqueContacts, eventInstantUtc);
     }
 
     private static class ExecutionData {
         private final Message message;
         private final Set<Contact> contacts;
+        private final Instant eventInstantUtc;
 
-        private ExecutionData(Message message, Set<Contact> contacts) {
+        private ExecutionData(Message message, Set<Contact> contacts, Instant eventInstantUtc) {
             this.message = message;
             this.contacts = contacts;
+            this.eventInstantUtc = eventInstantUtc;
         }
     }
 }

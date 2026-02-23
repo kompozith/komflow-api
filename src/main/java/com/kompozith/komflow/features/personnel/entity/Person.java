@@ -35,6 +35,9 @@ public class Person extends BaseEntity {
     private String lastName;
 
     private String language;
+    private String country;
+    private String city;
+    private String timezone;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "person")
     private List<PhoneNumber> phoneNumbers;

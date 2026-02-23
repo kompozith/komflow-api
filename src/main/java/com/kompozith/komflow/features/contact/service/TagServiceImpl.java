@@ -4,17 +4,23 @@ import com.kompozith.komflow.exception.ObjectExistException;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
+import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.TagMapper;
+import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.core.service.BaseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,9 +28,11 @@ import java.util.stream.Collectors;
 public class TagServiceImpl extends BaseService implements TagService {
 
     private final TagRepository tagRepository;
+    private final ContactRepository contactRepository;
     private final TagMapper tagMapper;
 
     @Override
+    @Transactional
     public TagDto create(TagDto tagDto) {
         // Check if tag with same name already exists
         if (tagRepository.findByName(tagDto.getName()).isPresent()) {
@@ -34,9 +42,15 @@ public class TagServiceImpl extends BaseService implements TagService {
         Tag tag = tagMapper.tagDtoToTag(tagDto);
         tag.setEnabled(true); // Default to enabled
         Tag savedTag = tagRepository.save(tag);
-        TagDto dto = tagMapper.tagToTagDto(savedTag);
-        // Calculate contact count for new tag (should be 0)
-        dto.setContactCount(0L);
+
+        syncTagContacts(savedTag, tagDto.getContactIds());
+
+        Tag refreshedTag = tagRepository.findById(savedTag.getId())
+                .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), savedTag.getId()));
+
+        TagDto dto = tagMapper.tagToTagDto(refreshedTag);
+        dto.setContactCount(refreshedTag.getContacts() != null ? (long) refreshedTag.getContacts().size() : 0L);
+        dto.setContactIds(extractContactIds(refreshedTag.getContacts()));
         return dto;
     }
 
@@ -61,16 +75,19 @@ public class TagServiceImpl extends BaseService implements TagService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TagDto findById(Long id) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
         TagDto dto = tagMapper.tagToTagDto(tag);
         // Calculate contact count for this tag
         dto.setContactCount(tag.getContacts() != null ? (long) tag.getContacts().size() : 0L);
+        dto.setContactIds(extractContactIds(tag.getContacts()));
         return dto;
     }
 
     @Override
+    @Transactional
     public TagDto update(Long id, TagDto tagDto) {
         Tag existingTag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
@@ -88,7 +105,15 @@ public class TagServiceImpl extends BaseService implements TagService {
         // Note: enabled field not in TagDto, assuming it's not updated via this method
 
         Tag updatedTag = tagRepository.save(existingTag);
-        return tagMapper.tagToTagDto(updatedTag);
+
+        syncTagContacts(updatedTag, tagDto.getContactIds());
+
+        Tag refreshedTag = tagRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
+        TagDto dto = tagMapper.tagToTagDto(refreshedTag);
+        dto.setContactCount(refreshedTag.getContacts() != null ? (long) refreshedTag.getContacts().size() : 0L);
+        dto.setContactIds(extractContactIds(refreshedTag.getContacts()));
+        return dto;
     }
 
     @Override
@@ -106,5 +131,43 @@ public class TagServiceImpl extends BaseService implements TagService {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
         tagRepository.deleteById(id);
+    }
+
+    private void syncTagContacts(Tag tag, List<Long> requestedContactIds) {
+        Set<Long> desiredIds = requestedContactIds == null
+                ? new HashSet<>()
+                : new HashSet<>(requestedContactIds);
+
+        Set<Contact> currentlyLinked = tag.getContacts() != null
+                ? new HashSet<>(tag.getContacts())
+                : new HashSet<>();
+
+        for (Contact contact : currentlyLinked) {
+            if (!desiredIds.contains(contact.getId())) {
+                if (contact.getTags() != null) {
+                    contact.getTags().removeIf(t -> t.getId().equals(tag.getId()));
+                }
+            }
+        }
+
+        if (!desiredIds.isEmpty()) {
+            List<Contact> desiredContacts = contactRepository.findAllById(desiredIds);
+            for (Contact contact : desiredContacts) {
+                if (contact.getTags() == null) {
+                    contact.setTags(new HashSet<>());
+                }
+                contact.getTags().add(tag);
+            }
+            contactRepository.saveAll(desiredContacts);
+        }
+
+        contactRepository.saveAll(currentlyLinked);
+    }
+
+    private List<Long> extractContactIds(Set<Contact> contacts) {
+        if (contacts == null || contacts.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return contacts.stream().map(Contact::getId).toList();
     }
 }

@@ -30,7 +30,7 @@ public class ContactWithTagCountDto {
 
     private Instant updatedAt;
 
-    public ContactWithTagCountDto(Long id, Boolean enabled, Instant lastMessageReceivedAt, Instant createdAt, Instant updatedAt, Long tagCount, Long personId, String email, String firstName, String lastName, String language, Instant personCreatedAt, Instant personUpdatedAt, String phoneNumber) {
+    public ContactWithTagCountDto(Long id, Boolean enabled, Instant lastMessageReceivedAt, Instant createdAt, Instant updatedAt, Long tagCount, Long personId, String email, String firstName, String lastName, String language, String country, String city, String timezone, Instant personCreatedAt, Instant personUpdatedAt, String phoneNumber) {
         this.id = id;
         this.enabled = enabled;
         this.lastMessageReceivedAt = lastMessageReceivedAt;
@@ -43,6 +43,9 @@ public class ContactWithTagCountDto {
             firstName,
             lastName,
             language,
+            country,
+            city,
+            timezone,
             phoneNumber,
             personCreatedAt,
             personUpdatedAt

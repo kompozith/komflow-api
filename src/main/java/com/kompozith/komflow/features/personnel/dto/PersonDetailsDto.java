@@ -21,6 +21,9 @@ public class PersonDetailsDto {
     private String lastName;
 
     private String language;
+    private String country;
+    private String city;
+    private String timezone;
 
     private List<PhoneNumberDto> phoneNumbers; // Embed PhoneNumberDto
 

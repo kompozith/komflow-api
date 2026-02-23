@@ -1,6 +1,7 @@
 package com.kompozith.komflow.features.messaging.controller;
 
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
+import com.kompozith.komflow.features.messaging.dto.CampaignEditabilityDto;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.dto.ScheduleCampaignDto;
@@ -52,6 +53,13 @@ public class CampaignController {
     public ResponseEntity<CampaignDetailsDto> getCampaignById(@PathVariable Long id) {
         CampaignDetailsDto campaignDetailsDto = campaignService.findById(id);
         return ResponseEntity.ok(campaignDetailsDto);
+    }
+
+    @PreAuthorize("hasAnyAuthority('CAMPAIGN_SHOW', 'CAMPAIGN_UPDATE')")
+    @GetMapping("/{id}/editability")
+    @Operation(summary = "Check campaign editability", description = "Check whether a campaign can currently be edited based on its status and schedule")
+    public ResponseEntity<CampaignEditabilityDto> getEditability(@PathVariable Long id) {
+        return ResponseEntity.ok(campaignService.getEditability(id));
     }
 
     @PreAuthorize("hasAuthority('CAMPAIGN_UPDATE')")

@@ -39,6 +39,10 @@ public class Message extends BaseEntity {
             joinColumns = @JoinColumn(name = "msg_message_id"),
             inverseJoinColumns = @JoinColumn(name = "core_file_id")
     )
-    private List<File> Attachments;
+    private List<File> attachments;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "msg_event_id")
+    private Event event;
 
 }

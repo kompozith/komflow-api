@@ -90,6 +90,9 @@ public class ContactMapperManual implements ContactMapper {
             person.getFirstName(),
             person.getLastName(),
             person.getLanguage(),
+            person.getCountry(),
+            person.getCity(),
+            person.getTimezone(),
             primaryPhone,
             person.getCreatedAt(),
             person.getUpdatedAt()

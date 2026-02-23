@@ -1,12 +1,12 @@
 # Server Configuration
 server:
-  port: ${SERVER_PORT:9001}
+  port: ${SERVER_PORT}
   servlet:
-    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/api/v1}
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH}
 
 spring:
   application:
-    name: ${APP_NAME:Komflow}
+    name: ${APP_NAME}
 
   # ===============================
   # = DATA SOURCE
@@ -14,9 +14,9 @@ spring:
   # Set here configurations for the database connection
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:komflow}
-    username: ${DB_USERNAME:komflow_user}
-    password: ${DB_PASSWORD:komflow_user}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   sql:
     init.mode: always
@@ -29,7 +29,7 @@ spring:
   jpa:
     show-sql: true
     hibernate.ddl-auto: update
-    properties.hibernate.default_schema: ${DB_SCHEMA:komflow}
+    properties.hibernate.default_schema: ${DB_SCHEMA}
 
   flyway:
     enabled: false
@@ -38,16 +38,16 @@ spring:
     out-of-order: false
     baseline-on-migrate: true
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:komflow}
-    default-schema: ${DB_SCHEMA:komflow}
-    user: ${DB_USERNAME:komflow_user}
-    password: ${DB_PASSWORD:komflow_user}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    default-schema: ${DB_SCHEMA}
+    user: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:gilleskemgoum@gmail.com}
-    password: ${MAIL_PASSWORD:tasl nkgx ynnk dgjm}
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -63,24 +63,30 @@ spring:
             fallback: false
         debug: true  # Enable debug in dev
     test-connection: false  # Disable connection test in dev
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE}
+      max-request-size: ${MAX_REQUEST_SIZE}
 
 # Swagger
 springdoc:
   api-docs:
-    path: ${SPRINGDOC_API_DOCS_PATH:/v3/api-docs}
+    path: ${SPRINGDOC_API_DOCS_PATH}
   swagger-ui:
-    path: ${SPRINGDOC_SWAGGER_UI_PATH:/swagger-ui.html}
+    path: ${SPRINGDOC_SWAGGER_UI_PATH}
 
 # Configuration JWT
 jwt:
-  secret-key: "${JWT_SECRET:de717372299e516520195b110c787d30b004db006a9692498bb04914556eca1f}"
-  expiration-ms: ${JWT_EXPIRATION_MS:43200000}
-  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
-  issuer: ${JWT_ISSUER:komflow-app}
+  secret-key: "${JWT_SECRET}"
+  expiration-ms: ${JWT_EXPIRATION_MS}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
+  issuer: ${JWT_ISSUER}
   # Durée d'expiration du token d'accès en secondes (2 heures = 7200 secondes)
-  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
+  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS}
 
 app:
+  file-storage:
+    path: ${FILE_STORAGE_PATH}
   cors:
     allowed-origins:
       - http://localhost:4200
@@ -88,11 +94,11 @@ app:
 
 auth:
   cookie:
-    name: ${AUTH_REFRESH_COOKIE_NAME:refresh_token}
-    path: ${AUTH_REFRESH_COOKIE_PATH:/api/v1}
-    same-site: ${AUTH_REFRESH_COOKIE_SAMESITE:Lax}
-    secure: ${AUTH_REFRESH_COOKIE_SECURE:false}
-    http-only: ${AUTH_REFRESH_COOKIE_HTTPONLY:true}
+    name: ${AUTH_REFRESH_COOKIE_NAME}
+    path: ${AUTH_REFRESH_COOKIE_PATH}
+    same-site: ${AUTH_REFRESH_COOKIE_SAMESITE}
+    secure: ${AUTH_REFRESH_COOKIE_SECURE}
+    http-only: ${AUTH_REFRESH_COOKIE_HTTPONLY}
 
 logging:
   level:

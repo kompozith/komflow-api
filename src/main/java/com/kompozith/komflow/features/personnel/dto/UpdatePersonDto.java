@@ -20,4 +20,7 @@ public class UpdatePersonDto {
     private String lastName;
 
     private String language;
+    private String country;
+    private String city;
+    private String timezone;
 }

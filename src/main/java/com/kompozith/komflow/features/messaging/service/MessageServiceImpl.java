@@ -5,12 +5,17 @@ import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
+import com.kompozith.komflow.features.core.dto.FileDto;
+import com.kompozith.komflow.features.core.entity.File;
+import com.kompozith.komflow.features.core.repository.FileRepository;
 import com.kompozith.komflow.features.messaging.dto.CreateMessageDto;
 import com.kompozith.komflow.features.messaging.dto.MessageDto;
 import com.kompozith.komflow.features.messaging.dto.SendResult;
+import com.kompozith.komflow.features.messaging.entity.Event;
 import com.kompozith.komflow.features.messaging.entity.Message;
 import com.kompozith.komflow.features.messaging.entity.MessageChannel;
 import com.kompozith.komflow.features.messaging.mapper.MessageMapper;
+import com.kompozith.komflow.features.messaging.repository.EventRepository;
 import com.kompozith.komflow.features.messaging.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,27 +27,46 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MessageServiceImpl implements MessageService {
+    private static final Pattern EVENT_VARIABLE_PATTERN = Pattern.compile("\\{\\{event[^}]+\\}\\}", Pattern.CASE_INSENSITIVE);
+    private static final String LEGACY_EVENT_START_AT = "{{eventStartAt}}";
+    private static final String LEGACY_EVENT_END_AT = "{{eventEndAt}}";
+    private static final String EVENT_START_DATE = "{{eventStartDate}}";
+    private static final String EVENT_START_TIME = "{{eventStartTime}}";
+    private static final String EVENT_END_DATE = "{{eventEndDate}}";
+    private static final String EVENT_END_TIME = "{{eventEndTime}}";
 
     private final MessageRepository messageRepository;
     private final MessageMapper messageMapper;
     private final ContactRepository contactRepository;
     private final TagRepository tagRepository;
+    private final FileRepository fileRepository;
+    private final EventRepository eventRepository;
     private final MessageDispatcherService messageDispatcherService;
+    private final MessageContentParserService messageContentParserService;
     private final EmailService emailService; // Keep for backward compatibility
 
     @Override
+    @Transactional
     public MessageDto create(CreateMessageDto createMessageDto) {
         validateCreateMessage(createMessageDto);
+        createMessageDto.setContent(normalizeLegacyEventVariables(createMessageDto.getContent()));
+        createMessageDto.setContent(messageContentParserService.normalizeForStorage(createMessageDto.getContent(), createMessageDto.getChannel()));
         Message message = messageMapper.createMessageDtoToMessage(createMessageDto);
+        message.setAttachments(resolveAttachmentEntities(createMessageDto.getAttachments()));
+        message.setEvent(resolveEventForMessage(createMessageDto.getEventId()));
         Message savedMessage = messageRepository.save(message);
 
         log.info("Message created with id: {}", savedMessage.getId());
@@ -53,13 +77,15 @@ public class MessageServiceImpl implements MessageService {
     public List<MessageDto> findAll() {
         return messageRepository.findAll().stream()
                 .map(messageMapper::messageToMessageDto)
+                .map(this::normalizeMessageDtoContent)
                 .collect(Collectors.toList());
     }
 
     @Override
     public Page<MessageDto> findAll(Pageable pageable) {
         return messageRepository.findAll(pageable)
-                .map(messageMapper::messageToMessageDto);
+                .map(messageMapper::messageToMessageDto)
+                .map(this::normalizeMessageDtoContent);
     }
 
     @Override
@@ -72,30 +98,36 @@ public class MessageServiceImpl implements MessageService {
                 createdAtFrom,
                 createdAtTo,
                 pageable
-        ).map(messageMapper::messageToMessageDto);
+        ).map(messageMapper::messageToMessageDto)
+         .map(this::normalizeMessageDtoContent);
     }
 
     @Override
     public MessageDto findById(Long id) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), id));
-        return messageMapper.messageToMessageDto(message);
+        return normalizeMessageDtoContent(messageMapper.messageToMessageDto(message));
     }
 
     @Override
+    @Transactional
     public MessageDto update(Long id, CreateMessageDto createMessageDto) {
         validateCreateMessage(createMessageDto);
+        createMessageDto.setContent(normalizeLegacyEventVariables(createMessageDto.getContent()));
+        createMessageDto.setContent(messageContentParserService.normalizeForStorage(createMessageDto.getContent(), createMessageDto.getChannel()));
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), id));
 
         message.setTitle(createMessageDto.getTitle());
         message.setContent(createMessageDto.getContent());
         message.setChannel(createMessageDto.getChannel());
+        message.setAttachments(resolveAttachmentEntities(createMessageDto.getAttachments()));
+        message.setEvent(resolveEventForMessage(createMessageDto.getEventId()));
 
         Message updatedMessage = messageRepository.save(message);
 
         log.info("Message updated with id: {}", id);
-        return messageMapper.messageToMessageDto(updatedMessage);
+        return normalizeMessageDtoContent(messageMapper.messageToMessageDto(updatedMessage));
     }
 
     @Override
@@ -209,9 +241,98 @@ public class MessageServiceImpl implements MessageService {
         if (createMessageDto.getChannel() == null) {
             throw new IllegalArgumentException("Channel is required");
         }
+        if (createMessageDto.getEventId() != null && createMessageDto.getEventId() <= 0) {
+            throw new IllegalArgumentException("Event id is invalid");
+        }
+        if (containsEventVariables(createMessageDto.getContent()) && createMessageDto.getEventId() == null) {
+            throw new IllegalArgumentException("Linked event is required when message content uses event variables");
+        }
+        if (createMessageDto.getAttachments() != null) {
+            for (int i = 0; i < createMessageDto.getAttachments().size(); i++) {
+                var attachment = createMessageDto.getAttachments().get(i);
+                if (attachment == null) {
+                    throw new IllegalArgumentException("Attachment at index " + i + " is invalid");
+                }
+                if (attachment.getId() == null || attachment.getId() <= 0) {
+                    throw new IllegalArgumentException("Attachment id is required at index " + i);
+                }
+                if (isBlank(attachment.getName())) {
+                    throw new IllegalArgumentException("Attachment name is required at index " + i);
+                }
+                if (isBlank(attachment.getUrl())) {
+                    throw new IllegalArgumentException("Attachment URL is required at index " + i);
+                }
+            }
+        }
     }
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean containsEventVariables(String content) {
+        if (isBlank(content)) {
+            return false;
+        }
+        return EVENT_VARIABLE_PATTERN.matcher(content).find();
+    }
+
+    private List<File> resolveAttachmentEntities(List<FileDto> attachments) {
+        if (attachments == null || attachments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> ids = attachments.stream()
+                .filter(Objects::nonNull)
+                .map(FileDto::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        List<File> existingFiles = fileRepository.findAllById(ids);
+        Map<Long, File> byId = existingFiles.stream().collect(Collectors.toMap(File::getId, f -> f));
+
+        List<File> resolved = new ArrayList<>();
+        for (FileDto dto : attachments) {
+            if (dto == null || dto.getId() == null) {
+                continue;
+            }
+            File file = byId.get(dto.getId());
+            if (file == null) {
+                throw new ObjectNotFoundException(File.class.getSimpleName(), dto.getId());
+            }
+            resolved.add(file);
+        }
+        return resolved;
+    }
+
+    private Event resolveEventForMessage(Long eventId) {
+        if (eventId == null) {
+            return null;
+        }
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ObjectNotFoundException(Event.class.getSimpleName(), eventId));
+        if (event.getStartAt() == null || !event.getStartAt().isAfter(Instant.now())) {
+            throw new IllegalArgumentException("Only future events can be linked to a message");
+        }
+        return event;
+    }
+
+    private MessageDto normalizeMessageDtoContent(MessageDto dto) {
+        if (dto == null) {
+            return null;
+        }
+        String normalizedLegacy = normalizeLegacyEventVariables(dto.getContent());
+        dto.setContent(messageContentParserService.normalizeForStorage(normalizedLegacy, dto.getChannel()));
+        return dto;
+    }
+
+    private String normalizeLegacyEventVariables(String content) {
+        if (content == null || content.isEmpty()) {
+            return content;
+        }
+        return content
+                .replace(LEGACY_EVENT_START_AT, EVENT_START_DATE + " " + EVENT_START_TIME)
+                .replace(LEGACY_EVENT_END_AT, EVENT_END_DATE + " " + EVENT_END_TIME);
     }
 }

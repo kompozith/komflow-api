@@ -8,6 +8,7 @@ import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
+import com.kompozith.komflow.features.messaging.dto.CampaignEditabilityDto;
 import com.kompozith.komflow.features.messaging.dto.ScheduleCampaignDto;
 import com.kompozith.komflow.features.messaging.entity.Campaign;
 import com.kompozith.komflow.features.messaging.entity.CampaignStatus;
@@ -110,20 +111,26 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public CampaignEditabilityDto getEditability(Long id) {
+        Campaign campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), id));
+        return evaluateEditability(campaign);
+    }
+
+    @Override
     @Transactional
     public CampaignDto update(Long id, CreateCampaignDto createCampaignDto) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), id));
 
-        // Prevent deletion if campaign is running
-        if (campaign.getStatus() == CampaignStatus.RUNNING) {
-            throw new IllegalStateException("Cannot update a campaign that is currently running");
+        CampaignEditabilityDto editability = evaluateEditability(campaign);
+        if (!Boolean.TRUE.equals(editability.getEditable())) {
+            throw new IllegalStateException(editability.getReason());
         }
 
         campaign.setName(createCampaignDto.getName());
         campaign.setDescription(createCampaignDto.getDescription());
-        campaign.setStatus(createCampaignDto.getStatus());
-        campaign.setScheduledAt(createCampaignDto.getScheduledAt());
 
         // Update message if provided
         if (createCampaignDto.getMessageId() != null) {
@@ -136,16 +143,34 @@ public class CampaignServiceImpl implements CampaignService {
             campaign.setContacts(contacts);
         }
 
+        // Update tags if provided
+        if (createCampaignDto.getTagIds() != null) {
+            List<Tag> tags = tagRepository.findAllById(createCampaignDto.getTagIds());
+            campaign.setTags(tags);
+        }
+
         // Update CC contacts if provided
         if (createCampaignDto.getMailCcIds() != null) {
             List<Contact> mailCc = contactRepository.findAllById(createCampaignDto.getMailCcIds());
             campaign.setMailCcContacts(mailCc);
         }
 
+        // Update CC tags if provided
+        if (createCampaignDto.getMailCcTagIds() != null) {
+            List<Tag> mailCcTags = tagRepository.findAllById(createCampaignDto.getMailCcTagIds());
+            campaign.setMailCcTags(mailCcTags);
+        }
+
         // Update CCI contacts if provided
         if (createCampaignDto.getMailCciIds() != null) {
             List<Contact> mailCci = contactRepository.findAllById(createCampaignDto.getMailCciIds());
             campaign.setMailCciContacts(mailCci);
+        }
+
+        // Update CCI tags if provided
+        if (createCampaignDto.getMailCciTagIds() != null) {
+            List<Tag> mailCciTags = tagRepository.findAllById(createCampaignDto.getMailCciTagIds());
+            campaign.setMailCciTags(mailCciTags);
         }
 
         Campaign updatedCampaign = campaignRepository.save(campaign);
@@ -251,5 +276,23 @@ public class CampaignServiceImpl implements CampaignService {
         log.info("Campaign {} schedule cancelled successfully. Returned to DRAFT status", campaignId);
         
         return campaignMapper.campaignToCampaignDto(updatedCampaign);
+    }
+
+    private CampaignEditabilityDto evaluateEditability(Campaign campaign) {
+        CampaignStatus status = campaign.getStatus();
+        Instant now = Instant.now();
+
+        if (status == CampaignStatus.DRAFT) {
+            return new CampaignEditabilityDto(true, status, null);
+        }
+
+        if (status == CampaignStatus.SCHEDULED) {
+            if (campaign.getScheduledAt() == null || !campaign.getScheduledAt().isAfter(now)) {
+                return new CampaignEditabilityDto(false, status, "Scheduled campaign is no longer editable because execution time is reached");
+            }
+            return new CampaignEditabilityDto(true, status, null);
+        }
+
+        return new CampaignEditabilityDto(false, status, "Only DRAFT or future SCHEDULED campaigns are editable");
     }
 }

@@ -1,12 +1,17 @@
 package com.kompozith.komflow.features.messaging.service;
 
 import com.kompozith.komflow.features.contact.entity.Contact;
+import com.kompozith.komflow.features.messaging.entity.Message;
 import com.kompozith.komflow.features.messaging.entity.MessageVariable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,11 +20,26 @@ import java.util.regex.Pattern;
 public class TemplateParserService {
 
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{([^}]+)\\}\\}");
+    private static final DateTimeFormatter EVENT_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z", Locale.ENGLISH);
+    private static final DateTimeFormatter EVENT_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+    private static final DateTimeFormatter EVENT_HOUR_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH);
+    private static final ZoneId GMT_ZONE = ZoneId.of("GMT");
 
     /**
      * Parse and replace variables in the message content for a specific contact
      */
     public String parseTemplate(String template, Contact contact) {
+        return parseTemplate(template, contact, null, null);
+    }
+
+    /**
+     * Parse and replace variables in the message content for a specific contact with event time context.
+     */
+    public String parseTemplate(String template, Contact contact, Instant eventInstantUtc) {
+        return parseTemplate(template, contact, null, eventInstantUtc);
+    }
+
+    public String parseTemplate(String template, Contact contact, Message message, Instant eventInstantUtc) {
         if (template == null || template.isEmpty()) {
             return template;
         }
@@ -37,8 +57,6 @@ public class TemplateParserService {
 
         while (matcher.find()) {
             String variableKey = matcher.group(0); // e.g., "{{firstName}}"
-            String variableName = matcher.group(1); // e.g., "firstName"
-
             MessageVariable variable = MessageVariable.fromKey(variableKey);
             if (variable == null) {
                 log.warn("Unknown variable '{}' found in template", variableKey);
@@ -46,7 +64,20 @@ public class TemplateParserService {
             }
 
             try {
-                String value = getFieldValue(contact, variable.getFieldPath());
+                String value;
+                if (variable == MessageVariable.EVENT_LOCAL_TIME
+                        || variable == MessageVariable.EVENT_END_LOCAL_TIME
+                        || variable == MessageVariable.EVENT_TITLE
+                        || variable == MessageVariable.EVENT_START_DATE
+                        || variable == MessageVariable.EVENT_START_TIME
+                        || variable == MessageVariable.EVENT_END_DATE
+                        || variable == MessageVariable.EVENT_END_TIME
+                        || variable == MessageVariable.EVENT_LOCATION
+                        || variable == MessageVariable.EVENT_TIMEZONE) {
+                    value = resolveEventVariable(variable, contact, message, eventInstantUtc);
+                } else {
+                    value = getFieldValue(contact, variable.getFieldPath());
+                }
                 log.debug("Variable '{}' with path '{}' resolved to: '{}'",
                          variableKey, variable.getFieldPath(), value != null ? value : "null");
                 result = result.replace(variableKey, value != null ? value : "");
@@ -58,6 +89,134 @@ public class TemplateParserService {
         }
 
         return result;
+    }
+
+    private String resolveEventVariable(MessageVariable variable, Contact contact, Message message, Instant eventInstantUtc) {
+        if (variable == MessageVariable.EVENT_LOCAL_TIME) {
+            Instant instantToUse = eventInstantUtc;
+            if (instantToUse == null && message != null && message.getEvent() != null) {
+                instantToUse = message.getEvent().getStartAt();
+            }
+            return resolveEventLocalTime(contact, instantToUse);
+        }
+        if (variable == MessageVariable.EVENT_END_LOCAL_TIME) {
+            Instant instantToUse = null;
+            if (message != null && message.getEvent() != null) {
+                instantToUse = message.getEvent().getEndAt();
+                if (instantToUse == null) {
+                    instantToUse = message.getEvent().getStartAt();
+                }
+            }
+            if (instantToUse == null) {
+                instantToUse = eventInstantUtc;
+            }
+            return resolveEventLocalTime(contact, instantToUse);
+        }
+
+        if (message == null || message.getEvent() == null) {
+            return "";
+        }
+
+        return switch (variable) {
+            case EVENT_TITLE -> safeString(message.getEvent().getTitle());
+            case EVENT_START_DATE -> formatEventDate(message.getEvent().getStartAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
+            case EVENT_START_TIME -> formatEventTime(message.getEvent().getStartAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
+            case EVENT_END_DATE -> formatEventDate(message.getEvent().getEndAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
+            case EVENT_END_TIME -> formatEventTime(message.getEvent().getEndAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
+            case EVENT_LOCATION -> safeString(message.getEvent().getLocation());
+            case EVENT_TIMEZONE -> resolveTimezoneLocationLabel(contact, message.getEvent().getTimezone());
+            default -> "";
+        };
+    }
+
+    private String formatEventDate(Instant instant, ZoneId zoneId) {
+        if (instant == null) {
+            return "";
+        }
+        return EVENT_DATE_FORMATTER.format(instant.atZone(zoneId));
+    }
+
+    private String formatEventTime(Instant instant, ZoneId zoneId) {
+        if (instant == null) {
+            return "";
+        }
+        return EVENT_HOUR_FORMATTER.format(instant.atZone(zoneId));
+    }
+
+    private String resolveEventLocalTime(Contact contact, Instant eventInstantUtc) {
+        if (eventInstantUtc == null) {
+            return "";
+        }
+        ZoneId zoneId = resolveContactZoneId(contact, null);
+        return EVENT_TIME_FORMATTER.format(eventInstantUtc.atZone(zoneId));
+    }
+
+    private String safeString(String value) {
+        return value == null ? "" : value;
+    }
+
+    private ZoneId resolveZoneId(String timezone) {
+        if (timezone == null || timezone.isBlank()) {
+            return GMT_ZONE;
+        }
+        try {
+            return ZoneId.of(timezone.trim());
+        } catch (Exception e) {
+            return GMT_ZONE;
+        }
+    }
+
+    private ZoneId resolveContactZoneId(Contact contact, String fallbackTimezone) {
+        if (contact != null && contact.getPerson() != null) {
+            String contactTimezone = contact.getPerson().getTimezone();
+            if (contactTimezone != null && !contactTimezone.isBlank()) {
+                try {
+                    return ZoneId.of(contactTimezone.trim());
+                } catch (Exception e) {
+                    log.warn("Invalid contact timezone '{}' for contact {}. Trying fallback timezone.",
+                            contactTimezone, contact.getId());
+                }
+            }
+        }
+
+        if (fallbackTimezone != null && !fallbackTimezone.isBlank()) {
+            try {
+                return ZoneId.of(fallbackTimezone.trim());
+            } catch (Exception e) {
+                log.warn("Invalid fallback timezone '{}'. Falling back to GMT.", fallbackTimezone);
+            }
+        }
+
+        return GMT_ZONE;
+    }
+
+    private String resolveTimezoneLocationLabel(Contact contact, String fallbackTimezone) {
+        String city = null;
+        String country = null;
+
+        if (contact != null && contact.getPerson() != null) {
+            city = safeString(contact.getPerson().getCity()).trim();
+            country = safeString(contact.getPerson().getCountry()).trim();
+        }
+
+        if (!city.isEmpty() && !country.isEmpty()) {
+            return city + ", " + country;
+        }
+        if (!city.isEmpty()) {
+            return city;
+        }
+        if (!country.isEmpty()) {
+            return country;
+        }
+
+        ZoneId zoneId = resolveContactZoneId(contact, fallbackTimezone);
+        String zoneIdText = zoneId.getId(); // e.g. America/New_York
+        String[] segments = zoneIdText.split("/");
+        if (segments.length >= 2) {
+            String location = segments[segments.length - 1].replace('_', ' ');
+            return location + " (" + zoneIdText + ")";
+        }
+        return zoneIdText;
     }
 
     /**
@@ -157,7 +316,7 @@ public class TemplateParserService {
             log.debug("Field '{}' value: '{}' (type: {})", fieldName, value, value != null ? value.getClass().getSimpleName() : "null");
 
             // Special debug for Person fields
-            if (clazz.getSimpleName().equals("Person") && (fieldName.equals("firstName") || fieldName.equals("lastName") || fieldName.equals("email"))) {
+            if (clazz.getSimpleName().equals("Person") && (fieldName.equals("firstName") || fieldName.equals("lastName") || fieldName.equals("email") || fieldName.equals("language") || fieldName.equals("country") || fieldName.equals("city") || fieldName.equals("timezone"))) {
                 log.debug("Person field '{}' accessed directly: {}", fieldName, value);
             }
 

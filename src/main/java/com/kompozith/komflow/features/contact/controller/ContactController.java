@@ -2,6 +2,7 @@ package com.kompozith.komflow.features.contact.controller;
 
 import com.kompozith.komflow.features.contact.dto.ContactDetailsDto;
 import com.kompozith.komflow.features.contact.dto.ContactDto;
+import com.kompozith.komflow.features.contact.dto.ContactImportResultDto;
 import com.kompozith.komflow.features.contact.dto.ContactWithTagCountDto;
 import com.kompozith.komflow.features.contact.dto.CreateContactDto;
 import com.kompozith.komflow.features.contact.service.ContactService;
@@ -12,13 +13,15 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Locale;
 
 
 @RestController
@@ -72,5 +75,37 @@ public class ContactController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         contactService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAuthority('CONTACT_LIST')")
+    @GetMapping("/export")
+    @Operation(summary = "Export contacts", description = "Export contacts list to CSV or XLSX")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Instant createdAtFrom,
+            @RequestParam(required = false) Instant createdAtTo,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) String tagIds) {
+
+        String normalizedFormat = format.toLowerCase(Locale.ROOT);
+        byte[] content = contactService.exportContacts(normalizedFormat, search, enabled, createdAtFrom, createdAtTo, tagIds);
+
+        String extension = "xlsx".equals(normalizedFormat) ? "xlsx" : "csv";
+        String contentType = "xlsx".equals(normalizedFormat)
+                ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                : "text/csv";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"contacts-export." + extension + "\"")
+                .body(content);
+    }
+
+    @PreAuthorize("hasAuthority('CONTACT_CREATE')")
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import contacts", description = "Import contacts from CSV or XLSX file")
+    public ContactImportResultDto importContacts(@RequestPart("file") MultipartFile file) {
+        return contactService.importContacts(file);
     }
 }
