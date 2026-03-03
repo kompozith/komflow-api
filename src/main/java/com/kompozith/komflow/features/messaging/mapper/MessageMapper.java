@@ -96,8 +96,16 @@ public interface MessageMapper {
         return new EventDto(
                 event.getId(),
                 event.getTitle(),
+                event.getSlug(),
                 event.getDescription(),
                 event.getLocation(),
+                event.getSubtitle(),
+                event.getAddress(),
+                event.getMode(),
+                event.getMeetingUrl(),
+                List.of(),
+                List.of(),
+                startDate,
                 event.getStartAt(),
                 event.getEndAt(),
                 startDate,
@@ -105,7 +113,6 @@ public interface MessageMapper {
                 endDate,
                 endTime,
                 normalizeTimezone(event.getTimezone()),
-                event.getAllDay(),
                 event.getCreatedAt(),
                 event.getUpdatedAt()
         );

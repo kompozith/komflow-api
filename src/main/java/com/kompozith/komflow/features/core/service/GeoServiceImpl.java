@@ -44,6 +44,31 @@ public class GeoServiceImpl implements GeoService {
         return citiesFromTimezones(zoneIds);
     }
 
+    @Override
+    public GeoCountryDto getCountryByTimezone(String timezone) {
+        if (timezone == null || timezone.isBlank()) {
+            return null;
+        }
+
+        String normalizedTimezone = timezone.trim();
+        Set<String> isoCountries = Locale.getISOCountries(Locale.IsoCountryCode.PART1_ALPHA2);
+        for (String code : isoCountries) {
+            String[] zoneIds = TimeZone.getAvailableIDs(code);
+            for (String zoneId : zoneIds) {
+                if (normalizedTimezone.equals(zoneId)) {
+                    Locale locale = new Locale("", code);
+                    String name = locale.getDisplayCountry(Locale.ENGLISH);
+                    if (name != null && !name.isBlank()) {
+                        return new GeoCountryDto(code, name);
+                    }
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private List<GeoCityDto> citiesFromTimezones(String[] zoneIds) {
         Map<String, GeoCityDto> byTimezone = new LinkedHashMap<>();
         for (String timezone : zoneIds) {

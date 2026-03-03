@@ -7,6 +7,10 @@ import com.kompozith.komflow.features.contact.dto.ContactDto;
 import com.kompozith.komflow.features.contact.dto.ContactImportResultDto;
 import com.kompozith.komflow.features.contact.dto.ContactWithTagCountDto;
 import com.kompozith.komflow.features.contact.dto.CreateContactDto;
+import com.kompozith.komflow.features.contact.dto.PublicEventAgendaItemDto;
+import com.kompozith.komflow.features.contact.dto.PublicEventDetailsDto;
+import com.kompozith.komflow.features.contact.dto.PublicEventRegistrationRequestDto;
+import com.kompozith.komflow.features.contact.dto.PublicEventRegistrationResponseDto;
 import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.ContactMapper;
@@ -19,6 +23,7 @@ import com.kompozith.komflow.features.personnel.entity.Person;
 import com.kompozith.komflow.features.personnel.entity.PhoneNumber;
 import com.kompozith.komflow.features.personnel.repository.PersonRepository;
 import com.kompozith.komflow.features.personnel.repository.PhoneNumberRepository;
+import com.kompozith.komflow.features.messaging.entity.EventMode;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -39,13 +44,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,17 +64,23 @@ import java.util.stream.Collectors;
 public class ContactServiceImpl extends BaseService implements ContactService {
 
     private static final List<String> EXPORT_HEADERS = List.of(
+            "Enabled",
+            "Last Message Received At",
+            "Civility",
+            "Profession",
+            "Age Range",
+            "Objectives",
+            "Website URL",
             "First Name",
             "Last Name",
             "Email",
-            "Phone Number",
+            "Phone Numbers",
+            "Is WhatsApp Numbers",
             "Language",
             "Country",
             "City",
             "Timezone",
-            "Enabled",
-            "Tag IDs",
-            "Created At"
+            "Tag IDs"
     );
 
     private final ContactRepository contactRepository;
@@ -120,6 +137,11 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         contact.setEnabled(createContactDto.isEnabled());
         contact.setLastMessageReceivedAt(createContactDto.getLastMessageReceivedAt());
+        contact.setCivility(createContactDto.getCivility());
+        contact.setProfession(createContactDto.getProfession());
+        contact.setAgeRange(createContactDto.getAgeRange());
+        contact.setObjectives(createContactDto.getObjectives());
+        contact.setWebsiteUrl(createContactDto.getWebsiteUrl());
 
         if (createContactDto.getPersonId() != null) {
             Person person = personRepository.findById(createContactDto.getPersonId())
@@ -233,6 +255,89 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         return new ContactImportResultDto(imported, updated, skipped, failed, errors);
     }
 
+    @Override
+    public PublicEventDetailsDto getPublicEventDetails(String slug) {
+        String normalizedSlug = normalizeEventSlug(slug);
+        return buildEventDetails(normalizedSlug);
+    }
+
+    @Override
+    public PublicEventRegistrationResponseDto registerPublicEvent(String slug, PublicEventRegistrationRequestDto request) {
+        String normalizedSlug = normalizeEventSlug(slug);
+        if (request == null || request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("email is required");
+        }
+
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        Person person = personRepository.findByEmail(email).orElse(null);
+        boolean created = false;
+        boolean updated = false;
+
+        if (person == null) {
+            person = new Person();
+            person.setEmail(email);
+            person.setFirstName(trimToNull(request.getFirstName()));
+            person.setLastName(trimToNull(request.getLastName()));
+            person.setLanguage(normalizeLanguage(request.getLanguage()));
+            person.setCountry(trimToNull(request.getCountry()));
+            person.setCity(trimToNull(request.getCity()));
+            person.setTimezone(trimToNull(request.getTimezone()));
+            person.setPhoneNumbers(new ArrayList<>());
+            person = personRepository.save(person);
+            created = true;
+        } else {
+            CreatePersonDto patch = new CreatePersonDto(
+                    email,
+                    trimToNull(request.getFirstName()),
+                    trimToNull(request.getLastName()),
+                    normalizeLanguage(request.getLanguage()),
+                    trimToNull(request.getCountry()),
+                    trimToNull(request.getCity()),
+                    trimToNull(request.getTimezone())
+            );
+            if (applyPersonIdentityUpdates(person, patch)) {
+                person = personRepository.save(person);
+                updated = true;
+            }
+        }
+
+        if (addPhoneIfMissingNoConflict(person, trimToNull(request.getPhoneNumber()), request.getWhatsappNumber())) {
+            person = personRepository.save(person);
+            updated = true;
+        }
+
+        Contact contact = contactRepository.findByPersonId(person.getId()).orElse(null);
+        if (contact == null) {
+            contact = new Contact();
+            contact.setEnabled(true);
+            contact.setPerson(person);
+            created = true;
+        }
+
+        boolean contactChanged = false;
+        contactChanged |= setIfDifferent(contact.getCivility(), trimToNull(request.getCivility()), contact::setCivility);
+        contactChanged |= setIfDifferent(contact.getProfession(), trimToNull(request.getProfession()), contact::setProfession);
+        contactChanged |= setIfDifferent(contact.getAgeRange(), trimToNull(request.getAgeRange()), contact::setAgeRange);
+        contactChanged |= setIfDifferent(contact.getObjectives(), trimToNull(request.getObjectives()), contact::setObjectives);
+        contactChanged |= setIfDifferent(contact.getWebsiteUrl(), trimToNull(request.getWebsiteUrl()), contact::setWebsiteUrl);
+
+        if (contact.getId() == null || contactChanged) {
+            contact = contactRepository.save(contact);
+            if (contact.getId() != null) {
+                updated = true;
+            }
+        }
+
+        String status = created ? "CREATED" : (updated ? "UPDATED" : "UNCHANGED");
+        return new PublicEventRegistrationResponseDto(
+                status,
+                "Registration saved successfully",
+                normalizedSlug,
+                contact.getId(),
+                person.getId()
+        );
+    }
+
     private Person resolvePersonForCreate(CreateContactDto createContactDto) {
         if (createContactDto.getPersonId() != null) {
             if (contactRepository.findByPersonId(createContactDto.getPersonId()).isPresent()) {
@@ -299,19 +404,25 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         for (Contact contact : contacts) {
             List<String> columns = List.of(
+                    String.valueOf(contact.isEnabled()),
+                    contact.getLastMessageReceivedAt() == null ? "" : contact.getLastMessageReceivedAt().toString(),
+                    nullSafe(contact.getCivility()),
+                    nullSafe(contact.getProfession()),
+                    nullSafe(contact.getAgeRange()),
+                    nullSafe(contact.getObjectives()),
+                    nullSafe(contact.getWebsiteUrl()),
                     nullSafe(contact.getPerson().getFirstName()),
                     nullSafe(contact.getPerson().getLastName()),
                     nullSafe(contact.getPerson().getEmail()),
-                    getFirstPhoneNumber(contact),
+                    getPhoneNumbers(contact),
+                    getWhatsappFlags(contact),
                     nullSafe(contact.getPerson().getLanguage()),
                     nullSafe(contact.getPerson().getCountry()),
                     nullSafe(contact.getPerson().getCity()),
                     nullSafe(contact.getPerson().getTimezone()),
-                    String.valueOf(contact.isEnabled()),
                     contact.getTags() == null
                             ? ""
-                            : contact.getTags().stream().map(Tag::getId).sorted().map(String::valueOf).collect(Collectors.joining(";")),
-                    contact.getCreatedAt() == null ? "" : contact.getCreatedAt().toString()
+                            : contact.getTags().stream().map(Tag::getId).sorted().map(String::valueOf).collect(Collectors.joining(";"))
             );
 
             builder.append(columns.stream().map(this::escapeCsv).collect(Collectors.joining(","))).append("\n");
@@ -332,21 +443,27 @@ public class ContactServiceImpl extends BaseService implements ContactService {
             int rowIndex = 1;
             for (Contact contact : contacts) {
                 Row row = sheet.createRow(rowIndex++);
-                row.createCell(0).setCellValue(nullSafe(contact.getPerson().getFirstName()));
-                row.createCell(1).setCellValue(nullSafe(contact.getPerson().getLastName()));
-                row.createCell(2).setCellValue(nullSafe(contact.getPerson().getEmail()));
-                row.createCell(3).setCellValue(getFirstPhoneNumber(contact));
-                row.createCell(4).setCellValue(nullSafe(contact.getPerson().getLanguage()));
-                row.createCell(5).setCellValue(nullSafe(contact.getPerson().getCountry()));
-                row.createCell(6).setCellValue(nullSafe(contact.getPerson().getCity()));
-                row.createCell(7).setCellValue(nullSafe(contact.getPerson().getTimezone()));
-                row.createCell(8).setCellValue(contact.isEnabled());
-                row.createCell(9).setCellValue(
+                row.createCell(0).setCellValue(contact.isEnabled());
+                row.createCell(1).setCellValue(contact.getLastMessageReceivedAt() == null ? "" : contact.getLastMessageReceivedAt().toString());
+                row.createCell(2).setCellValue(nullSafe(contact.getCivility()));
+                row.createCell(3).setCellValue(nullSafe(contact.getProfession()));
+                row.createCell(4).setCellValue(nullSafe(contact.getAgeRange()));
+                row.createCell(5).setCellValue(nullSafe(contact.getObjectives()));
+                row.createCell(6).setCellValue(nullSafe(contact.getWebsiteUrl()));
+                row.createCell(7).setCellValue(nullSafe(contact.getPerson().getFirstName()));
+                row.createCell(8).setCellValue(nullSafe(contact.getPerson().getLastName()));
+                row.createCell(9).setCellValue(nullSafe(contact.getPerson().getEmail()));
+                row.createCell(10).setCellValue(getPhoneNumbers(contact));
+                row.createCell(11).setCellValue(getWhatsappFlags(contact));
+                row.createCell(12).setCellValue(nullSafe(contact.getPerson().getLanguage()));
+                row.createCell(13).setCellValue(nullSafe(contact.getPerson().getCountry()));
+                row.createCell(14).setCellValue(nullSafe(contact.getPerson().getCity()));
+                row.createCell(15).setCellValue(nullSafe(contact.getPerson().getTimezone()));
+                row.createCell(16).setCellValue(
                         contact.getTags() == null
                                 ? ""
                                 : contact.getTags().stream().map(Tag::getId).sorted().map(String::valueOf).collect(Collectors.joining(";"))
                 );
-                row.createCell(10).setCellValue(contact.getCreatedAt() == null ? "" : contact.getCreatedAt().toString());
             }
 
             for (int i = 0; i < EXPORT_HEADERS.size(); i++) {
@@ -364,7 +481,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         return value == null ? "" : value;
     }
 
-    private String getFirstPhoneNumber(Contact contact) {
+    private String getPhoneNumbers(Contact contact) {
         if (contact.getPerson() == null || contact.getPerson().getPhoneNumbers() == null || contact.getPerson().getPhoneNumbers().isEmpty()) {
             return "";
         }
@@ -372,8 +489,18 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         return contact.getPerson().getPhoneNumbers().stream()
                 .map(PhoneNumber::getNumber)
                 .filter(number -> number != null && !number.isBlank())
-                .findFirst()
-                .orElse("");
+                .collect(Collectors.joining(";"));
+    }
+
+    private String getWhatsappFlags(Contact contact) {
+        if (contact.getPerson() == null || contact.getPerson().getPhoneNumbers() == null || contact.getPerson().getPhoneNumbers().isEmpty()) {
+            return "";
+        }
+
+        return contact.getPerson().getPhoneNumbers().stream()
+                .filter(phone -> phone.getNumber() != null && !phone.getNumber().isBlank())
+                .map(phone -> parseBooleanWithDefault(phone.getIsWhatsapp(), false) ? "true" : "false")
+                .collect(Collectors.joining(";"));
     }
 
     private String escapeCsv(String value) {
@@ -404,7 +531,16 @@ public class ContactServiceImpl extends BaseService implements ContactService {
                     continue;
                 }
 
-                List<String> values = parseCsvLine(line);
+                StringBuilder logicalLine = new StringBuilder(line);
+                while (!hasBalancedQuotes(logicalLine.toString())) {
+                    String continuation = reader.readLine();
+                    if (continuation == null) {
+                        break;
+                    }
+                    logicalLine.append("\n").append(continuation);
+                }
+
+                List<String> values = parseCsvLine(logicalLine.toString());
                 rows.add(toRowMap(headers, values));
             }
         }
@@ -495,6 +631,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     }
 
     private CreateContactDto mapRowToCreateContact(Map<String, String> row) {
+        String[] parsedNames = parseFullName(row);
         String email = firstNonBlank(
                 row.get("email"),
                 row.get("emailaddress")
@@ -506,8 +643,8 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         CreatePersonDto person = new CreatePersonDto(
                 email,
-                firstNonBlank(row.get("firstname"), row.get("first_name")),
-                firstNonBlank(row.get("lastname"), row.get("last_name")),
+                firstNonBlank(row.get("firstname"), row.get("first_name"), parsedNames[0]),
+                firstNonBlank(row.get("lastname"), row.get("last_name"), parsedNames[1]),
                 normalizeLanguage(row.get("language")),
                 firstNonBlank(row.get("country"), row.get("countryname")),
                 firstNonBlank(row.get("city"), row.get("town")),
@@ -516,17 +653,19 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         CreateContactDto dto = new CreateContactDto();
         dto.setEnabled(parseBooleanWithDefault(row.get("enabled"), true));
+        dto.setLastMessageReceivedAt(parseInstant(firstNonBlank(
+                row.get("lastmessagereceivedat"),
+                row.get("lastmessageat"),
+                row.get("lastmessagedate"),
+                row.get("datelastmessage")
+        )));
+        dto.setCivility(firstNonBlank(row.get("civility"), row.get("civilite"), row.get("civilit"), row.get("title"), row.get("gender")));
+        dto.setProfession(firstNonBlank(row.get("profession"), row.get("jobtitle"), row.get("job"), row.get("metier")));
+        dto.setAgeRange(firstNonBlank(row.get("agerange"), row.get("age"), row.get("trancheage")));
+        dto.setObjectives(firstNonBlank(row.get("objectives"), row.get("objectif"), row.get("goals"), row.get("goal")));
+        dto.setWebsiteUrl(firstNonBlank(row.get("websiteurl"), row.get("website"), row.get("siteweb"), row.get("urlsite")));
         dto.setPerson(person);
-
-        String phoneValue = firstNonBlank(
-                row.get("phonenumber"),
-                row.get("phone"),
-                row.get("phone_number")
-        );
-
-        if (phoneValue != null && !phoneValue.isBlank()) {
-            dto.setPhoneNumbers(List.of(new CreatePhoneNumberDto(phoneValue, false)));
-        }
+        dto.setPhoneNumbers(parsePhoneNumbers(row));
 
         List<Long> tagIds = parseLongList(firstNonBlank(row.get("tagids"), row.get("tag_ids")));
         if (!tagIds.isEmpty()) {
@@ -534,6 +673,41 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         }
 
         return dto;
+    }
+
+    private List<CreatePhoneNumberDto> parsePhoneNumbers(Map<String, String> row) {
+        String phoneValue = firstNonBlank(
+                row.get("phonenumbers"),
+                row.get("phonenumber"),
+                row.get("phone"),
+                row.get("phone_number")
+        );
+
+        if (phoneValue == null || phoneValue.isBlank()) {
+            return List.of();
+        }
+
+        String whatsappValue = firstNonBlank(
+                row.get("iswhatsappnumbers"),
+                row.get("iswhatsappnumber"),
+                row.get("iswhatsapp"),
+                row.get("whatsapp")
+        );
+
+        String[] numbers = phoneValue.split("[;|]");
+        String[] flags = whatsappValue == null ? new String[0] : whatsappValue.split("[;|]");
+        List<CreatePhoneNumberDto> phoneNumbers = new ArrayList<>();
+
+        for (int i = 0; i < numbers.length; i++) {
+            String number = numbers[i] == null ? "" : numbers[i].trim();
+            if (number.isEmpty()) {
+                continue;
+            }
+            Boolean isWhatsapp = i < flags.length ? parseNullableBoolean(flags[i]) : null;
+            phoneNumbers.add(new CreatePhoneNumberDto(number, isWhatsapp != null ? isWhatsapp : false));
+        }
+
+        return phoneNumbers;
     }
 
     private List<Long> parseLongList(String value) {
@@ -576,12 +750,89 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         return defaultValue;
     }
 
+    private Boolean parseNullableBoolean(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        if ("true".equals(normalized) || "1".equals(normalized) || "yes".equals(normalized) || "y".equals(normalized) || "oui".equals(normalized) || "o".equals(normalized)) {
+            return true;
+        }
+
+        if ("false".equals(normalized) || "0".equals(normalized) || "no".equals(normalized) || "n".equals(normalized) || "non".equals(normalized)) {
+            return false;
+        }
+
+        return null;
+    }
+
+    private Instant parseInstant(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String candidate = value.trim();
+        try {
+            return Instant.parse(candidate);
+        } catch (DateTimeParseException ignored) {
+            // Try non-ISO formats below.
+        }
+
+        List<DateTimeFormatter> patterns = List.of(
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+        );
+
+        for (DateTimeFormatter formatter : patterns) {
+            try {
+                LocalDateTime dateTime = LocalDateTime.parse(candidate, formatter);
+                return dateTime.toInstant(ZoneOffset.UTC);
+            } catch (DateTimeParseException ignored) {
+                // Try next pattern.
+            }
+        }
+
+        return null;
+    }
+
+    private String[] parseFullName(Map<String, String> row) {
+        String fullName = firstNonBlank(row.get("fullname"), row.get("name"), row.get("nomcomplet"));
+        if (fullName == null || fullName.isBlank()) {
+            return new String[] { null, null };
+        }
+
+        String[] chunks = fullName.trim().split("\\s+");
+        if (chunks.length == 1) {
+            return new String[] { chunks[0], null };
+        }
+
+        return new String[] { chunks[0], String.join(" ", java.util.Arrays.copyOfRange(chunks, 1, chunks.length)) };
+    }
+
     private String normalizeHeader(String header) {
         if (header == null) {
             return "";
         }
 
         return header.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    private boolean hasBalancedQuotes(String value) {
+        boolean inQuotes = false;
+        for (int i = 0; i < value.length(); i++) {
+            char current = value.charAt(i);
+            if (current == '"') {
+                if (inQuotes && i + 1 < value.length() && value.charAt(i + 1) == '"') {
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            }
+        }
+        return !inQuotes;
     }
 
     private String firstNonBlank(String... values) {
@@ -782,6 +1033,36 @@ public class ContactServiceImpl extends BaseService implements ContactService {
             changed = true;
         }
 
+        if (dto.getLastMessageReceivedAt() != null && !dto.getLastMessageReceivedAt().equals(contact.getLastMessageReceivedAt())) {
+            contact.setLastMessageReceivedAt(dto.getLastMessageReceivedAt());
+            changed = true;
+        }
+
+        if (dto.getCivility() != null && !dto.getCivility().isBlank() && !dto.getCivility().equals(contact.getCivility())) {
+            contact.setCivility(dto.getCivility());
+            changed = true;
+        }
+
+        if (dto.getProfession() != null && !dto.getProfession().isBlank() && !dto.getProfession().equals(contact.getProfession())) {
+            contact.setProfession(dto.getProfession());
+            changed = true;
+        }
+
+        if (dto.getAgeRange() != null && !dto.getAgeRange().isBlank() && !dto.getAgeRange().equals(contact.getAgeRange())) {
+            contact.setAgeRange(dto.getAgeRange());
+            changed = true;
+        }
+
+        if (dto.getObjectives() != null && !dto.getObjectives().isBlank() && !dto.getObjectives().equals(contact.getObjectives())) {
+            contact.setObjectives(dto.getObjectives());
+            changed = true;
+        }
+
+        if (dto.getWebsiteUrl() != null && !dto.getWebsiteUrl().isBlank() && !dto.getWebsiteUrl().equals(contact.getWebsiteUrl())) {
+            contact.setWebsiteUrl(dto.getWebsiteUrl());
+            changed = true;
+        }
+
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
             Set<Tag> existingTags = contact.getTags() == null ? new HashSet<>() : new HashSet<>(contact.getTags());
             Set<Tag> importedTags = new HashSet<>(tagRepository.findAllById(dto.getTagIds()));
@@ -798,6 +1079,81 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         }
 
         return changed;
+    }
+
+    private String normalizeEventSlug(String slug) {
+        if (slug == null || slug.isBlank()) {
+            return "komflow-growth-summit-2026";
+        }
+        return slug.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private PublicEventDetailsDto buildEventDetails(String slug) {
+        return new PublicEventDetailsDto(
+                slug,
+                "Komflow Growth Summit 2026",
+                "Design, Automation and Growth in One Day",
+                "A premium event for founders, marketers and product teams to build modern growth systems with automation, brand design and AI-assisted execution.",
+                EventMode.ONSITE,
+                Instant.parse("2026-06-20T09:00:00Z"),
+                Instant.parse("2026-06-20T18:00:00Z"),
+                "Sawa Convention Center, Douala, Cameroon",
+                "Boulevard de la Liberte, Akwa, Douala",
+                null,
+                List.of(
+                        "Live sessions with high-impact builders",
+                        "Hands-on workshops for marketing automation",
+                        "Networking with decision-makers and creators",
+                        "Templates and playbooks shared after the event"
+                ),
+                List.of(
+                        new PublicEventAgendaItemDto("09:00", "Check-in & Welcome Coffee", "Komflow Team", "Arrival, badge collection and networking."),
+                        new PublicEventAgendaItemDto("10:00", "Opening Keynote: Growth Systems", "Gilles Cheeta", "How modern teams structure growth without chaos."),
+                        new PublicEventAgendaItemDto("12:00", "Design That Converts", "Invited Product Designer", "Practical UI/UX decisions that increase conversion."),
+                        new PublicEventAgendaItemDto("14:00", "Automation Workshop", "Komflow Experts", "Build your first event-to-CRM pipeline live."),
+                        new PublicEventAgendaItemDto("17:00", "Closing Panel", "Guest Speakers", "Execution strategies for the next 90 days.")
+                )
+        );
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private boolean addPhoneIfMissingNoConflict(Person person, String phone, Boolean whatsappNumber) {
+        if (phone == null || phone.isBlank()) {
+            return false;
+        }
+
+        PhoneNumber existingPhone = phoneNumberRepository.findByNumber(phone).orElse(null);
+        if (existingPhone != null) {
+            return false;
+        }
+
+        List<PhoneNumber> phoneNumbers = person.getPhoneNumbers();
+        if (phoneNumbers == null) {
+            phoneNumbers = new ArrayList<>();
+            person.setPhoneNumbers(phoneNumbers);
+        }
+
+        PhoneNumber phoneNumber = new PhoneNumber();
+        phoneNumber.setNumber(phone);
+        phoneNumber.setIsWhatsapp(Boolean.TRUE.equals(whatsappNumber) ? "true" : "false");
+        phoneNumber.setPerson(person);
+        phoneNumbers.add(phoneNumber);
+        return true;
+    }
+
+    private <T> boolean setIfDifferent(T current, T incoming, Consumer<T> setter) {
+        if (!Objects.equals(current, incoming)) {
+            setter.accept(incoming);
+            return true;
+        }
+        return false;
     }
 
     private enum ImportHandlingResult {

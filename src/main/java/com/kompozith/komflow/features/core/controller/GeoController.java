@@ -32,4 +32,10 @@ public class GeoController {
     public List<GeoCityDto> listCitiesByCountry(@PathVariable String countryCode) {
         return geoService.getCitiesByCountry(countryCode);
     }
+
+    @GetMapping("/country-by-timezone")
+    @Operation(summary = "Get country by timezone")
+    public GeoCountryDto getCountryByTimezone(@org.springframework.web.bind.annotation.RequestParam String timezone) {
+        return geoService.getCountryByTimezone(timezone);
+    }
 }

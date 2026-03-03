@@ -19,6 +19,16 @@ public class CreateContactDto {
 
     private Instant lastMessageReceivedAt;
 
+    private String civility;
+
+    private String profession;
+
+    private String ageRange;
+
+    private String objectives;
+
+    private String websiteUrl;
+
     // Use existing person
     private Long personId;
 

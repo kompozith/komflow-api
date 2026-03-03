@@ -22,6 +22,16 @@ public class ContactDto {
 
     private Instant lastMessageReceivedAt;
 
+    private String civility;
+
+    private String profession;
+
+    private String ageRange;
+
+    private String objectives;
+
+    private String websiteUrl;
+
     private PersonDto person;
 
     private Integer tagCount;

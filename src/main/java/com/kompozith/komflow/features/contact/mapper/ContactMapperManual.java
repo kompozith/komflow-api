@@ -28,6 +28,11 @@ public class ContactMapperManual implements ContactMapper {
         contact.setId(contactDto.getId());
         contact.setEnabled(contactDto.isEnabled());
         contact.setLastMessageReceivedAt(contactDto.getLastMessageReceivedAt());
+        contact.setCivility(contactDto.getCivility());
+        contact.setProfession(contactDto.getProfession());
+        contact.setAgeRange(contactDto.getAgeRange());
+        contact.setObjectives(contactDto.getObjectives());
+        contact.setWebsiteUrl(contactDto.getWebsiteUrl());
         return contact;
     }
 
@@ -39,6 +44,11 @@ public class ContactMapperManual implements ContactMapper {
         Contact contact = new Contact();
         contact.setEnabled(createContactDto.isEnabled());
         contact.setLastMessageReceivedAt(createContactDto.getLastMessageReceivedAt());
+        contact.setCivility(createContactDto.getCivility());
+        contact.setProfession(createContactDto.getProfession());
+        contact.setAgeRange(createContactDto.getAgeRange());
+        contact.setObjectives(createContactDto.getObjectives());
+        contact.setWebsiteUrl(createContactDto.getWebsiteUrl());
         return contact;
     }
 
@@ -51,6 +61,11 @@ public class ContactMapperManual implements ContactMapper {
         dto.setId(contact.getId());
         dto.setEnabled(contact.isEnabled());
         dto.setLastMessageReceivedAt(contact.getLastMessageReceivedAt());
+        dto.setCivility(contact.getCivility());
+        dto.setProfession(contact.getProfession());
+        dto.setAgeRange(contact.getAgeRange());
+        dto.setObjectives(contact.getObjectives());
+        dto.setWebsiteUrl(contact.getWebsiteUrl());
         dto.setPerson(personToPersonDto(contact.getPerson()));
         dto.setTagCount(contact.getTags() != null ? contact.getTags().size() : 0);
         dto.setCreatedAt(contact.getCreatedAt());
@@ -67,6 +82,11 @@ public class ContactMapperManual implements ContactMapper {
         dto.setId(contact.getId());
         dto.setEnabled(contact.isEnabled());
         dto.setLastMessageReceivedAt(contact.getLastMessageReceivedAt());
+        dto.setCivility(contact.getCivility());
+        dto.setProfession(contact.getProfession());
+        dto.setAgeRange(contact.getAgeRange());
+        dto.setObjectives(contact.getObjectives());
+        dto.setWebsiteUrl(contact.getWebsiteUrl());
         dto.setPerson(personToPersonDto(contact.getPerson()));
         dto.setTags(mapTags(contact.getTags()));
         dto.setCreatedAt(contact.getCreatedAt());

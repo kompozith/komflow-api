@@ -8,4 +8,5 @@ import java.util.List;
 public interface GeoService {
     List<GeoCountryDto> getCountries();
     List<GeoCityDto> getCitiesByCountry(String countryCode);
+    GeoCountryDto getCountryByTimezone(String timezone);
 }

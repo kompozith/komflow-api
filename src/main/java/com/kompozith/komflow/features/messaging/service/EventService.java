@@ -13,6 +13,7 @@ public interface EventService {
     List<EventDto> findFuture(Instant from);
     List<EventDto> findCalendarRange(Instant start, Instant end);
     EventDto findById(Long id);
+    EventDto findBySlug(String slug);
     EventDto update(Long id, CreateEventDto createEventDto);
     void delete(Long id);
     Event findEntityById(Long id);

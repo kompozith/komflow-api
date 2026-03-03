@@ -17,4 +17,6 @@ public interface ContactService {
     void delete(Long id);
     byte[] exportContacts(String format, String search, Boolean enabled, Instant createdAtFrom, Instant createdAtTo, String tagIds);
     ContactImportResultDto importContacts(MultipartFile file);
+    PublicEventDetailsDto getPublicEventDetails(String slug);
+    PublicEventRegistrationResponseDto registerPublicEvent(String slug, PublicEventRegistrationRequestDto request);
 }

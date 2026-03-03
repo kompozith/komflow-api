@@ -9,10 +9,22 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface EventMapper {
 
+    @Mapping(target = "highlights", ignore = true)
+    @Mapping(target = "agenda", ignore = true)
+    @Mapping(target = "eventDate", ignore = true)
+    @Mapping(target = "startDate", ignore = true)
+    @Mapping(target = "startTime", ignore = true)
+    @Mapping(target = "endDate", ignore = true)
+    @Mapping(target = "endTime", ignore = true)
     EventDto eventToEventDto(Event event);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "highlights", ignore = true)
+    @Mapping(target = "agenda", ignore = true)
+    @Mapping(target = "startAt", ignore = true)
+    @Mapping(target = "endAt", ignore = true)
+    @Mapping(target = "slug", ignore = true)
     Event createEventDtoToEvent(CreateEventDto createEventDto);
 }

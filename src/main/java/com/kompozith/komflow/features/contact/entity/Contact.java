@@ -25,6 +25,17 @@ public class Contact extends BaseEntity {
 
     private Instant lastMessageReceivedAt;
 
+    private String civility;
+
+    private String profession;
+
+    private String ageRange;
+
+    @Column(columnDefinition = "TEXT")
+    private String objectives;
+
+    private String websiteUrl;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "prs_person_id", nullable = false)
     private Person person;

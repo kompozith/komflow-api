@@ -24,11 +24,33 @@ public class Event extends BaseEntity {
     @Column(nullable = false, length = 200)
     private String title;
 
+    @Column(length = 220)
+    private String slug;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(length = 255)
     private String location;
+
+    @Column(length = 255)
+    private String subtitle;
+
+    @Column(length = 255)
+    private String address;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_mode", nullable = true, length = 20)
+    private EventMode mode;
+
+    @Column(length = 1024)
+    private String meetingUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String highlights;
+
+    @Column(columnDefinition = "TEXT")
+    private String agenda;
 
     @Column(nullable = false)
     private Instant startAt;
@@ -37,7 +59,4 @@ public class Event extends BaseEntity {
 
     @Column(length = 100)
     private String timezone;
-
-    @Column(nullable = false)
-    private Boolean allDay = false;
 }
