@@ -80,6 +80,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/**",
                                 "/public/**",
+                                "/geo/**",
                                 "/files/*/download",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
