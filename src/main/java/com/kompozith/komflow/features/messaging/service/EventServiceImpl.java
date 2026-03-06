@@ -32,6 +32,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
     private final ObjectMapper objectMapper;
+    private final EventRichTextSanitizerService eventRichTextSanitizerService;
 
     @Override
     @Transactional
@@ -40,7 +41,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventMapper.createEventDtoToEvent(createEventDto);
         event.setTitle(createEventDto.getTitle().trim());
         event.setSlug(generateUniqueSlug(event.getTitle(), null));
-        event.setDescription(trimToNull(createEventDto.getDescription()));
+        event.setDescription(sanitizeRichTextToNull(createEventDto.getDescription()));
         event.setLocation(trimToNull(createEventDto.getLocation()));
         event.setSubtitle(trimToNull(createEventDto.getSubtitle()));
         event.setAddress(trimToNull(createEventDto.getAddress()));
@@ -117,7 +118,7 @@ public class EventServiceImpl implements EventService {
         String normalizedTitle = createEventDto.getTitle().trim();
         event.setTitle(normalizedTitle);
         event.setSlug(generateUniqueSlug(normalizedTitle, event.getId()));
-        event.setDescription(trimToNull(createEventDto.getDescription()));
+        event.setDescription(sanitizeRichTextToNull(createEventDto.getDescription()));
         event.setLocation(trimToNull(createEventDto.getLocation()));
         event.setSubtitle(trimToNull(createEventDto.getSubtitle()));
         event.setAddress(trimToNull(createEventDto.getAddress()));
@@ -306,6 +307,11 @@ public class EventServiceImpl implements EventService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    private String sanitizeRichTextToNull(String value) {
+        String sanitized = eventRichTextSanitizerService.sanitizeHtml(value);
+        return sanitized.isBlank() ? null : sanitized;
+    }
+
     private String serializeHighlights(List<String> highlights) {
         if (highlights == null) {
             return null;
@@ -411,7 +417,7 @@ public class EventServiceImpl implements EventService {
         String time = trimToNull(item.getTime());
         String title = trimToNull(item.getTitle());
         String speaker = trimToNull(item.getSpeaker());
-        String description = trimToNull(item.getDescription());
+        String description = sanitizeRichTextToNull(item.getDescription());
 
         if (time == null && title == null && speaker == null && description == null) {
             return null;
