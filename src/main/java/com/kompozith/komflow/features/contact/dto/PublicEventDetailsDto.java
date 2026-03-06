@@ -24,4 +24,5 @@ public class PublicEventDetailsDto {
     private String meetingUrl;
     private List<String> highlights;
     private List<PublicEventAgendaItemDto> agenda;
+    private PublicEventScheduleDto schedule;
 }

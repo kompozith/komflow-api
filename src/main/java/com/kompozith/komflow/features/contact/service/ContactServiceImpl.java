@@ -9,6 +9,7 @@ import com.kompozith.komflow.features.contact.dto.ContactWithTagCountDto;
 import com.kompozith.komflow.features.contact.dto.CreateContactDto;
 import com.kompozith.komflow.features.contact.dto.PublicEventAgendaItemDto;
 import com.kompozith.komflow.features.contact.dto.PublicEventDetailsDto;
+import com.kompozith.komflow.features.contact.dto.PublicEventRequestMetadataDto;
 import com.kompozith.komflow.features.contact.dto.PublicEventRegistrationRequestDto;
 import com.kompozith.komflow.features.contact.dto.PublicEventRegistrationResponseDto;
 import com.kompozith.komflow.features.contact.entity.Contact;
@@ -16,7 +17,10 @@ import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.mapper.ContactMapper;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
+import com.kompozith.komflow.features.core.dto.GeoCityDto;
+import com.kompozith.komflow.features.core.dto.GeoCountryDto;
 import com.kompozith.komflow.features.core.service.BaseService;
+import com.kompozith.komflow.features.core.service.GeoService;
 import com.kompozith.komflow.features.personnel.dto.CreatePersonDto;
 import com.kompozith.komflow.features.personnel.dto.CreatePhoneNumberDto;
 import com.kompozith.komflow.features.personnel.entity.Person;
@@ -89,6 +93,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     private final TagRepository tagRepository;
     private final PhoneNumberRepository phoneNumberRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final GeoService geoService;
 
     @Override
     public ContactDto create(CreateContactDto createContactDto) {
@@ -262,13 +267,14 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     }
 
     @Override
-    public PublicEventRegistrationResponseDto registerPublicEvent(String slug, PublicEventRegistrationRequestDto request) {
+    public PublicEventRegistrationResponseDto registerPublicEvent(String slug, PublicEventRegistrationRequestDto request, PublicEventRequestMetadataDto metadata) {
         String normalizedSlug = normalizeEventSlug(slug);
         if (request == null || request.getEmail() == null || request.getEmail().isBlank()) {
             throw new IllegalArgumentException("email is required");
         }
+        PublicEventRegistrationRequestDto enrichedRequest = enrichFromMetadata(request, metadata);
 
-        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String email = enrichedRequest.getEmail().trim().toLowerCase(Locale.ROOT);
         Person person = personRepository.findByEmail(email).orElse(null);
         boolean created = false;
         boolean updated = false;
@@ -276,24 +282,24 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         if (person == null) {
             person = new Person();
             person.setEmail(email);
-            person.setFirstName(trimToNull(request.getFirstName()));
-            person.setLastName(trimToNull(request.getLastName()));
-            person.setLanguage(normalizeLanguage(request.getLanguage()));
-            person.setCountry(trimToNull(request.getCountry()));
-            person.setCity(trimToNull(request.getCity()));
-            person.setTimezone(trimToNull(request.getTimezone()));
+            person.setFirstName(trimToNull(enrichedRequest.getFirstName()));
+            person.setLastName(trimToNull(enrichedRequest.getLastName()));
+            person.setLanguage(normalizeLanguage(enrichedRequest.getLanguage()));
+            person.setCountry(trimToNull(enrichedRequest.getCountry()));
+            person.setCity(trimToNull(enrichedRequest.getCity()));
+            person.setTimezone(trimToNull(enrichedRequest.getTimezone()));
             person.setPhoneNumbers(new ArrayList<>());
             person = personRepository.save(person);
             created = true;
         } else {
             CreatePersonDto patch = new CreatePersonDto(
                     email,
-                    trimToNull(request.getFirstName()),
-                    trimToNull(request.getLastName()),
-                    normalizeLanguage(request.getLanguage()),
-                    trimToNull(request.getCountry()),
-                    trimToNull(request.getCity()),
-                    trimToNull(request.getTimezone())
+                    trimToNull(enrichedRequest.getFirstName()),
+                    trimToNull(enrichedRequest.getLastName()),
+                    normalizeLanguage(enrichedRequest.getLanguage()),
+                    trimToNull(enrichedRequest.getCountry()),
+                    trimToNull(enrichedRequest.getCity()),
+                    trimToNull(enrichedRequest.getTimezone())
             );
             if (applyPersonIdentityUpdates(person, patch)) {
                 person = personRepository.save(person);
@@ -301,7 +307,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
             }
         }
 
-        if (addPhoneIfMissingNoConflict(person, trimToNull(request.getPhoneNumber()), request.getWhatsappNumber())) {
+        if (addPhoneIfMissingNoConflict(person, trimToNull(enrichedRequest.getPhoneNumber()), enrichedRequest.getWhatsappNumber())) {
             person = personRepository.save(person);
             updated = true;
         }
@@ -315,11 +321,11 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         }
 
         boolean contactChanged = false;
-        contactChanged |= setIfDifferent(contact.getCivility(), trimToNull(request.getCivility()), contact::setCivility);
-        contactChanged |= setIfDifferent(contact.getProfession(), trimToNull(request.getProfession()), contact::setProfession);
-        contactChanged |= setIfDifferent(contact.getAgeRange(), trimToNull(request.getAgeRange()), contact::setAgeRange);
-        contactChanged |= setIfDifferent(contact.getObjectives(), trimToNull(request.getObjectives()), contact::setObjectives);
-        contactChanged |= setIfDifferent(contact.getWebsiteUrl(), trimToNull(request.getWebsiteUrl()), contact::setWebsiteUrl);
+        contactChanged |= setIfDifferent(contact.getCivility(), trimToNull(enrichedRequest.getCivility()), contact::setCivility);
+        contactChanged |= setIfDifferent(contact.getProfession(), trimToNull(enrichedRequest.getProfession()), contact::setProfession);
+        contactChanged |= setIfDifferent(contact.getAgeRange(), trimToNull(enrichedRequest.getAgeRange()), contact::setAgeRange);
+        contactChanged |= setIfDifferent(contact.getObjectives(), trimToNull(enrichedRequest.getObjectives()), contact::setObjectives);
+        contactChanged |= setIfDifferent(contact.getWebsiteUrl(), trimToNull(enrichedRequest.getWebsiteUrl()), contact::setWebsiteUrl);
 
         if (contact.getId() == null || contactChanged) {
             contact = contactRepository.save(contact);
@@ -336,6 +342,51 @@ public class ContactServiceImpl extends BaseService implements ContactService {
                 contact.getId(),
                 person.getId()
         );
+    }
+
+    private PublicEventRegistrationRequestDto enrichFromMetadata(PublicEventRegistrationRequestDto request, PublicEventRequestMetadataDto metadata) {
+        PublicEventRegistrationRequestDto enriched = new PublicEventRegistrationRequestDto();
+        enriched.setEmail(request.getEmail());
+        enriched.setFirstName(request.getFirstName());
+        enriched.setLastName(request.getLastName());
+        enriched.setPhoneNumber(request.getPhoneNumber());
+        enriched.setWhatsappNumber(request.getWhatsappNumber());
+        enriched.setCivility(request.getCivility());
+        enriched.setProfession(request.getProfession());
+        enriched.setAgeRange(request.getAgeRange());
+        enriched.setObjectives(request.getObjectives());
+        enriched.setWebsiteUrl(request.getWebsiteUrl());
+
+        String metadataLanguage = metadata == null ? null : metadata.getLanguage();
+        String metadataTimezone = metadata == null ? null : metadata.getTimezone();
+        String metadataCountry = metadata == null ? null : metadata.getCountry();
+        String metadataCity = metadata == null ? null : metadata.getCity();
+
+        String effectiveLanguage = firstNonBlank(request.getLanguage(), metadataLanguage);
+        String effectiveTimezone = firstNonBlank(request.getTimezone(), metadataTimezone);
+        String effectiveCountry = normalizeCountryCode(firstNonBlank(request.getCountry(), metadataCountry));
+        String effectiveCity = firstNonBlank(request.getCity(), metadataCity);
+
+        if (effectiveTimezone != null) {
+            if (effectiveCountry == null) {
+                GeoCountryDto countryByTimezone = geoService.getCountryByTimezone(effectiveTimezone);
+                effectiveCountry = countryByTimezone == null ? null : normalizeCountryCode(countryByTimezone.getCode());
+            }
+
+            if (effectiveCity == null && effectiveCountry != null) {
+                GeoCityDto cityByTimezone = geoService.getCitiesByCountry(effectiveCountry).stream()
+                        .filter(city -> effectiveTimezone.equals(city.getTimezone()))
+                        .findFirst()
+                        .orElse(null);
+                effectiveCity = cityByTimezone == null ? null : trimToNull(cityByTimezone.getName());
+            }
+        }
+
+        enriched.setLanguage(normalizeLanguage(effectiveLanguage));
+        enriched.setTimezone(trimToNull(effectiveTimezone));
+        enriched.setCountry(effectiveCountry);
+        enriched.setCity(trimToNull(effectiveCity));
+        return enriched;
     }
 
     private Person resolvePersonForCreate(CreateContactDto createContactDto) {
@@ -1112,7 +1163,8 @@ public class ContactServiceImpl extends BaseService implements ContactService {
                         new PublicEventAgendaItemDto("12:00", "Design That Converts", "Invited Product Designer", "Practical UI/UX decisions that increase conversion."),
                         new PublicEventAgendaItemDto("14:00", "Automation Workshop", "Komflow Experts", "Build your first event-to-CRM pipeline live."),
                         new PublicEventAgendaItemDto("17:00", "Closing Panel", "Guest Speakers", "Execution strategies for the next 90 days.")
-                )
+                ),
+                null
         );
     }
 
@@ -1122,6 +1174,14 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeCountryCode(String value) {
+        String normalized = trimToNull(value);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.toUpperCase(Locale.ROOT);
     }
 
     private boolean addPhoneIfMissingNoConflict(Person person, String phone, Boolean whatsappNumber) {
