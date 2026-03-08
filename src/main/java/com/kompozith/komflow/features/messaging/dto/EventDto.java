@@ -23,6 +23,7 @@ public class EventDto {
     private String address;
     private EventMode mode;
     private String meetingUrl;
+    private String bannerImageUrl;
     private List<String> highlights;
     private List<EventAgendaItemDto> agenda;
     private LocalDate eventDate;

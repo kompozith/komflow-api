@@ -1151,6 +1151,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
                 "Sawa Convention Center, Douala, Cameroon",
                 "Boulevard de la Liberte, Akwa, Douala",
                 null,
+                null,
                 List.of(
                         "Live sessions with high-impact builders",
                         "Hands-on workshops for marketing automation",

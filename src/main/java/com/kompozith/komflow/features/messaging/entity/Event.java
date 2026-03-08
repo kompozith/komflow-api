@@ -46,6 +46,9 @@ public class Event extends BaseEntity {
     @Column(length = 1024)
     private String meetingUrl;
 
+    @Column(length = 2048)
+    private String bannerImageUrl;
+
     @Column(columnDefinition = "TEXT")
     private String highlights;
 

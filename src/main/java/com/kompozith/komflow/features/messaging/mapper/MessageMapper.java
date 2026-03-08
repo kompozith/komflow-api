@@ -103,6 +103,7 @@ public interface MessageMapper {
                 event.getAddress(),
                 event.getMode(),
                 event.getMeetingUrl(),
+                event.getBannerImageUrl(),
                 List.of(),
                 List.of(),
                 startDate,

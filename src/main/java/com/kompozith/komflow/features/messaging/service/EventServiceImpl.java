@@ -48,6 +48,7 @@ public class EventServiceImpl implements EventService {
         EventMode mode = resolveMode(createEventDto.getMode());
         event.setMode(mode);
         event.setMeetingUrl(mode == EventMode.ONLINE ? trimToNull(createEventDto.getMeetingUrl()) : null);
+        event.setBannerImageUrl(trimToNull(createEventDto.getBannerImageUrl()));
         event.setHighlights(serializeHighlights(createEventDto.getHighlights()));
         event.setAgenda(serializeAgenda(createEventDto.getAgenda()));
         applyDateTimePayload(event, createEventDto);
@@ -125,6 +126,7 @@ public class EventServiceImpl implements EventService {
         EventMode mode = resolveMode(createEventDto.getMode());
         event.setMode(mode);
         event.setMeetingUrl(mode == EventMode.ONLINE ? trimToNull(createEventDto.getMeetingUrl()) : null);
+        event.setBannerImageUrl(trimToNull(createEventDto.getBannerImageUrl()));
         event.setHighlights(serializeHighlights(createEventDto.getHighlights()));
         event.setAgenda(serializeAgenda(createEventDto.getAgenda()));
         applyDateTimePayload(event, createEventDto);

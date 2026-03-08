@@ -22,6 +22,7 @@ public class PublicEventDetailsDto {
     private String location;
     private String address;
     private String meetingUrl;
+    private String bannerImageUrl;
     private List<String> highlights;
     private List<PublicEventAgendaItemDto> agenda;
     private PublicEventScheduleDto schedule;

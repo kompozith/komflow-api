@@ -48,6 +48,7 @@ public class PublicEventController {
                 event.getLocation(),
                 event.getAddress(),
                 event.getMeetingUrl(),
+                event.getBannerImageUrl(),
                 event.getHighlights() != null ? event.getHighlights() : List.of(),
                 event.getAgenda() != null
                         ? event.getAgenda().stream()
