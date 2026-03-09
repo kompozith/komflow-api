@@ -1,6 +1,7 @@
 package com.kompozith.komflow.features.messaging.service;
 
 import com.kompozith.komflow.exception.ObjectNotFoundException;
+import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
 import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class CampaignServiceImpl implements CampaignService {
+    private static final String EVENT_REGISTRATION_TAG_PREFIX = "EVENT-REG-";
 
     private final CampaignRepository campaignRepository;
     private final CampaignMapper campaignMapper;
@@ -107,7 +109,9 @@ public class CampaignServiceImpl implements CampaignService {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), id));
 
-        return campaignMapper.campaignToCampaignDetailsDto(campaign);
+        CampaignDetailsDto detailsDto = campaignMapper.campaignToCampaignDetailsDto(campaign);
+        appendEventRegistrationTagForDisplay(campaign, detailsDto);
+        return detailsDto;
     }
 
     @Override
@@ -294,5 +298,39 @@ public class CampaignServiceImpl implements CampaignService {
         }
 
         return new CampaignEditabilityDto(false, status, "Only DRAFT or future SCHEDULED campaigns are editable");
+    }
+
+    private void appendEventRegistrationTagForDisplay(Campaign campaign, CampaignDetailsDto detailsDto) {
+        if (campaign == null || detailsDto == null || campaign.getMessage() == null || campaign.getMessage().getEvent() == null
+                || campaign.getMessage().getEvent().getId() == null) {
+            return;
+        }
+
+        String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getEvent().getId();
+        Tag eventTag = tagRepository.findByName(eventTagName).orElse(null);
+        if (eventTag == null) {
+            return;
+        }
+
+        List<TagWithContactCountDto> currentTags = detailsDto.getTags() == null
+                ? new java.util.ArrayList<>()
+                : new java.util.ArrayList<>(detailsDto.getTags());
+        boolean alreadyPresent = currentTags.stream()
+                .anyMatch(tag -> tag != null && tag.getId() != null && tag.getId().equals(eventTag.getId()));
+        if (alreadyPresent) {
+            return;
+        }
+
+        TagWithContactCountDto eventTagDto = new TagWithContactCountDto();
+        eventTagDto.setId(eventTag.getId());
+        eventTagDto.setName(eventTag.getName());
+        eventTagDto.setDescription(eventTag.getDescription());
+        eventTagDto.setColorCode(eventTag.getColorCode());
+        eventTagDto.setEnabled(eventTag.isEnabled());
+        eventTagDto.setCreatedAt(eventTag.getCreatedAt());
+        eventTagDto.setUpdatedAt(eventTag.getUpdatedAt());
+        eventTagDto.setContactCount(eventTag.getContacts() != null ? (long) eventTag.getContacts().size() : 0L);
+        currentTags.add(eventTagDto);
+        detailsDto.setTags(currentTags);
     }
 }

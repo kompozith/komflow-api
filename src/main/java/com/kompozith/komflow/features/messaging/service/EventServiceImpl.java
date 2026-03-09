@@ -1,8 +1,12 @@
 package com.kompozith.komflow.features.messaging.service;
 
+import com.kompozith.komflow.features.contact.entity.Contact;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
+import com.kompozith.komflow.features.contact.entity.Tag;
+import com.kompozith.komflow.features.contact.repository.ContactRepository;
+import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.messaging.dto.CreateEventDto;
 import com.kompozith.komflow.features.messaging.dto.EventAgendaItemDto;
 import com.kompozith.komflow.features.messaging.dto.EventDto;
@@ -10,6 +14,7 @@ import com.kompozith.komflow.features.messaging.entity.Event;
 import com.kompozith.komflow.features.messaging.entity.EventMode;
 import com.kompozith.komflow.features.messaging.mapper.EventMapper;
 import com.kompozith.komflow.features.messaging.repository.EventRepository;
+import com.kompozith.komflow.features.messaging.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +33,12 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
     private static final ZoneId DEFAULT_EVENT_ZONE = ZoneId.of("GMT");
+    private static final String EVENT_REGISTRATION_TAG_PREFIX = "EVENT-REG-";
 
     private final EventRepository eventRepository;
+    private final TagRepository tagRepository;
+    private final ContactRepository contactRepository;
+    private final MessageRepository messageRepository;
     private final EventMapper eventMapper;
     private final ObjectMapper objectMapper;
     private final EventRichTextSanitizerService eventRichTextSanitizerService;
@@ -53,6 +62,7 @@ public class EventServiceImpl implements EventService {
         event.setAgenda(serializeAgenda(createEventDto.getAgenda()));
         applyDateTimePayload(event, createEventDto);
         Event saved = eventRepository.save(event);
+        ensureEventRegistrationTag(saved);
         return toEventDto(saved);
     }
 
@@ -132,16 +142,20 @@ public class EventServiceImpl implements EventService {
         applyDateTimePayload(event, createEventDto);
 
         Event saved = eventRepository.save(event);
+        ensureEventRegistrationTag(saved);
         return toEventDto(saved);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!eventRepository.existsById(id)) {
-            throw new ObjectNotFoundException(Event.class.getSimpleName(), id);
-        }
-        eventRepository.deleteById(id);
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException(Event.class.getSimpleName(), id));
+
+        // Prevent FK violations and keep messages reusable after event deletion.
+        messageRepository.detachEventReferences(id);
+        deleteEventRegistrationTags(id);
+        eventRepository.delete(event);
     }
 
     @Override
@@ -431,5 +445,43 @@ public class EventServiceImpl implements EventService {
                 speaker != null ? speaker : "",
                 description != null ? description : ""
         );
+    }
+
+    private void ensureEventRegistrationTag(Event event) {
+        if (event == null || event.getId() == null) {
+            return;
+        }
+
+        String tagName = "EVENT-REG-" + event.getId();
+        tagRepository.findByName(tagName).orElseGet(() -> {
+            Tag tag = new Tag();
+            tag.setName(tagName);
+            tag.setColorCode("#2563EB");
+            tag.setDescription("Contacts inscrits via le lien public de l evenement " + event.getId());
+            tag.setEnabled(true);
+            return tagRepository.save(tag);
+        });
+    }
+
+    private void deleteEventRegistrationTags(Long eventId) {
+        String prefix = EVENT_REGISTRATION_TAG_PREFIX + eventId;
+        List<Tag> eventTags = tagRepository.findAllByNameStartingWith(prefix);
+        if (eventTags == null || eventTags.isEmpty()) {
+            return;
+        }
+
+        for (Tag tag : eventTags) {
+            Tag tagWithContacts = tagRepository.findByIdWithContacts(tag.getId()).orElse(tag);
+            if (tagWithContacts.getContacts() != null && !tagWithContacts.getContacts().isEmpty()) {
+                List<Contact> linkedContacts = new ArrayList<>(tagWithContacts.getContacts());
+                for (Contact contact : linkedContacts) {
+                    if (contact.getTags() != null) {
+                        contact.getTags().removeIf(contactTag -> contactTag.getId().equals(tagWithContacts.getId()));
+                    }
+                }
+                contactRepository.saveAll(linkedContacts);
+            }
+            tagRepository.deleteById(tagWithContacts.getId());
+        }
     }
 }

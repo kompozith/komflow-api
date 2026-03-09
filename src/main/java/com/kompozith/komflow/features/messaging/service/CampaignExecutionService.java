@@ -3,6 +3,7 @@ package com.kompozith.komflow.features.messaging.service;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.contact.entity.Tag;
+import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.messaging.dto.CampaignEventDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignEventType;
 import com.kompozith.komflow.features.messaging.entity.Campaign;
@@ -25,8 +26,10 @@ import java.util.concurrent.Executor;
 @RequiredArgsConstructor
 @Slf4j
 public class CampaignExecutionService {
+    private static final String EVENT_REGISTRATION_TAG_PREFIX = "EVENT-REG-";
 
     private final CampaignRepository campaignRepository;
+    private final TagRepository tagRepository;
     private final MessageDispatcherService messageDispatcherService;
     private final CampaignEventStreamService campaignEventStreamService;
     @Qualifier("campaignExecutor")
@@ -43,8 +46,7 @@ public class CampaignExecutionService {
                 throw new IllegalStateException("Campaign is already running");
             }
 
-            if ((campaign.getContacts() == null || campaign.getContacts().isEmpty()) &&
-                (campaign.getTags() == null || campaign.getTags().isEmpty())) {
+            if (!hasAtLeastOneRecipientSource(campaign)) {
                 throw new IllegalStateException("Campaign has no contacts or tags to send to");
             }
 
@@ -188,6 +190,14 @@ public class CampaignExecutionService {
                 }
             }
         }
+        if (message != null && message.getEvent() != null && message.getEvent().getId() != null) {
+            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + message.getEvent().getId();
+            tagRepository.findByNameWithContacts(eventTagName).ifPresent(eventTag -> {
+                if (eventTag.getContacts() != null) {
+                    uniqueContacts.addAll(eventTag.getContacts());
+                }
+            });
+        }
 
         for (Contact contact : uniqueContacts) {
             if (contact.getPerson() != null) {
@@ -208,6 +218,19 @@ public class CampaignExecutionService {
             eventInstantUtc = Instant.now();
         }
         return new ExecutionData(message, uniqueContacts, eventInstantUtc);
+    }
+
+    private boolean hasAtLeastOneRecipientSource(Campaign campaign) {
+        boolean hasDirectContacts = campaign.getContacts() != null && !campaign.getContacts().isEmpty();
+        boolean hasDirectTags = campaign.getTags() != null && !campaign.getTags().isEmpty();
+        if (hasDirectContacts || hasDirectTags) {
+            return true;
+        }
+        if (campaign.getMessage() == null || campaign.getMessage().getEvent() == null || campaign.getMessage().getEvent().getId() == null) {
+            return false;
+        }
+        String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getEvent().getId();
+        return tagRepository.findByName(eventTagName).isPresent();
     }
 
     private static class ExecutionData {

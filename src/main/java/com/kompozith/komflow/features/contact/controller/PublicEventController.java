@@ -72,7 +72,7 @@ public class PublicEventController {
             HttpServletRequest httpRequest
     ) {
         EventDto event = eventService.findBySlug(slug);
-        return contactService.registerPublicEvent(event.getSlug(), request, buildRequestMetadata(httpRequest));
+        return contactService.registerPublicEvent(event.getId(), event.getSlug(), request, buildRequestMetadata(httpRequest));
     }
 
     private PublicEventRequestMetadataDto buildRequestMetadata(HttpServletRequest request) {

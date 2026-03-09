@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TagServiceImpl extends BaseService implements TagService {
+    private static final String EVENT_REGISTRATION_TAG_PREFIX = "EVENT-REG-";
 
     private final TagRepository tagRepository;
     private final ContactRepository contactRepository;
@@ -127,9 +128,13 @@ public class TagServiceImpl extends BaseService implements TagService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Tag.class.getSimpleName(), id));
+        if (tag.getName() != null && tag.getName().startsWith(EVENT_REGISTRATION_TAG_PREFIX)) {
+            throw new IllegalStateException("Event registration tags cannot be deleted directly. Delete the linked event instead.");
+        }
         tagRepository.deleteById(id);
     }
 

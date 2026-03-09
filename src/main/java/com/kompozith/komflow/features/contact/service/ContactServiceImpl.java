@@ -267,7 +267,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     }
 
     @Override
-    public PublicEventRegistrationResponseDto registerPublicEvent(String slug, PublicEventRegistrationRequestDto request, PublicEventRequestMetadataDto metadata) {
+    public PublicEventRegistrationResponseDto registerPublicEvent(Long eventId, String slug, PublicEventRegistrationRequestDto request, PublicEventRequestMetadataDto metadata) {
         String normalizedSlug = normalizeEventSlug(slug);
         if (request == null || request.getEmail() == null || request.getEmail().isBlank()) {
             throw new IllegalArgumentException("email is required");
@@ -326,6 +326,11 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         contactChanged |= setIfDifferent(contact.getAgeRange(), trimToNull(enrichedRequest.getAgeRange()), contact::setAgeRange);
         contactChanged |= setIfDifferent(contact.getObjectives(), trimToNull(enrichedRequest.getObjectives()), contact::setObjectives);
         contactChanged |= setIfDifferent(contact.getWebsiteUrl(), trimToNull(enrichedRequest.getWebsiteUrl()), contact::setWebsiteUrl);
+
+        if (eventId != null && linkContactToEventTag(contact, eventId)) {
+            contactChanged = true;
+            updated = true;
+        }
 
         if (contact.getId() == null || contactChanged) {
             contact = contactRepository.save(contact);
@@ -1137,6 +1142,33 @@ public class ContactServiceImpl extends BaseService implements ContactService {
             return "komflow-growth-summit-2026";
         }
         return slug.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean linkContactToEventTag(Contact contact, Long eventId) {
+        if (contact == null || eventId == null) {
+            return false;
+        }
+
+        String tagName = buildEventRegistrationTagName(eventId);
+        Tag eventTag = tagRepository.findByName(tagName).orElseGet(() -> {
+            Tag tag = new Tag();
+            tag.setName(tagName);
+            tag.setColorCode("#2563EB");
+            tag.setDescription("Contacts inscrits via le lien public de l evenement " + eventId);
+            tag.setEnabled(true);
+            return tagRepository.save(tag);
+        });
+
+        Set<Tag> tags = contact.getTags();
+        if (tags == null) {
+            tags = new HashSet<>();
+            contact.setTags(tags);
+        }
+        return tags.add(eventTag);
+    }
+
+    private String buildEventRegistrationTagName(Long eventId) {
+        return "EVENT-REG-" + eventId;
     }
 
     private PublicEventDetailsDto buildEventDetails(String slug) {

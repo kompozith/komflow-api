@@ -3,9 +3,11 @@ package com.kompozith.komflow.features.messaging.repository;
 import com.kompozith.komflow.features.messaging.entity.Message;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
@@ -45,4 +47,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             @Param("createdAtTo") Instant createdAtTo,
             Pageable pageable
     );
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Message m SET m.event = null WHERE m.event.id = :eventId")
+    int detachEventReferences(@Param("eventId") Long eventId);
 }

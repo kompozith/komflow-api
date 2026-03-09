@@ -53,6 +53,12 @@ public class GlobalExceptionHandler {
         return new SimpleResponse<>("INVALID_DATA", errorMap);
     }
 
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IllegalStateException.class)
+    public ErrorResponse handleIllegalStateException(IllegalStateException ex) {
+        return new ErrorResponse("INVALID_STATE", ex.getMessage());
+    }
+
     // Gestionnaire pour les erreurs 405 Method Not Allowed
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
