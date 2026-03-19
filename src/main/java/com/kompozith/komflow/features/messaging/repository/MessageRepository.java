@@ -25,6 +25,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
           )
           AND (CAST(:createdAtFrom AS TIMESTAMP) IS NULL OR m.created_at >= CAST(:createdAtFrom AS TIMESTAMP))
           AND (CAST(:createdAtTo AS TIMESTAMP) IS NULL OR m.created_at <= CAST(:createdAtTo AS TIMESTAMP))
+        ORDER BY m.created_at DESC
         """,
             countQuery = """
         SELECT COUNT(*)

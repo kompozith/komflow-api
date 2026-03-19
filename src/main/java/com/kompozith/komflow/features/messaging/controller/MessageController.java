@@ -3,6 +3,7 @@ package com.kompozith.komflow.features.messaging.controller;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.messaging.dto.CreateMessageDto;
 import com.kompozith.komflow.features.messaging.dto.MessageDto;
+import com.kompozith.komflow.features.messaging.dto.MessageTestRequestDto;
 import com.kompozith.komflow.features.messaging.dto.MessageVariableDto;
 import com.kompozith.komflow.features.messaging.dto.SendResult;
 import com.kompozith.komflow.features.messaging.entity.MessageChannel;
@@ -136,6 +137,30 @@ public class MessageController {
         } catch (Exception e) {
             log.error("Error sending messages: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(new SimpleResponse<>("Failed to send messages", null));
+        }
+    }
+
+    @PreAuthorize("hasAuthority('MESSAGE_SEND_TO_CONTACT')")
+    @PostMapping("/{id}/test")
+    @Operation(summary = "Test a message", description = "Send a message to a specific contact for testing")
+    public ResponseEntity<SimpleResponse> testMessage(
+            @PathVariable Long id,
+            @RequestBody MessageTestRequestDto request) {
+        try {
+            if (request == null || request.getContactId() == null) {
+                throw new IllegalArgumentException("Contact ID is required");
+            }
+            messageService.testMessage(id, request.getContactId());
+            return ResponseEntity.ok(new SimpleResponse<>("Test message sent successfully", null));
+        } catch (MissingChannelException | IllegalArgumentException e) {
+            log.warn("Invalid parameters: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new SimpleResponse<>(e.getMessage(), null));
+        } catch (ObjectNotFoundException e) {
+            log.warn("Resource not found: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new SimpleResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Error sending test message: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(new SimpleResponse<>("Failed to send test message", null));
         }
     }
 

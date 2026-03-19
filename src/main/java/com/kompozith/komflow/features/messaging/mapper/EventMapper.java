@@ -16,6 +16,7 @@ public interface EventMapper {
     @Mapping(target = "startTime", ignore = true)
     @Mapping(target = "endDate", ignore = true)
     @Mapping(target = "endTime", ignore = true)
+    @Mapping(target = "registrationWorkflowSteps", ignore = true)
     EventDto eventToEventDto(Event event);
 
     @Mapping(target = "id", ignore = true)
@@ -26,5 +27,6 @@ public interface EventMapper {
     @Mapping(target = "startAt", ignore = true)
     @Mapping(target = "endAt", ignore = true)
     @Mapping(target = "slug", ignore = true)
+    @Mapping(target = "registrationWorkflowSteps", ignore = true)
     Event createEventDtoToEvent(CreateEventDto createEventDto);
 }

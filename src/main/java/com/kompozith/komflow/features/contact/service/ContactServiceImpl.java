@@ -28,7 +28,9 @@ import com.kompozith.komflow.features.personnel.entity.PhoneNumber;
 import com.kompozith.komflow.features.personnel.repository.PersonRepository;
 import com.kompozith.komflow.features.personnel.repository.PhoneNumberRepository;
 import com.kompozith.komflow.features.messaging.entity.EventMode;
+import com.kompozith.komflow.features.messaging.service.EventRegistrationWorkflowExecutor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
@@ -65,6 +67,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ContactServiceImpl extends BaseService implements ContactService {
 
     private static final List<String> EXPORT_HEADERS = List.of(
@@ -94,6 +97,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     private final PhoneNumberRepository phoneNumberRepository;
     private final JdbcTemplate jdbcTemplate;
     private final GeoService geoService;
+    private final EventRegistrationWorkflowExecutor eventRegistrationWorkflowExecutor;
 
     @Override
     public ContactDto create(CreateContactDto createContactDto) {
@@ -340,6 +344,11 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         }
 
         String status = created ? "CREATED" : (updated ? "UPDATED" : "UNCHANGED");
+        try {
+            eventRegistrationWorkflowExecutor.execute(eventId, contact);
+        } catch (Exception ex) {
+            log.warn("Failed to execute event registration workflow for event {}: {}", eventId, ex.getMessage());
+        }
         return new PublicEventRegistrationResponseDto(
                 status,
                 "Registration saved successfully",

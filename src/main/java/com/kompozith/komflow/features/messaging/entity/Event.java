@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -62,4 +64,8 @@ public class Event extends BaseEntity {
 
     @Column(length = 100)
     private String timezone;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<EventRegistrationWorkflowStep> registrationWorkflowSteps = new ArrayList<>();
 }

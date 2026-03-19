@@ -8,10 +8,17 @@ import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.messaging.dto.CreateEventDto;
+import com.kompozith.komflow.features.messaging.dto.CreateEventRegistrationWorkflowStepDto;
 import com.kompozith.komflow.features.messaging.dto.EventAgendaItemDto;
 import com.kompozith.komflow.features.messaging.dto.EventDto;
+import com.kompozith.komflow.features.messaging.dto.EventRegistrationWorkflowStepDto;
 import com.kompozith.komflow.features.messaging.entity.Event;
+import com.kompozith.komflow.features.messaging.entity.EventRegistrationWorkflowStep;
+import com.kompozith.komflow.features.messaging.entity.EventWorkflowConditionType;
+import com.kompozith.komflow.features.messaging.entity.EventWorkflowRecipientType;
+import com.kompozith.komflow.features.messaging.entity.EventWorkflowStepType;
 import com.kompozith.komflow.features.messaging.entity.EventMode;
+import com.kompozith.komflow.features.messaging.entity.Message;
 import com.kompozith.komflow.features.messaging.mapper.EventMapper;
 import com.kompozith.komflow.features.messaging.repository.EventRepository;
 import com.kompozith.komflow.features.messaging.repository.MessageRepository;
@@ -62,8 +69,10 @@ public class EventServiceImpl implements EventService {
         event.setAgenda(serializeAgenda(createEventDto.getAgenda()));
         applyDateTimePayload(event, createEventDto);
         Event saved = eventRepository.save(event);
-        ensureEventRegistrationTag(saved);
-        return toEventDto(saved);
+        applyRegistrationWorkflow(saved, createEventDto.getRegistrationWorkflowSteps());
+        Event savedWithWorkflow = eventRepository.save(saved);
+        ensureEventRegistrationTag(savedWithWorkflow);
+        return toEventDto(savedWithWorkflow);
     }
 
     @Override
@@ -141,6 +150,7 @@ public class EventServiceImpl implements EventService {
         event.setAgenda(serializeAgenda(createEventDto.getAgenda()));
         applyDateTimePayload(event, createEventDto);
 
+        applyRegistrationWorkflow(event, createEventDto.getRegistrationWorkflowSteps());
         Event saved = eventRepository.save(event);
         ensureEventRegistrationTag(saved);
         return toEventDto(saved);
@@ -263,7 +273,100 @@ public class EventServiceImpl implements EventService {
         dto.setHighlights(parseHighlights(event.getHighlights()));
         dto.setAgenda(parseAgenda(event.getAgenda()));
         dto.setTimezone(normalizeTimezone(event.getTimezone()));
+        dto.setRegistrationWorkflowSteps(mapWorkflowSteps(event.getRegistrationWorkflowSteps()));
         return dto;
+    }
+
+    private List<EventRegistrationWorkflowStepDto> mapWorkflowSteps(List<EventRegistrationWorkflowStep> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return List.of();
+        }
+        return steps.stream()
+                .filter(step -> step != null)
+                .map(step -> {
+                    Message message = step.getMessage();
+                    return new EventRegistrationWorkflowStepDto(
+                            step.getId(),
+                            message != null ? message.getId() : null,
+                            message != null ? message.getTitle() : null,
+                            message != null ? message.getChannel() : null,
+                            step.getStepType(),
+                            step.getRecipientType(),
+                            step.getDelayMinutes(),
+                            step.getConditionType(),
+                            step.getConditionValue(),
+                            step.getPosition(),
+                            step.isEnabled(),
+                            step.getRecipientEmails()
+                    );
+                })
+                .toList();
+    }
+
+    private void applyRegistrationWorkflow(Event event, List<CreateEventRegistrationWorkflowStepDto> steps) {
+        if (event == null || steps == null) {
+            return;
+        }
+
+        event.getRegistrationWorkflowSteps().clear();
+        int index = 1;
+        for (CreateEventRegistrationWorkflowStepDto stepDto : steps) {
+            if (stepDto == null) {
+                continue;
+            }
+
+            EventWorkflowStepType stepType = stepDto.getStepType() != null ? stepDto.getStepType() : EventWorkflowStepType.SEND_MESSAGE;
+            Message message = null;
+            if (stepType == EventWorkflowStepType.SEND_MESSAGE) {
+                if (stepDto.getMessageId() == null) {
+                    continue;
+                }
+                message = messageRepository.findById(stepDto.getMessageId())
+                        .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), stepDto.getMessageId()));
+
+            if (message.getEvent() != null
+                    && (event.getId() == null || !message.getEvent().getId().equals(event.getId()))) {
+                throw new IllegalArgumentException("Message is already linked to another event.");
+            }
+
+                if (message.getEvent() == null) {
+                    message.setEvent(event);
+                    messageRepository.save(message);
+                }
+            }
+
+            if (stepType == EventWorkflowStepType.DELAY) {
+                Integer delayMinutes = stepDto.getDelayMinutes();
+                if (delayMinutes == null || delayMinutes <= 0) {
+                    throw new IllegalArgumentException("Delay minutes must be greater than 0.");
+                }
+            }
+
+            if (stepType == EventWorkflowStepType.CONDITION) {
+                EventWorkflowConditionType conditionType = stepDto.getConditionType();
+                if (conditionType == null) {
+                    throw new IllegalArgumentException("Condition type is required.");
+                }
+            }
+
+            if (stepType == EventWorkflowStepType.SEND_MESSAGE && message == null) {
+                continue;
+            }
+
+            EventRegistrationWorkflowStep step = new EventRegistrationWorkflowStep();
+            step.setEvent(event);
+            step.setMessage(message);
+            step.setStepType(stepType);
+            step.setRecipientType(stepDto.getRecipientType() != null ? stepDto.getRecipientType() : EventWorkflowRecipientType.REGISTRANT);
+            step.setDelayMinutes(stepDto.getDelayMinutes());
+            step.setConditionType(stepDto.getConditionType());
+            step.setConditionValue(trimToNull(stepDto.getConditionValue()));
+            step.setPosition(stepDto.getPosition() != null ? stepDto.getPosition() : index);
+            step.setEnabled(stepDto.getEnabled() == null || stepDto.getEnabled());
+            step.setRecipientEmails(trimToNull(stepDto.getRecipientEmails()));
+            event.getRegistrationWorkflowSteps().add(step);
+            index++;
+        }
     }
 
     private String normalizeTimezone(String timezone) {

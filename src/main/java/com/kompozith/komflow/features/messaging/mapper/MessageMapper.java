@@ -115,7 +115,8 @@ public interface MessageMapper {
                 endTime,
                 normalizeTimezone(event.getTimezone()),
                 event.getCreatedAt(),
-                event.getUpdatedAt()
+                event.getUpdatedAt(),
+                List.of()
         );
     }
 

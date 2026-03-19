@@ -20,7 +20,9 @@ import com.kompozith.komflow.features.messaging.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -91,13 +93,16 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional(readOnly = true)
     public Page<MessageDto> findAll(Pageable pageable, MessageChannel channel, String search, Instant createdAtFrom, Instant createdAtTo) {
+        Pageable sanitizedPageable = pageable == null
+                ? Pageable.unpaged()
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.unsorted());
 
         return messageRepository.findWithFilters(
                 channel != null ? channel.name() : null,
                 search,
                 createdAtFrom,
                 createdAtTo,
-                pageable
+                sanitizedPageable
         ).map(messageMapper::messageToMessageDto)
          .map(this::normalizeMessageDtoContent);
     }
@@ -226,6 +231,28 @@ public class MessageServiceImpl implements MessageService {
         messageDispatcherService.sendToContact(contact, message, channel);
 
         log.info("{} sent successfully to contact {} with message {}", channel, contactId, messageId);
+    }
+
+    @Override
+    public void testMessage(Long messageId, Long contactId) {
+        if (messageId == null || messageId <= 0) {
+            throw new IllegalArgumentException("Invalid message ID");
+        }
+        if (contactId == null || contactId <= 0) {
+            throw new IllegalArgumentException("Invalid contact ID");
+        }
+
+        Message message = findEntityById(messageId);
+        Contact contact = contactRepository.findByIdWithAssociations(contactId)
+                .orElseThrow(() -> new ObjectNotFoundException(Contact.class.getSimpleName(), "id", contactId.toString()));
+
+        MessageChannel channel = message.getChannel();
+        if (!messageDispatcherService.canSendToContact(contact, channel)) {
+            throw new IllegalArgumentException("Contact cannot receive messages on channel " + channel);
+        }
+
+        messageDispatcherService.sendToContact(contact, message, channel);
+        log.info("Test message {} sent to contact {} via {}", messageId, contactId, channel);
     }
 
     private void validateCreateMessage(CreateMessageDto createMessageDto) {

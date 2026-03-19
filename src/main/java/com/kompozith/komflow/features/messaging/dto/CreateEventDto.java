@@ -31,4 +31,5 @@ public class CreateEventDto {
     private Instant startAt;
     private Instant endAt;
     private String timezone;
+    private List<CreateEventRegistrationWorkflowStepDto> registrationWorkflowSteps;
 }

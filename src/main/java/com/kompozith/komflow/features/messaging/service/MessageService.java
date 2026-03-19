@@ -22,4 +22,5 @@ public interface MessageService {
     Message findEntityById(Long id);
     void sendToContact(Long contactId, Long messageId, MessageChannel channel);
     SendResult sendToTag(Long tagId, Long messageId, MessageChannel channel);
+    void testMessage(Long messageId, Long contactId);
 }
