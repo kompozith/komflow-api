@@ -23,8 +23,8 @@ public class EventRegistrationWorkflowStep extends BaseEntity {
     @JoinColumn(name = "msg_event_id", nullable = false)
     private Event event;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "msg_message_id")
+    @ManyToOne(fetch = FetchType.EAGER, optional = true)
+    @JoinColumn(name = "msg_message_id", nullable = true)
     private Message message;
 
     @Enumerated(EnumType.STRING)

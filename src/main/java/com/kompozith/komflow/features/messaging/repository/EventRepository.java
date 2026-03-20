@@ -20,8 +20,11 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             LEFT JOIN FETCH e.registrationWorkflowSteps steps
             LEFT JOIN FETCH steps.message message
             WHERE e.id = :id
+            ORDER BY steps.position ASC
             """)
     Optional<Event> findByIdWithWorkflowSteps(@Param("id") Long id);
     boolean existsBySlug(String slug);
     boolean existsBySlugAndIdNot(String slug, Long id);
 }
+
+

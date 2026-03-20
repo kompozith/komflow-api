@@ -41,6 +41,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -345,9 +347,9 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         String status = created ? "CREATED" : (updated ? "UPDATED" : "UNCHANGED");
         try {
-            eventRegistrationWorkflowExecutor.execute(eventId, contact);
+            scheduleRegistrationWorkflowAfterCommit(eventId, contact.getId());
         } catch (Exception ex) {
-            log.warn("Failed to execute event registration workflow for event {}: {}", eventId, ex.getMessage());
+            log.warn("Failed to schedule event registration workflow for event {}: {}", eventId, ex.getMessage());
         }
         return new PublicEventRegistrationResponseDto(
                 status,
@@ -356,6 +358,25 @@ public class ContactServiceImpl extends BaseService implements ContactService {
                 contact.getId(),
                 person.getId()
         );
+    }
+
+    private void scheduleRegistrationWorkflowAfterCommit(Long eventId, Long contactId) {
+        if (eventId == null || contactId == null) {
+            return;
+        }
+
+        Runnable scheduleWorkflow = () -> eventRegistrationWorkflowExecutor.executeAsync(eventId, contactId);
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            scheduleWorkflow.run();
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                scheduleWorkflow.run();
+            }
+        });
     }
 
     private PublicEventRegistrationRequestDto enrichFromMetadata(PublicEventRegistrationRequestDto request, PublicEventRequestMetadataDto metadata) {

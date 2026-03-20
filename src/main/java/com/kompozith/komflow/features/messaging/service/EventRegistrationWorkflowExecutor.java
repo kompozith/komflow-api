@@ -1,6 +1,7 @@
 package com.kompozith.komflow.features.messaging.service;
 
 import com.kompozith.komflow.features.contact.entity.Contact;
+import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.messaging.entity.Event;
 import com.kompozith.komflow.features.messaging.entity.EventRegistrationWorkflowStep;
 import com.kompozith.komflow.features.messaging.entity.EventWorkflowConditionType;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.scheduling.TaskScheduler;
 
@@ -31,12 +33,22 @@ import java.util.Set;
 @Slf4j
 public class EventRegistrationWorkflowExecutor {
 
+    private final ContactRepository contactRepository;
     private final EventRepository eventRepository;
     private final MessageDispatcherService messageDispatcherService;
     private final TaskScheduler taskScheduler;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${app.notifications.admin-emails:}")
     private String adminEmails;
+
+    public void executeAsync(Long eventId, Long registrantContactId) {
+        if (eventId == null || registrantContactId == null) {
+            return;
+        }
+
+        scheduleWorkflowExecution(eventId, registrantContactId, 0, Instant.now());
+    }
 
     public void execute(Long eventId, Contact registrant) {
         if (eventId == null || registrant == null) {
@@ -55,6 +67,42 @@ public class EventRegistrationWorkflowExecutor {
         }
 
         executeSteps(event, registrant, steps, 0);
+    }
+
+    private void scheduleWorkflowExecution(Long eventId, Long registrantContactId, int startIndex, Instant runAt) {
+        taskScheduler.schedule(
+                () -> runScheduledWorkflow(eventId, registrantContactId, startIndex),
+                runAt
+        );
+    }
+
+    private void runScheduledWorkflow(Long eventId, Long registrantContactId, int startIndex) {
+        try {
+            transactionTemplate.executeWithoutResult(status -> {
+                Contact registrant = contactRepository.findByIdWithAssociations(registrantContactId).orElse(null);
+                if (registrant == null) {
+                    log.warn("Workflow registrant {} not found for event {}", registrantContactId, eventId);
+                    return;
+                }
+
+                Event event = eventRepository.findByIdWithWorkflowSteps(eventId).orElse(null);
+                if (event == null) {
+                    log.warn("Workflow event {} not found for contact {}", eventId, registrantContactId);
+                    return;
+                }
+
+                List<EventRegistrationWorkflowStep> steps = event.getRegistrationWorkflowSteps();
+                if (steps == null || steps.isEmpty()) {
+                    log.info("No registration workflow steps configured for event {}", eventId);
+                    return;
+                }
+
+                executeSteps(event, registrant, steps, startIndex);
+            });
+        } catch (Exception ex) {
+            log.error("Failed to execute async event registration workflow for event {} and contact {}",
+                    eventId, registrantContactId, ex);
+        }
     }
 
     private void executeSteps(Event event, Contact registrant, List<EventRegistrationWorkflowStep> steps, int startIndex) {
@@ -86,10 +134,7 @@ public class EventRegistrationWorkflowExecutor {
                     continue;
                 }
                 int nextIndex = i + 1;
-                taskScheduler.schedule(
-                        () -> executeSteps(event, registrant, steps, nextIndex),
-                        Instant.now().plus(Duration.ofMinutes(delayMinutes))
-                );
+                scheduleWorkflowExecution(event.getId(), registrant.getId(), nextIndex, Instant.now().plus(Duration.ofMinutes(delayMinutes)));
                 return;
             }
 
