@@ -324,11 +324,6 @@ public class EventServiceImpl implements EventService {
                 message = messageRepository.findById(stepDto.getMessageId())
                         .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), stepDto.getMessageId()));
 
-            if (message.getEvent() != null
-                    && (event.getId() == null || !message.getEvent().getId().equals(event.getId()))) {
-                throw new IllegalArgumentException("Message is already linked to another event.");
-            }
-
                 if (message.getEvent() == null) {
                     message.setEvent(event);
                     messageRepository.save(message);

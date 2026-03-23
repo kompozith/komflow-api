@@ -150,10 +150,10 @@ public class EventRegistrationWorkflowExecutor {
             if (recipientType == EventWorkflowRecipientType.ADMIN) {
                 List<Contact> admins = buildAdminRecipients(step.getRecipientEmails());
                 for (Contact admin : admins) {
-                    dispatchIfPossible(admin, message, channel, eventInstant);
+                    dispatchIfPossible(admin, registrant, message, channel, eventInstant);
                 }
             } else {
-                dispatchIfPossible(registrant, message, channel, eventInstant);
+                dispatchIfPossible(registrant, registrant, message, channel, eventInstant);
             }
         }
     }
@@ -171,12 +171,16 @@ public class EventRegistrationWorkflowExecutor {
         };
     }
 
-    private void dispatchIfPossible(Contact contact, Message message, MessageChannel channel, Instant eventInstant) {
-        if (!messageDispatcherService.canSendToContact(contact, channel)) {
-            log.warn("Skipping workflow message {} for contact {} via {}", message.getId(), contact.getId(), channel);
+    private void dispatchIfPossible(Contact recipient,
+                                    Contact templateContext,
+                                    Message message,
+                                    MessageChannel channel,
+                                    Instant eventInstant) {
+        if (!messageDispatcherService.canSendToContact(recipient, channel)) {
+            log.warn("Skipping workflow message {} for contact {} via {}", message.getId(), recipient.getId(), channel);
             return;
         }
-        messageDispatcherService.sendToContact(contact, message, channel, eventInstant);
+        messageDispatcherService.sendToContact(recipient, templateContext, message, channel, eventInstant);
     }
 
     private List<Contact> buildAdminRecipients(String stepEmails) {

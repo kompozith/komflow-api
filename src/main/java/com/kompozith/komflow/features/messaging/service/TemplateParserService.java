@@ -4,6 +4,7 @@ import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.messaging.entity.Message;
 import com.kompozith.komflow.features.messaging.entity.MessageVariable;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
@@ -24,6 +25,9 @@ public class TemplateParserService {
     private static final DateTimeFormatter EVENT_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
     private static final DateTimeFormatter EVENT_HOUR_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH);
     private static final ZoneId GMT_ZONE = ZoneId.of("GMT");
+
+    @Value("${app.public-event-base-url:}")
+    private String publicEventBaseUrl;
 
     /**
      * Parse and replace variables in the message content for a specific contact
@@ -73,7 +77,11 @@ public class TemplateParserService {
                         || variable == MessageVariable.EVENT_END_DATE
                         || variable == MessageVariable.EVENT_END_TIME
                         || variable == MessageVariable.EVENT_LOCATION
-                        || variable == MessageVariable.EVENT_TIMEZONE) {
+                        || variable == MessageVariable.EVENT_TIMEZONE
+                        || variable == MessageVariable.EVENT_SUBTITLE
+                        || variable == MessageVariable.EVENT_ADDRESS
+                        || variable == MessageVariable.EVENT_MEETING_URL
+                        || variable == MessageVariable.EVENT_PUBLIC_URL) {
                     value = resolveEventVariable(variable, contact, message, eventInstantUtc);
                 } else {
                     value = getFieldValue(contact, variable.getFieldPath());
@@ -125,8 +133,34 @@ public class TemplateParserService {
             case EVENT_END_TIME -> formatEventTime(message.getEvent().getEndAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
             case EVENT_LOCATION -> safeString(message.getEvent().getLocation());
             case EVENT_TIMEZONE -> resolveTimezoneLocationLabel(contact, message.getEvent().getTimezone());
+            case EVENT_SUBTITLE -> safeString(message.getEvent().getSubtitle());
+            case EVENT_ADDRESS -> safeString(message.getEvent().getAddress());
+            case EVENT_MEETING_URL -> safeString(message.getEvent().getMeetingUrl());
+            case EVENT_PUBLIC_URL -> resolvePublicEventUrl(message);
             default -> "";
         };
+    }
+
+    private String resolvePublicEventUrl(Message message) {
+        if (message == null || message.getEvent() == null) {
+            return "";
+        }
+
+        String slug = safeString(message.getEvent().getSlug()).trim();
+        if (slug.isEmpty()) {
+            return "";
+        }
+
+        String baseUrl = publicEventBaseUrl == null ? "" : publicEventBaseUrl.trim();
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+
+        if (baseUrl.isEmpty()) {
+            return "/event/" + slug;
+        }
+
+        return baseUrl + "/event/" + slug;
     }
 
     private String formatEventDate(Instant instant, ZoneId zoneId) {

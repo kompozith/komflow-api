@@ -48,9 +48,48 @@ public class GlobalExceptionHandler {
     public SimpleResponse<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex){
         Map<String, String> errorMap = new HashMap<>();
         String message = ex.getMessage() != null ? ex.getMessage() : "INVALID_DATA";
-        errorMap.put("personId", message);
-        errorMap.put("person", message);
+        String field = inferFieldFromMessage(message);
+        errorMap.put(field, message);
+        // Keep a global key so frontend can always display a fallback error banner.
+        errorMap.put("error", message);
         return new SimpleResponse<>("INVALID_DATA", errorMap);
+    }
+
+    private String inferFieldFromMessage(String message) {
+        if (message == null || message.isBlank()) {
+            return "error";
+        }
+
+        String normalized = message.toLowerCase();
+        if (normalized.contains("event")) {
+            return "eventId";
+        }
+        if (normalized.contains("contact")) {
+            return "contactId";
+        }
+        if (normalized.contains("tag")) {
+            return "tagId";
+        }
+        if (normalized.contains("channel")) {
+            return "channel";
+        }
+        if (normalized.contains("title")) {
+            return "title";
+        }
+        if (normalized.contains("body") || normalized.contains("content")) {
+            return "body";
+        }
+        if (normalized.contains("attachment")) {
+            return "attachments";
+        }
+        if (normalized.contains("email")) {
+            return "email";
+        }
+        if (normalized.contains("phone") || normalized.contains("whatsapp")) {
+            return "phoneNumber";
+        }
+
+        return "error";
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

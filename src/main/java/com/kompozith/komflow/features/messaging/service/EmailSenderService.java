@@ -2,12 +2,15 @@ package com.kompozith.komflow.features.messaging.service;
 
 import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.core.entity.File;
+import com.kompozith.komflow.features.core.service.FileStorageService;
 import com.kompozith.komflow.features.messaging.entity.Message;
 import com.kompozith.komflow.features.messaging.entity.MessageChannel;
+import org.springframework.core.io.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,16 +20,19 @@ import java.nio.charset.StandardCharsets;
 public class EmailSenderService extends MessageSender implements EmailService {
 
     private final JavaMailSender mailSender;
+    private final FileStorageService fileStorageService;
     private final String mailFromAddress;
     private final String appName;
 
     public EmailSenderService(
             JavaMailSender mailSender,
+            FileStorageService fileStorageService,
             @Value("${spring.mail.username}") String mailFromAddress,
             @Value("${spring.application.name}") String appName
     ) {
         super(MessageChannel.EMAIL);
         this.mailSender = mailSender;
+        this.fileStorageService = fileStorageService;
         this.mailFromAddress = mailFromAddress;
         this.appName = appName;
     }
@@ -47,10 +53,15 @@ public class EmailSenderService extends MessageSender implements EmailService {
 
             if (message.getAttachments() != null) {
                 for (File attachment : message.getAttachments()) {
-                    if (attachment == null || !StringUtils.hasText(attachment.getName()) || !StringUtils.hasText(attachment.getUrl())) {
+                    if (attachment == null || attachment.getId() == null || !StringUtils.hasText(attachment.getName())) {
                         continue;
                     }
-                    helper.addAttachment(attachment.getName(), new UrlResource(attachment.getUrl()));
+
+                    Resource resource = fileStorageService.loadAsResource(attachment.getId());
+                    String fileName = attachment.getName();
+                    MediaType mediaType = MediaTypeFactory.getMediaType(fileName)
+                            .orElse(MediaType.APPLICATION_OCTET_STREAM);
+                    helper.addAttachment(fileName, resource, mediaType.toString());
                 }
             }
 

@@ -53,10 +53,18 @@ public class MessageDispatcherService {
      * Send a message to a contact via the specified channel
      */
     public void sendToContact(Contact contact, Message message, MessageChannel channel) {
-        sendToContact(contact, message, channel, null);
+        sendToContact(contact, contact, message, channel, null);
     }
 
     public void sendToContact(Contact contact, Message message, MessageChannel channel, Instant eventInstantUtc) {
+        sendToContact(contact, contact, message, channel, eventInstantUtc);
+    }
+
+    public void sendToContact(Contact recipientContact,
+                              Contact templateContextContact,
+                              Message message,
+                              MessageChannel channel,
+                              Instant eventInstantUtc) {
         if (channel == null) {
             throw new MissingChannelException("Channel parameter is required");
         }
@@ -66,12 +74,17 @@ public class MessageDispatcherService {
             throw new IllegalArgumentException("Unsupported channel: " + channel);
         }
 
-        log.info("Dispatching message {} to contact {} via channel {}", message.getId(), contact.getId(), channel);
+        Contact parsingContact = templateContextContact != null ? templateContextContact : recipientContact;
+        log.info("Dispatching message {} to contact {} via channel {} (template context: {})",
+                message.getId(),
+                recipientContact != null ? recipientContact.getId() : null,
+                channel,
+                parsingContact != null ? parsingContact.getId() : null);
 
         try {
             // Parse template variables
             String normalizedContent = normalizeLegacyEventVariables(message.getContent());
-            String personalizedContent = templateParserService.parseTemplate(normalizedContent, contact, message, eventInstantUtc);
+            String personalizedContent = templateParserService.parseTemplate(normalizedContent, parsingContact, message, eventInstantUtc);
             String channelReadyContent = messageContentParserService.renderForChannel(personalizedContent, channel);
 
             // Create a personalized message object
@@ -84,10 +97,11 @@ public class MessageDispatcherService {
                     message.getAttachments() != null ? new ArrayList<>(message.getAttachments()) : null
             );
 
-            sender.sendMessage(contact, personalizedMessage);
-            log.info("Message sent successfully via {} to contact {}", channel, contact.getId());
+            sender.sendMessage(recipientContact, personalizedMessage);
+            log.info("Message sent successfully via {} to contact {}", channel, recipientContact != null ? recipientContact.getId() : null);
         } catch (Exception e) {
-            log.error("Failed to send message via {} to contact {}: {}", channel, contact.getId(), e.getMessage());
+            log.error("Failed to send message via {} to contact {}: {}", channel,
+                    recipientContact != null ? recipientContact.getId() : null, e.getMessage());
             throw e;
         }
     }
