@@ -326,9 +326,14 @@ public class CampaignExecutionService {
     }
 
     /**
-     * Persists a {@link CampaignContactResult} row in its own transaction so that
-     * the record is committed immediately, even if the campaign execution is
-     * later interrupted.
+     * Upserts a {@link CampaignContactResult} row in its own transaction:
+     * <ul>
+     *   <li>If a row already exists for the (campaign, contact) pair it is
+     *       updated in-place (status + errorMessage). This handles resubmissions
+     *       correctly — a previously FAILED row becomes SUCCESS without creating
+     *       a duplicate.</li>
+     *   <li>If no row exists a new one is inserted.</li>
+     * </ul>
      * Errors are swallowed and logged so that a persistence failure never blocks
      * the send loop.
      */
@@ -338,11 +343,16 @@ public class CampaignExecutionService {
                                 String errorMessage) {
         try {
             template.executeWithoutResult(tx -> {
-                CampaignContactResult result = new CampaignContactResult();
-                // getReferenceById returns a lightweight Hibernate proxy (no DB hit)
-                result.setCampaign(campaignRepository.getReferenceById(campaignId));
-                result.setContact(contactRepository.getReferenceById(contact.getId()));
-                result.setChannel(channel);
+                CampaignContactResult result =
+                        campaignContactResultRepository
+                                .findByCampaignIdAndContactId(campaignId, contact.getId())
+                                .orElseGet(() -> {
+                                    CampaignContactResult r = new CampaignContactResult();
+                                    r.setCampaign(campaignRepository.getReferenceById(campaignId));
+                                    r.setContact(contactRepository.getReferenceById(contact.getId()));
+                                    r.setChannel(channel);
+                                    return r;
+                                });
                 result.setStatus(status);
                 result.setErrorMessage(errorMessage);
                 campaignContactResultRepository.save(result);

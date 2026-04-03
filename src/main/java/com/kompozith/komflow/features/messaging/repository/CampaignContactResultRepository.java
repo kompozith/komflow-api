@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
 import java.util.Set;
 
 public interface CampaignContactResultRepository extends JpaRepository<CampaignContactResult, Long> {
@@ -79,6 +80,17 @@ public interface CampaignContactResultRepository extends JpaRepository<CampaignC
     long countByCampaignId(Long campaignId);
 
     /**
+     * Lookup a single result row by campaign + contact (used for upsert).
+     * The unique constraint {@code uq_ccr_campaign_contact} guarantees at most
+     * one row per pair, so an {@link Optional} is the correct return type.
+     */
+    @Query("SELECT r FROM CampaignContactResult r " +
+           "WHERE r.campaign.id = :campaignId AND r.contact.id = :contactId")
+    Optional<CampaignContactResult> findByCampaignIdAndContactId(
+            @Param("campaignId") Long campaignId,
+            @Param("contactId")  Long contactId);
+
+    /**
      * Returns the set of contact IDs that already have the given send status for
      * the specified campaign. Used by the resubmit flow to skip contacts that
      * were successfully reached in a previous execution.
@@ -97,4 +109,3 @@ public interface CampaignContactResultRepository extends JpaRepository<CampaignC
     @Query("SELECT MAX(r.createdAt) FROM CampaignContactResult r WHERE r.campaign.id = :campaignId")
     java.time.Instant findLastResultCreatedAt(@Param("campaignId") Long campaignId);
 }
-
