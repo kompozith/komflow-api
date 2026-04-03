@@ -23,6 +23,10 @@ public class EmailConfig {
     @Value("${spring.mail.password}")
     private String password;
 
+    /** Set spring.mail.debug=true in your profile yml to enable SMTP protocol tracing (dev only). */
+    @Value("${spring.mail.debug:false}")
+    private boolean debug;
+
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
@@ -36,7 +40,12 @@ public class EmailConfig {
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.starttls.required", "true");
-        props.put("mail.debug", "true");
+        props.put("mail.smtp.ssl.trust", "*");
+        // Connection & I/O timeouts to avoid blocking threads forever
+        props.put("mail.smtp.connectiontimeout", "15000");  // 15 s connection timeout
+        props.put("mail.smtp.timeout", "15000");             // 15 s socket read timeout
+        props.put("mail.smtp.writetimeout", "15000");        // 15 s socket write timeout
+        props.put("mail.debug", String.valueOf(debug));
 
         return mailSender;
     }

@@ -23,4 +23,5 @@ public interface MessageService {
     void sendToContact(Long contactId, Long messageId, MessageChannel channel);
     SendResult sendToTag(Long tagId, Long messageId, MessageChannel channel);
     void testMessage(Long messageId, Long contactId);
+    void testMessageDirect(Long messageId, String recipient);
 }

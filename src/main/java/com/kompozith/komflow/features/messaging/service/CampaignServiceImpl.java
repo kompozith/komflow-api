@@ -6,14 +6,19 @@ import com.kompozith.komflow.features.contact.entity.Contact;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
-import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
-import com.kompozith.komflow.features.messaging.dto.CampaignDto;
+import com.kompozith.komflow.features.messaging.dto.CampaignContactResultDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
+import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignEditabilityDto;
+import com.kompozith.komflow.features.messaging.dto.CampaignResultsSummaryDto;
+import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.ScheduleCampaignDto;
 import com.kompozith.komflow.features.messaging.entity.Campaign;
+import com.kompozith.komflow.features.messaging.entity.CampaignContactResult;
+import com.kompozith.komflow.features.messaging.entity.CampaignSendStatus;
 import com.kompozith.komflow.features.messaging.entity.CampaignStatus;
 import com.kompozith.komflow.features.messaging.mapper.CampaignMapper;
+import com.kompozith.komflow.features.messaging.repository.CampaignContactResultRepository;
 import com.kompozith.komflow.features.messaging.repository.CampaignRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +44,7 @@ public class CampaignServiceImpl implements CampaignService {
     private final ContactRepository contactRepository;
     private final TagRepository tagRepository;
     private final CampaignExecutionService campaignExecutionService;
+    private final CampaignContactResultRepository campaignContactResultRepository;
 
     @Override
     @Transactional
@@ -332,5 +339,76 @@ public class CampaignServiceImpl implements CampaignService {
         eventTagDto.setContactCount(eventTag.getContacts() != null ? (long) eventTag.getContacts().size() : 0L);
         currentTags.add(eventTagDto);
         detailsDto.setTags(currentTags);
+    }
+
+    // ─── Send-result queries ──────────────────────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CampaignContactResultDto> getCampaignResults(
+            Long campaignId, CampaignSendStatus status, String search, Pageable pageable) {
+
+        boolean hasSearch = search != null && !search.isBlank();
+
+        Page<CampaignContactResult> page;
+        if (hasSearch && status != null) {
+            page = campaignContactResultRepository.findByCampaignIdAndStatusWithSearch(campaignId, status, search.trim(), pageable);
+        } else if (hasSearch) {
+            page = campaignContactResultRepository.findByCampaignIdWithSearch(campaignId, search.trim(), pageable);
+        } else if (status != null) {
+            page = campaignContactResultRepository.findByCampaignIdAndStatus(campaignId, status, pageable);
+        } else {
+            page = campaignContactResultRepository.findByCampaignId(campaignId, pageable);
+        }
+
+        return page.map(this::toResultDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CampaignResultsSummaryDto getCampaignResultsSummary(Long campaignId) {
+        long success = campaignContactResultRepository.countByCampaignIdAndStatus(campaignId, CampaignSendStatus.SUCCESS);
+        long failed  = campaignContactResultRepository.countByCampaignIdAndStatus(campaignId, CampaignSendStatus.FAILED);
+
+        // -- Compute total unique target contacts --------------------------------
+        // Start with direct contacts + tag contacts (UNION ensures deduplication)
+        Set<Long> targetIds = new java.util.HashSet<>(
+                campaignRepository.findDirectAndTagContactIds(campaignId));
+
+        // Add contacts from the event-registration tag if the campaign message
+        // is linked to an event
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), campaignId));
+        if (campaign.getMessage() != null && campaign.getMessage().getEvent() != null
+                && campaign.getMessage().getEvent().getId() != null) {
+            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getEvent().getId();
+            tagRepository.findByNameWithContacts(eventTagName).ifPresent(tag -> {
+                if (tag.getContacts() != null) {
+                    tag.getContacts().forEach(c -> targetIds.add(c.getId()));
+                }
+            });
+        }
+
+        return new CampaignResultsSummaryDto(success, failed, success + failed, targetIds.size());
+    }
+
+    @Override
+    public void resubmitCampaign(Long campaignId) {
+        campaignExecutionService.resubmitCampaign(campaignId);
+    }
+
+    private CampaignContactResultDto toResultDto(CampaignContactResult r) {
+        var person = r.getContact() != null ? r.getContact().getPerson() : null;
+        return new CampaignContactResultDto(
+                r.getId(),
+                r.getContact() != null ? r.getContact().getId() : null,
+                person != null ? person.getEmail() : null,
+                person != null ? person.getFirstName() : null,
+                person != null ? person.getLastName() : null,
+                r.getChannel() != null ? r.getChannel().name() : null,
+                r.getStatus() != null ? r.getStatus().name() : null,
+                r.getCreatedAt(),
+                r.getErrorMessage()
+        );
     }
 }

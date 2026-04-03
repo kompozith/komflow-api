@@ -48,21 +48,10 @@ spring:
     port: ${MAIL_PORT}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          ssl:
-            trust: "*"
-            protocols: "TLSv1.2"
-          socketFactory:
-            class: javax.net.ssl.SSLSocketFactory
-            fallback: false
-        debug: true  # Enable debug in dev
-    test-connection: false  # Disable connection test in dev
+    from-name: ${MAIL_FROM_NAME}
+    # Set to true only when debugging SMTP issues – generates very verbose output
+    debug: false
+    test-connection: false
   servlet:
     multipart:
       max-file-size: ${MAX_FILE_SIZE}
@@ -93,6 +82,18 @@ app:
     allowed-origins:
       - http://localhost:4200
       - http://127.0.0.1:4200
+      - http://localhost:54744
+      - http://127.0.0.1:54744
+  campaign:
+    # Delay between individual email sends (ms). Prevents Gmail rate-limiting.
+    # ~120 emails/min at 500ms; increase to 1000ms if AUTH failures persist.
+    email-throttle-ms: 500
+    # How many AUTH failures in a row before pausing the campaign
+    max-consecutive-auth-failures: 5
+    # How long to pause (ms) when the circuit-breaker trips (default 2 min)
+    auth-failure-pause-ms: 120000
+    # Max send attempts per email before giving up (1 attempt + 1 retry)
+    email-max-retry-attempts: 2
 
 auth:
   cookie:
@@ -107,3 +108,10 @@ logging:
     root: INFO
     org.springframework.security: DEBUG
     com.kompozith.komflow.features.auth.CustomUserDetailsService: DEBUG
+  file:
+    name: ${LOG_FILE_PATH:logs/komflow.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 30          # 30 fichiers de rotation conservés
+      file-name-pattern: logs/komflow-%d{yyyy-MM-dd}.%i.log

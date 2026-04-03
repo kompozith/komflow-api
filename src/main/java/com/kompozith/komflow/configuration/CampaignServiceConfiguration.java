@@ -3,6 +3,7 @@ package com.kompozith.komflow.configuration;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.messaging.mapper.CampaignMapper;
+import com.kompozith.komflow.features.messaging.repository.CampaignContactResultRepository;
 import com.kompozith.komflow.features.messaging.repository.CampaignRepository;
 import com.kompozith.komflow.features.messaging.service.CampaignExecutionService;
 import com.kompozith.komflow.features.messaging.service.CampaignService;
@@ -23,7 +24,8 @@ public class CampaignServiceConfiguration {
             MessageService messageService,
             ContactRepository contactRepository,
             TagRepository tagRepository,
-            CampaignExecutionService campaignExecutionService
+            CampaignExecutionService campaignExecutionService,
+            CampaignContactResultRepository campaignContactResultRepository
     ) {
         return new CampaignServiceImpl(
                 campaignRepository,
@@ -31,7 +33,10 @@ public class CampaignServiceConfiguration {
                 messageService,
                 contactRepository,
                 tagRepository,
-                campaignExecutionService
+                campaignExecutionService,
+                campaignContactResultRepository
         );
     }
 }
+
+

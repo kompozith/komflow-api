@@ -1,10 +1,13 @@
 package com.kompozith.komflow.features.messaging.controller;
 
+import com.kompozith.komflow.features.messaging.dto.CampaignContactResultDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDetailsDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignEditabilityDto;
+import com.kompozith.komflow.features.messaging.dto.CampaignResultsSummaryDto;
 import com.kompozith.komflow.features.messaging.dto.CreateCampaignDto;
 import com.kompozith.komflow.features.messaging.dto.CampaignDto;
 import com.kompozith.komflow.features.messaging.dto.ScheduleCampaignDto;
+import com.kompozith.komflow.features.messaging.entity.CampaignSendStatus;
 import com.kompozith.komflow.features.messaging.service.CampaignEventStreamService;
 import com.kompozith.komflow.features.messaging.service.CampaignService;
 import com.kompozith.komflow.util.SimpleResponse;
@@ -87,6 +90,18 @@ public class CampaignController {
     }
 
     @PreAuthorize("hasAuthority('CAMPAIGN_SUBMIT')")
+    @PutMapping("/{id}/resubmit")
+    @Operation(
+            summary = "Resubmit failed campaign",
+            description = "Resubmit a FAILED or PARTIAL_SUCCESS campaign. Only contacts whose previous send " +
+                    "attempt failed are retried; contacts already reached successfully are skipped."
+    )
+    public ResponseEntity<SimpleResponse> resubmitCampaign(@PathVariable Long id) {
+        campaignService.resubmitCampaign(id);
+        return ResponseEntity.ok(new SimpleResponse<>("Campaign resubmission started", null));
+    }
+
+    @PreAuthorize("hasAuthority('CAMPAIGN_SUBMIT')")
     @PutMapping("/{id}/schedule")
     @Operation(summary = "Schedule campaign", description = "Schedule a campaign to be sent at a specific date and time")
     public ResponseEntity<CampaignDto> scheduleCampaign(@PathVariable Long id, @Valid @RequestBody ScheduleCampaignDto scheduleDto) {
@@ -100,6 +115,32 @@ public class CampaignController {
     public ResponseEntity<SimpleResponse<CampaignDto>> cancelSchedule(@PathVariable Long id) {
         CampaignDto campaignDto = campaignService.cancelSchedule(id);
         return ResponseEntity.ok(new SimpleResponse<>("Campaign schedule cancelled successfully", campaignDto));
+    }
+
+    @PreAuthorize("hasAuthority('CAMPAIGN_SHOW')")
+    @GetMapping("/{id}/results")
+    @Operation(
+            summary = "Campaign send results",
+            description = "Paginated list of all contacts processed by the campaign, " +
+                    "with their send status. Filter by ?status=SUCCESS or ?status=FAILED. " +
+                    "Optionally filter by contact name/email with ?search=term."
+    )
+    public ResponseEntity<Page<CampaignContactResultDto>> getCampaignResults(
+            @PathVariable Long id,
+            @RequestParam(required = false) CampaignSendStatus status,
+            @RequestParam(required = false) String search,
+            @org.springdoc.core.annotations.ParameterObject Pageable pageable) {
+        return ResponseEntity.ok(campaignService.getCampaignResults(id, status, search, pageable));
+    }
+
+    @PreAuthorize("hasAuthority('CAMPAIGN_SHOW')")
+    @GetMapping("/{id}/results/summary")
+    @Operation(
+            summary = "Campaign send results summary",
+            description = "Returns success / failed / total counts for a campaign execution."
+    )
+    public ResponseEntity<CampaignResultsSummaryDto> getCampaignResultsSummary(@PathVariable Long id) {
+        return ResponseEntity.ok(campaignService.getCampaignResultsSummary(id));
     }
 
     @PreAuthorize("hasAuthority('CAMPAIGN_SHOW')")

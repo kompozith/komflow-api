@@ -3,6 +3,7 @@ package com.kompozith.komflow.features.messaging.controller;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.messaging.dto.CreateMessageDto;
 import com.kompozith.komflow.features.messaging.dto.MessageDto;
+import com.kompozith.komflow.features.messaging.dto.MessageTestDirectRequestDto;
 import com.kompozith.komflow.features.messaging.dto.MessageTestRequestDto;
 import com.kompozith.komflow.features.messaging.dto.MessageVariableDto;
 import com.kompozith.komflow.features.messaging.dto.SendResult;
@@ -160,6 +161,30 @@ public class MessageController {
             return ResponseEntity.badRequest().body(new SimpleResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             log.error("Error sending test message: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(new SimpleResponse<>("Failed to send test message", null));
+        }
+    }
+
+    @PreAuthorize("hasAuthority('MESSAGE_SEND_TO_CONTACT')")
+    @PostMapping("/{id}/test-direct")
+    @Operation(summary = "Send a direct test message", description = "Send a test message to a given email address or phone number")
+    public ResponseEntity<SimpleResponse> testMessageDirect(
+            @PathVariable Long id,
+            @RequestBody MessageTestDirectRequestDto request) {
+        try {
+            if (request == null || request.getRecipient() == null || request.getRecipient().isBlank()) {
+                throw new IllegalArgumentException("Recipient is required");
+            }
+            messageService.testMessageDirect(id, request.getRecipient());
+            return ResponseEntity.ok(new SimpleResponse<>("Test message sent successfully", null));
+        } catch (MissingChannelException | IllegalArgumentException e) {
+            log.warn("Invalid parameters: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new SimpleResponse<>(e.getMessage(), null));
+        } catch (ObjectNotFoundException e) {
+            log.warn("Resource not found: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new SimpleResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Error sending direct test message: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(new SimpleResponse<>("Failed to send test message", null));
         }
     }

@@ -255,6 +255,45 @@ public class MessageServiceImpl implements MessageService {
         log.info("Test message {} sent to contact {} via {}", messageId, contactId, channel);
     }
 
+    @Override
+    public void testMessageDirect(Long messageId, String recipient) {
+        if (messageId == null || messageId <= 0) {
+            throw new IllegalArgumentException("Invalid message ID");
+        }
+        if (recipient == null || recipient.isBlank()) {
+            throw new IllegalArgumentException("Recipient is required");
+        }
+
+        Message message = findEntityById(messageId);
+        MessageChannel channel = message.getChannel();
+
+        // Build a transient contact carrying just the provided address
+        com.kompozith.komflow.features.personnel.entity.Person person =
+                new com.kompozith.komflow.features.personnel.entity.Person();
+        person.setFirstName("Test");
+        person.setLastName("Recipient");
+
+        if (channel == MessageChannel.EMAIL) {
+            person.setEmail(recipient.trim());
+            person.setPhoneNumbers(new ArrayList<>());
+        } else {
+            // SMS or WHATSAPP — put any value in email (non-null column) and create a phone entry
+            person.setEmail("test@komflow.internal");
+            com.kompozith.komflow.features.personnel.entity.PhoneNumber phone =
+                    new com.kompozith.komflow.features.personnel.entity.PhoneNumber();
+            phone.setNumber(recipient.trim());
+            phone.setIsWhatsapp(channel == MessageChannel.WHATSAPP ? "true" : "false");
+            person.setPhoneNumbers(new ArrayList<>(List.of(phone)));
+        }
+
+        Contact syntheticContact = new Contact();
+        syntheticContact.setEnabled(true);
+        syntheticContact.setPerson(person);
+
+        messageDispatcherService.sendToContact(syntheticContact, message, channel);
+        log.info("Direct test for message {} sent to '{}' via {}", messageId, recipient, channel);
+    }
+
     private void validateCreateMessage(CreateMessageDto createMessageDto) {
         if (createMessageDto == null) {
             throw new IllegalArgumentException("Message payload is required");

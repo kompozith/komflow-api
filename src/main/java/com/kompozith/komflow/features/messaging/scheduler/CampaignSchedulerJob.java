@@ -52,4 +52,13 @@ public class CampaignSchedulerJob {
             }
         }
     }
+
+    /**
+     * Check every 5 minutes for RUNNING campaigns that have stalled and need their status resolved.
+     */
+    @Scheduled(fixedRate = 300000) // Every 5 minutes
+    public void resolveStaleRunningCampaigns() {
+        log.debug("Checking for stale RUNNING campaigns...");
+        campaignExecutionService.resolveStaleRunning();
+    }
 }
