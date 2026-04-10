@@ -65,6 +65,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private boolean isSseCampaignEventsRequest(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return uri != null && uri.contains("/campaigns/") && uri.endsWith("/events");
+        if (uri == null) {
+            return false;
+        }
+        // Existing: /campaigns/{id}/events
+        if (uri.contains("/campaigns/") && uri.endsWith("/events")) {
+            return true;
+        }
+        // New: /events/{id}/registration-stats/stream
+        return uri.matches(".*/events/\\d+/registration-stats/stream");
     }
 }

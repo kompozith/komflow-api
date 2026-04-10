@@ -26,15 +26,28 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kompozith.komflow.features.messaging.dto.DailyRegistrationCountDto;
+import com.kompozith.komflow.features.messaging.dto.EventRegistrationStatsDto;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -581,5 +594,187 @@ public class EventServiceImpl implements EventService {
             }
             tagRepository.deleteById(tagWithContacts.getId());
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EventRegistrationStatsDto getRegistrationStats(Long eventId, Instant from, Instant to) {
+        String tagName = EVENT_REGISTRATION_TAG_PREFIX + eventId;
+        Optional<Tag> tagOpt = tagRepository.findByNameWithContacts(tagName);
+
+        if (tagOpt.isEmpty() || tagOpt.get().getContacts() == null || tagOpt.get().getContacts().isEmpty()) {
+            return buildEmptyStats();
+        }
+
+        Set<Contact> allContacts = tagOpt.get().getContacts();
+        Instant now = Instant.now();
+
+        // --- KPIs all-time ---
+        long total  = allContacts.size();
+        long active = allContacts.stream().filter(Contact::isEnabled).count();
+
+        Instant lastRegistrationAt = allContacts.stream()
+                .map(Contact::getCreatedAt).filter(Objects::nonNull)
+                .max(Comparator.naturalOrder()).orElse(null);
+
+        // --- FenÃªtres fixes 7 j / 30 j (backward compat SSE) ---
+        Instant start7  = now.minus(7,  ChronoUnit.DAYS);
+        Instant start14 = now.minus(14, ChronoUnit.DAYS);
+        Instant start30 = now.minus(30, ChronoUnit.DAYS);
+        Instant start60 = now.minus(60, ChronoUnit.DAYS);
+
+        long newLast7  = allContacts.stream().filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(start7)).count();
+        long prev7     = allContacts.stream().filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(start14) && c.getCreatedAt().isBefore(start7)).count();
+        long newLast30 = allContacts.stream().filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(start30)).count();
+        long prev30    = allContacts.stream().filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(start60) && c.getCreatedAt().isBefore(start30)).count();
+
+        double growthWeek  = computeGrowthRate(newLast7,  prev7);
+        double growthMonth = computeGrowthRate(newLast30, prev30);
+
+        // --- FenÃªtre dynamique (from / to) ---
+        boolean isAllTime     = (from == null && to == null);
+        Instant effectiveFrom = from != null ? from : Instant.EPOCH;
+        Instant effectiveTo   = to   != null ? to   : now;
+
+        Set<Contact> windowContacts = isAllTime ? allContacts : allContacts.stream()
+                .filter(c -> c.getCreatedAt() != null
+                        && !c.getCreatedAt().isBefore(effectiveFrom)
+                        && !c.getCreatedAt().isAfter(effectiveTo))
+                .collect(Collectors.toSet());
+
+        long newInPeriod = isAllTime ? total : windowContacts.size();
+
+        long previousPeriodCount = 0L;
+        if (!isAllTime) {
+            long windowDays = ChronoUnit.DAYS.between(effectiveFrom, effectiveTo);
+            if (windowDays > 0) {
+                Instant prevFrom = effectiveFrom.minus(windowDays, ChronoUnit.DAYS);
+                Instant prevTo   = effectiveFrom;
+                previousPeriodCount = allContacts.stream()
+                        .filter(c -> c.getCreatedAt() != null
+                                && !c.getCreatedAt().isBefore(prevFrom)
+                                && c.getCreatedAt().isBefore(prevTo))
+                        .count();
+            }
+        }
+        double growthRatePeriod = isAllTime ? 0.0 : computeGrowthRate(newInPeriod, previousPeriodCount);
+
+        // --- Tendance (granularitÃ© auto) ---
+        DateTimeFormatter dayFmt   = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter monthFmt = DateTimeFormatter.ofPattern("yyyy-MM");
+        long rangeDays = isAllTime ? Long.MAX_VALUE : ChronoUnit.DAYS.between(effectiveFrom, effectiveTo);
+
+        List<DailyRegistrationCountDto> dailyTrend = new ArrayList<>();
+
+        if (rangeDays > 90) {
+            // AgrÃ©gation mensuelle
+            Set<Contact> trendContacts = windowContacts;
+            Map<YearMonth, Long> countByMonth = trendContacts.stream()
+                    .filter(c -> c.getCreatedAt() != null)
+                    .collect(Collectors.groupingBy(
+                            c -> YearMonth.from(c.getCreatedAt().atZone(ZoneOffset.UTC)),
+                            Collectors.counting()
+                    ));
+            YearMonth startMonth = isAllTime
+                    ? countByMonth.keySet().stream().min(Comparator.naturalOrder()).orElse(YearMonth.now())
+                    : YearMonth.from(effectiveFrom.atZone(ZoneOffset.UTC));
+            YearMonth endMonth = YearMonth.from(effectiveTo.atZone(ZoneOffset.UTC));
+            YearMonth mCursor  = startMonth;
+            while (!mCursor.isAfter(endMonth)) {
+                dailyTrend.add(new DailyRegistrationCountDto(mCursor.format(monthFmt), countByMonth.getOrDefault(mCursor, 0L)));
+                mCursor = mCursor.plusMonths(1);
+            }
+        } else {
+            // AgrÃ©gation journaliÃ¨re
+            Map<LocalDate, Long> countByDay = windowContacts.stream()
+                    .filter(c -> c.getCreatedAt() != null)
+                    .collect(Collectors.groupingBy(
+                            c -> c.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate(),
+                            Collectors.counting()
+                    ));
+            LocalDate startDay = effectiveFrom.atZone(ZoneOffset.UTC).toLocalDate();
+            LocalDate endDay   = effectiveTo.atZone(ZoneOffset.UTC).toLocalDate();
+            LocalDate dayCursor = startDay;
+            while (!dayCursor.isAfter(endDay)) {
+                dailyTrend.add(new DailyRegistrationCountDto(dayCursor.format(dayFmt), countByDay.getOrDefault(dayCursor, 0L)));
+                dayCursor = dayCursor.plusDays(1);
+            }
+        }
+
+        // --- RÃ©partitions (sur les contacts de la fenÃªtre) ---
+        Map<String, Long> byCivility = buildTopMap(windowContacts.stream()
+                .map(Contact::getCivility).filter(v -> v != null && !v.isBlank())
+                .collect(Collectors.groupingBy(v -> v, Collectors.counting())));
+
+        Map<String, Long> byAgeRange = buildTopMap(windowContacts.stream()
+                .map(Contact::getAgeRange).filter(v -> v != null && !v.isBlank())
+                .collect(Collectors.groupingBy(v -> v, Collectors.counting())));
+
+        Map<String, Long> byProfession = buildTopMap(windowContacts.stream()
+                .map(Contact::getProfession).filter(v -> v != null && !v.isBlank())
+                .collect(Collectors.groupingBy(v -> v, Collectors.counting())));
+
+        Map<String, Long> byCountry = buildTopMap(windowContacts.stream()
+                .filter(c -> c.getPerson() != null && c.getPerson().getCountry() != null && !c.getPerson().getCountry().isBlank())
+                .collect(Collectors.groupingBy(c -> c.getPerson().getCountry(), Collectors.counting())));
+
+        Map<String, Long> byLanguage = buildTopMap(windowContacts.stream()
+                .filter(c -> c.getPerson() != null && c.getPerson().getLanguage() != null && !c.getPerson().getLanguage().isBlank())
+                .collect(Collectors.groupingBy(c -> c.getPerson().getLanguage(), Collectors.counting())));
+
+        return new EventRegistrationStatsDto(
+                total, active,
+                newLast7, prev7, growthWeek,
+                newLast30, prev30, growthMonth,
+                lastRegistrationAt, dailyTrend,
+                byCivility, byAgeRange, byCountry, byLanguage, byProfession,
+                newInPeriod, previousPeriodCount, growthRatePeriod
+        );
+    }
+
+    private EventRegistrationStatsDto buildEmptyStats() {
+        return new EventRegistrationStatsDto(
+                0L, 0L,
+                0L, 0L, 0.0,
+                0L, 0L, 0.0,
+                null, List.of(),
+                Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
+                0L, 0L, 0.0
+        );
+    }
+
+    private double computeGrowthRate(long current, long previous) {
+        if (previous == 0) {
+            return current > 0 ? 100.0 : 0.0;
+        }
+        return Math.round(((current - previous) / (double) previous) * 10000.0) / 100.0;
+    }
+
+    /**
+     * Retourne un Map ordonnÃ© avec les 5 premiÃ¨res entrÃ©es + agrÃ©gation "Autres".
+     */
+    private Map<String, Long> buildTopMap(Map<String, Long> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return Map.of();
+        }
+        List<Map.Entry<String, Long>> sorted = raw.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .toList();
+
+        Map<String, Long> result = new LinkedHashMap<>();
+        long othersCount = 0L;
+        int rank = 0;
+        for (Map.Entry<String, Long> entry : sorted) {
+            if (rank < 5) {
+                result.put(entry.getKey(), entry.getValue());
+            } else {
+                othersCount += entry.getValue();
+            }
+            rank++;
+        }
+        if (othersCount > 0) {
+            result.put("Autres", othersCount);
+        }
+        return result;
     }
 }

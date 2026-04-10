@@ -1,15 +1,19 @@
 package com.kompozith.komflow.features.messaging.controller;
 
+import com.kompozith.komflow.features.core.service.SseEmitterRegistry;
 import com.kompozith.komflow.features.messaging.dto.CreateEventDto;
 import com.kompozith.komflow.features.messaging.dto.EventDto;
+import com.kompozith.komflow.features.messaging.dto.EventRegistrationStatsDto;
 import com.kompozith.komflow.features.messaging.service.EventService;
 import com.kompozith.komflow.util.SimpleResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,6 +25,7 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
+    private final SseEmitterRegistry sseEmitterRegistry;
 
     @PreAuthorize("hasAuthority('MESSAGE_CREATE')")
     @PostMapping
@@ -68,5 +73,24 @@ public class EventController {
     public ResponseEntity<SimpleResponse> delete(@PathVariable Long id) {
         eventService.delete(id);
         return ResponseEntity.ok(new SimpleResponse<>("Event deleted successfully", null));
+    }
+
+    @PreAuthorize("hasAuthority('MESSAGE_SHOW')")
+    @GetMapping("/{id}/registration-stats")
+    @Operation(summary = "Get event registration statistics")
+    public ResponseEntity<EventRegistrationStatsDto> getRegistrationStats(
+            @PathVariable Long id,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        Instant fromInstant = from != null ? Instant.parse(from) : null;
+        Instant toInstant   = to   != null ? Instant.parse(to)   : null;
+        return ResponseEntity.ok(eventService.getRegistrationStats(id, fromInstant, toInstant));
+    }
+
+    @PreAuthorize("hasAuthority('MESSAGE_SHOW')")
+    @GetMapping(value = "/{id}/registration-stats/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "Stream event registration statistics via SSE")
+    public SseEmitter streamRegistrationStats(@PathVariable Long id) {
+        return sseEmitterRegistry.register(id);
     }
 }

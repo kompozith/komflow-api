@@ -2,6 +2,7 @@ package com.kompozith.komflow.features.messaging.service;
 
 import com.kompozith.komflow.features.messaging.dto.CreateEventDto;
 import com.kompozith.komflow.features.messaging.dto.EventDto;
+import com.kompozith.komflow.features.messaging.dto.EventRegistrationStatsDto;
 import com.kompozith.komflow.features.messaging.entity.Event;
 
 import java.time.Instant;
@@ -17,4 +18,5 @@ public interface EventService {
     EventDto update(Long id, CreateEventDto createEventDto);
     void delete(Long id);
     Event findEntityById(Long id);
+    EventRegistrationStatsDto getRegistrationStats(Long eventId, Instant from, Instant to);
 }

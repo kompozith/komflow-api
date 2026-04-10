@@ -28,6 +28,7 @@ import com.kompozith.komflow.features.personnel.entity.PhoneNumber;
 import com.kompozith.komflow.features.personnel.repository.PersonRepository;
 import com.kompozith.komflow.features.personnel.repository.PhoneNumberRepository;
 import com.kompozith.komflow.features.messaging.entity.EventMode;
+import com.kompozith.komflow.features.contact.event.RegistrationSavedEvent;
 import com.kompozith.komflow.features.messaging.service.EventRegistrationWorkflowExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -100,6 +102,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     private final JdbcTemplate jdbcTemplate;
     private final GeoService geoService;
     private final EventRegistrationWorkflowExecutor eventRegistrationWorkflowExecutor;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public ContactDto create(CreateContactDto createContactDto) {
@@ -366,8 +369,12 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         }
 
         Runnable scheduleWorkflow = () -> eventRegistrationWorkflowExecutor.executeAsync(eventId, contactId);
+        Runnable publishStats = () -> applicationEventPublisher.publishEvent(
+                new RegistrationSavedEvent(this, eventId, contactId));
+
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             scheduleWorkflow.run();
+            publishStats.run();
             return;
         }
 
@@ -375,6 +382,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
             @Override
             public void afterCommit() {
                 scheduleWorkflow.run();
+                publishStats.run();
             }
         });
     }
