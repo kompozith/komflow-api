@@ -427,8 +427,8 @@ public class CampaignExecutionService {
                 }
             }
         }
-        if (message != null && message.getEvent() != null && message.getEvent().getId() != null) {
-            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + message.getEvent().getId();
+        if (message != null && message.getFirstEvent() != null && message.getFirstEvent().getId() != null) {
+            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + message.getFirstEvent().getId();
             tagRepository.findByNameWithContacts(eventTagName).ifPresent(eventTag -> {
                 if (eventTag.getContacts() != null) {
                     uniqueContacts.addAll(eventTag.getContacts());
@@ -446,8 +446,8 @@ public class CampaignExecutionService {
         }
 
         Instant eventInstantUtc = null;
-        if (message != null && message.getEvent() != null && message.getEvent().getStartAt() != null) {
-            eventInstantUtc = message.getEvent().getStartAt();
+        if (message != null && message.getFirstEvent() != null && message.getFirstEvent().getStartAt() != null) {
+            eventInstantUtc = message.getFirstEvent().getStartAt();
         } else if (campaign.getScheduledAt() != null) {
             eventInstantUtc = campaign.getScheduledAt();
         } else {
@@ -462,11 +462,11 @@ public class CampaignExecutionService {
         if (hasDirectContacts || hasDirectTags) {
             return true;
         }
-        if (campaign.getMessage() == null || campaign.getMessage().getEvent() == null
-                || campaign.getMessage().getEvent().getId() == null) {
+        if (campaign.getMessage() == null || campaign.getMessage().getFirstEvent() == null
+                || campaign.getMessage().getFirstEvent().getId() == null) {
             return false;
         }
-        String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getEvent().getId();
+        String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getFirstEvent().getId();
         return tagRepository.findByName(eventTagName).isPresent();
     }
 
@@ -567,9 +567,9 @@ public class CampaignExecutionService {
     /** Counts the distinct contacts the campaign is supposed to reach. */
     private long countTargetContacts(Campaign campaign) {
         Set<Long> ids = new HashSet<>(campaignRepository.findDirectAndTagContactIds(campaign.getId()));
-        if (campaign.getMessage() != null && campaign.getMessage().getEvent() != null
-                && campaign.getMessage().getEvent().getId() != null) {
-            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getEvent().getId();
+        if (campaign.getMessage() != null && campaign.getMessage().getFirstEvent() != null
+                && campaign.getMessage().getFirstEvent().getId() != null) {
+            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getFirstEvent().getId();
             tagRepository.findByNameWithContacts(eventTagName).ifPresent(tag -> {
                 if (tag.getContacts() != null) {
                     tag.getContacts().forEach(c -> ids.add(c.getId()));

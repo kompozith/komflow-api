@@ -9,6 +9,7 @@ import com.kompozith.komflow.features.core.dto.FileDto;
 import com.kompozith.komflow.features.core.entity.File;
 import com.kompozith.komflow.features.core.repository.FileRepository;
 import com.kompozith.komflow.features.messaging.dto.CreateMessageDto;
+import com.kompozith.komflow.features.messaging.dto.DuplicateMessageDto;
 import com.kompozith.komflow.features.messaging.dto.MessageDto;
 import com.kompozith.komflow.features.messaging.dto.SendResult;
 import com.kompozith.komflow.features.messaging.entity.Event;
@@ -68,11 +69,46 @@ public class MessageServiceImpl implements MessageService {
         createMessageDto.setContent(messageContentParserService.normalizeForStorage(createMessageDto.getContent(), createMessageDto.getChannel()));
         Message message = messageMapper.createMessageDtoToMessage(createMessageDto);
         message.setAttachments(resolveAttachmentEntities(createMessageDto.getAttachments()));
-        message.setEvent(resolveEventForMessage(createMessageDto.getEventId()));
+        message.setEvents(resolveEventsForMessage(createMessageDto.getEventIds()));
         Message savedMessage = messageRepository.save(message);
 
         log.info("Message created with id: {}", savedMessage.getId());
         return messageMapper.messageToMessageDto(savedMessage);
+    }
+
+    @Override
+    @Transactional
+    public MessageDto duplicate(Long id, DuplicateMessageDto dto) {
+        Message original = messageRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), id));
+
+        Message copy = new Message();
+        copy.setTitle(dto.getTitle().trim());
+        copy.setContent(original.getContent());
+        copy.setChannel(original.getChannel());
+
+        // Créer de nouveaux enregistrements File (même chemin physique, nouvel ID)
+        // afin de respecter la contrainte UNIQUE sur core_file_id dans msg_message_attachments
+        if (original.getAttachments() != null && !original.getAttachments().isEmpty()) {
+            List<File> clonedFiles = original.getAttachments().stream()
+                    .map(f -> {
+                        File clone = new File();
+                        clone.setName(f.getName());
+                        clone.setUrl(f.getUrl());
+                        return fileRepository.save(clone);
+                    })
+                    .collect(Collectors.toList());
+            copy.setAttachments(clonedFiles);
+        } else {
+            copy.setAttachments(new ArrayList<>());
+        }
+
+        // Les événements liés sont partagés par référence (pas de contrainte unique dessus)
+        copy.setEvents(original.getEvents() != null ? new ArrayList<>(original.getEvents()) : new ArrayList<>());
+
+        Message saved = messageRepository.save(copy);
+        log.info("Message duplicated: original={}, copy={}, title='{}'", id, saved.getId(), dto.getTitle());
+        return normalizeMessageDtoContent(messageMapper.messageToMessageDto(saved));
     }
 
     @Override
@@ -127,7 +163,7 @@ public class MessageServiceImpl implements MessageService {
         message.setContent(createMessageDto.getContent());
         message.setChannel(createMessageDto.getChannel());
         message.setAttachments(resolveAttachmentEntities(createMessageDto.getAttachments()));
-        message.setEvent(resolveEventForMessage(createMessageDto.getEventId()));
+        message.setEvents(resolveEventsForMessage(createMessageDto.getEventIds()));
 
         Message updatedMessage = messageRepository.save(message);
 
@@ -146,6 +182,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Message findEntityById(Long id) {
         return messageRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), id));
@@ -256,6 +293,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    @Transactional
     public void testMessageDirect(Long messageId, String recipient) {
         if (messageId == null || messageId <= 0) {
             throw new IllegalArgumentException("Invalid message ID");
@@ -307,10 +345,14 @@ public class MessageServiceImpl implements MessageService {
         if (createMessageDto.getChannel() == null) {
             throw new IllegalArgumentException("Channel is required");
         }
-        if (createMessageDto.getEventId() != null && createMessageDto.getEventId() <= 0) {
-            throw new IllegalArgumentException("Event id is invalid");
+        if (createMessageDto.getEventIds() != null) {
+            for (Long eventId : createMessageDto.getEventIds()) {
+                if (eventId != null && eventId <= 0) {
+                    throw new IllegalArgumentException("Event id is invalid");
+                }
+            }
         }
-        if (containsEventVariables(createMessageDto.getContent()) && createMessageDto.getEventId() == null) {
+        if (containsEventVariables(createMessageDto.getContent()) && (createMessageDto.getEventIds() == null || createMessageDto.getEventIds().isEmpty())) {
             throw new IllegalArgumentException("Linked event is required when message content uses event variables");
         }
         if (createMessageDto.getAttachments() != null) {
@@ -372,16 +414,18 @@ public class MessageServiceImpl implements MessageService {
         return resolved;
     }
 
-    private Event resolveEventForMessage(Long eventId) {
-        if (eventId == null) {
-            return null;
+    private List<Event> resolveEventsForMessage(List<Long> eventIds) {
+        if (eventIds == null || eventIds.isEmpty()) {
+            return new ArrayList<>();
         }
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ObjectNotFoundException(Event.class.getSimpleName(), eventId));
-        if (event.getStartAt() == null || !event.getStartAt().isAfter(Instant.now())) {
-            throw new IllegalArgumentException("Only future events can be linked to a message");
+        List<Event> resolved = new ArrayList<>();
+        for (Long eventId : eventIds) {
+            if (eventId == null) continue;
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new ObjectNotFoundException(Event.class.getSimpleName(), eventId));
+            resolved.add(event);
         }
-        return event;
+        return resolved;
     }
 
     private MessageDto normalizeMessageDtoContent(MessageDto dto) {

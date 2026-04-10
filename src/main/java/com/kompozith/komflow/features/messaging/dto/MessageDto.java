@@ -21,5 +21,5 @@ public class MessageDto {
     private Instant updatedAt;
     private List<FileDto> attachments;
     private Integer attachmentCount;
-    private EventDto event;
+    private List<EventDto> events;
 }

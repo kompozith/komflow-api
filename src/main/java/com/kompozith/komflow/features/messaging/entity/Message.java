@@ -5,6 +5,7 @@ import com.kompozith.komflow.features.core.entity.BaseEntity;
 import com.kompozith.komflow.features.core.entity.File;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -41,8 +42,21 @@ public class Message extends BaseEntity {
     )
     private List<File> attachments;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "msg_event_id")
-    private Event event;
+    // Événements associés au message (plusieurs événements possibles)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "msg_message_events",
+            joinColumns = @JoinColumn(name = "msg_message_id"),
+            inverseJoinColumns = @JoinColumn(name = "msg_event_id")
+    )
+    private List<Event> events = new ArrayList<>();
 
+    /**
+     * Retourne le premier événement lié (compatibilité avec les services
+     * qui n'ont besoin que d'un seul événement, ex. template parser).
+     */
+    public Event getFirstEvent() {
+        if (events == null || events.isEmpty()) return null;
+        return events.get(0);
+    }
 }

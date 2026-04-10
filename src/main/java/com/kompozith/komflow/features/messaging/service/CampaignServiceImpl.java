@@ -308,12 +308,12 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     private void appendEventRegistrationTagForDisplay(Campaign campaign, CampaignDetailsDto detailsDto) {
-        if (campaign == null || detailsDto == null || campaign.getMessage() == null || campaign.getMessage().getEvent() == null
-                || campaign.getMessage().getEvent().getId() == null) {
+        if (campaign == null || detailsDto == null || campaign.getMessage() == null || campaign.getMessage().getFirstEvent() == null
+                || campaign.getMessage().getFirstEvent().getId() == null) {
             return;
         }
 
-        String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getEvent().getId();
+        String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getFirstEvent().getId();
         Tag eventTag = tagRepository.findByName(eventTagName).orElse(null);
         if (eventTag == null) {
             return;
@@ -379,9 +379,9 @@ public class CampaignServiceImpl implements CampaignService {
         // is linked to an event
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new ObjectNotFoundException(Campaign.class.getSimpleName(), campaignId));
-        if (campaign.getMessage() != null && campaign.getMessage().getEvent() != null
-                && campaign.getMessage().getEvent().getId() != null) {
-            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getEvent().getId();
+        if (campaign.getMessage() != null && campaign.getMessage().getFirstEvent() != null
+                && campaign.getMessage().getFirstEvent().getId() != null) {
+            String eventTagName = EVENT_REGISTRATION_TAG_PREFIX + campaign.getMessage().getFirstEvent().getId();
             tagRepository.findByNameWithContacts(eventTagName).ifPresent(tag -> {
                 if (tag.getContacts() != null) {
                     tag.getContacts().forEach(c -> targetIds.add(c.getId()));

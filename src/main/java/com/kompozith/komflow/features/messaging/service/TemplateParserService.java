@@ -102,17 +102,17 @@ public class TemplateParserService {
     private String resolveEventVariable(MessageVariable variable, Contact contact, Message message, Instant eventInstantUtc) {
         if (variable == MessageVariable.EVENT_LOCAL_TIME) {
             Instant instantToUse = eventInstantUtc;
-            if (instantToUse == null && message != null && message.getEvent() != null) {
-                instantToUse = message.getEvent().getStartAt();
+            if (instantToUse == null && message != null && message.getFirstEvent() != null) {
+                instantToUse = message.getFirstEvent().getStartAt();
             }
             return resolveEventLocalTime(contact, instantToUse);
         }
         if (variable == MessageVariable.EVENT_END_LOCAL_TIME) {
             Instant instantToUse = null;
-            if (message != null && message.getEvent() != null) {
-                instantToUse = message.getEvent().getEndAt();
+            if (message != null && message.getFirstEvent() != null) {
+                instantToUse = message.getFirstEvent().getEndAt();
                 if (instantToUse == null) {
-                    instantToUse = message.getEvent().getStartAt();
+                    instantToUse = message.getFirstEvent().getStartAt();
                 }
             }
             if (instantToUse == null) {
@@ -121,32 +121,32 @@ public class TemplateParserService {
             return resolveEventLocalTime(contact, instantToUse);
         }
 
-        if (message == null || message.getEvent() == null) {
+        if (message == null || message.getFirstEvent() == null) {
             return "";
         }
 
         return switch (variable) {
-            case EVENT_TITLE -> safeString(message.getEvent().getTitle());
-            case EVENT_START_DATE -> formatEventDate(message.getEvent().getStartAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
-            case EVENT_START_TIME -> formatEventTime(message.getEvent().getStartAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
-            case EVENT_END_DATE -> formatEventDate(message.getEvent().getEndAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
-            case EVENT_END_TIME -> formatEventTime(message.getEvent().getEndAt(), resolveContactZoneId(contact, message.getEvent().getTimezone()));
-            case EVENT_LOCATION -> safeString(message.getEvent().getLocation());
-            case EVENT_TIMEZONE -> resolveTimezoneLocationLabel(contact, message.getEvent().getTimezone());
-            case EVENT_SUBTITLE -> safeString(message.getEvent().getSubtitle());
-            case EVENT_ADDRESS -> safeString(message.getEvent().getAddress());
-            case EVENT_MEETING_URL -> safeString(message.getEvent().getMeetingUrl());
+            case EVENT_TITLE -> safeString(message.getFirstEvent().getTitle());
+            case EVENT_START_DATE -> formatEventDate(message.getFirstEvent().getStartAt(), resolveContactZoneId(contact, message.getFirstEvent().getTimezone()));
+            case EVENT_START_TIME -> formatEventTime(message.getFirstEvent().getStartAt(), resolveContactZoneId(contact, message.getFirstEvent().getTimezone()));
+            case EVENT_END_DATE -> formatEventDate(message.getFirstEvent().getEndAt(), resolveContactZoneId(contact, message.getFirstEvent().getTimezone()));
+            case EVENT_END_TIME -> formatEventTime(message.getFirstEvent().getEndAt(), resolveContactZoneId(contact, message.getFirstEvent().getTimezone()));
+            case EVENT_LOCATION -> safeString(message.getFirstEvent().getLocation());
+            case EVENT_TIMEZONE -> resolveTimezoneLocationLabel(contact, message.getFirstEvent().getTimezone());
+            case EVENT_SUBTITLE -> safeString(message.getFirstEvent().getSubtitle());
+            case EVENT_ADDRESS -> safeString(message.getFirstEvent().getAddress());
+            case EVENT_MEETING_URL -> safeString(message.getFirstEvent().getMeetingUrl());
             case EVENT_PUBLIC_URL -> resolvePublicEventUrl(message);
             default -> "";
         };
     }
 
     private String resolvePublicEventUrl(Message message) {
-        if (message == null || message.getEvent() == null) {
+        if (message == null || message.getFirstEvent() == null) {
             return "";
         }
 
-        String slug = safeString(message.getEvent().getSlug()).trim();
+        String slug = safeString(message.getFirstEvent().getSlug()).trim();
         if (slug.isEmpty()) {
             return "";
         }

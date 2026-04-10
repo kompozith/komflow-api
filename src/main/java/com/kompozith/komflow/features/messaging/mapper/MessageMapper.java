@@ -24,14 +24,20 @@ public interface MessageMapper {
 
     @Mapping(target = "attachments", expression = "java(mapAttachments(message.getAttachments()))")
     @Mapping(target = "attachmentCount", expression = "java(message.getAttachments() != null ? message.getAttachments().size() : 0)")
-    @Mapping(target = "event", expression = "java(toEventDto(message.getEvent()))")
+    @Mapping(target = "events", expression = "java(toEventDtoList(message.getEvents()))")
     MessageDto messageToMessageDto(Message message);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "events", ignore = true)
     @Mapping(target = "attachments", expression = "java(mapAttachmentDtos(createMessageDto.getAttachments()))")
     Message createMessageDtoToMessage(CreateMessageDto createMessageDto);
+
+    default List<EventDto> toEventDtoList(List<Event> events) {
+        if (events == null) return List.of();
+        return events.stream().map(this::toEventDto).collect(Collectors.toList());
+    }
 
     default List<FileDto> mapAttachments(List<File> attachments) {
         if (attachments == null) {

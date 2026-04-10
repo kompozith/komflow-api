@@ -79,6 +79,17 @@ app:
     path: ${FILE_STORAGE_PATH}
   notifications:
     admin-emails: ${APP_ADMIN_EMAILS:}
+  whatsapp:
+    phone-number: ${WHATSAPP_NUMBER}
+    phone-number-id: ${WHATSAPP_NUMBER_ID}
+    business-account-id: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+    access-token: ${WHATSAPP_ACCESS_TOKEN}
+    api-version: v25.0
+    # Nom du template Meta approuvé (laisser vide → mode text, fenêtre 24h uniquement)
+    template-name: ${WHATSAPP_TEMPLATE_NAME:}
+    template-language: ${WHATSAPP_TEMPLATE_LANGUAGE:fr}
+    connect-timeout-ms: 10000
+    read-timeout-ms: 15000
   cors:
     allowed-origins:
       - http://localhost:4200

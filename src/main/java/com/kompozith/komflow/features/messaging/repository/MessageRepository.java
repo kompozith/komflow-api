@@ -51,6 +51,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE Message m SET m.event = null WHERE m.event.id = :eventId")
+    @Query(value = "DELETE FROM komflow.msg_message_events WHERE msg_event_id = :eventId", nativeQuery = true)
     int detachEventReferences(@Param("eventId") Long eventId);
 }

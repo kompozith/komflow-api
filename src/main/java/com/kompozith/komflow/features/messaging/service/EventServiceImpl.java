@@ -337,8 +337,8 @@ public class EventServiceImpl implements EventService {
                 message = messageRepository.findById(stepDto.getMessageId())
                         .orElseThrow(() -> new ObjectNotFoundException(Message.class.getSimpleName(), stepDto.getMessageId()));
 
-                if (message.getEvent() == null) {
-                    message.setEvent(event);
+                if (message.getEvents() == null || message.getEvents().stream().noneMatch(e -> e.getId().equals(event.getId()))) {
+                    message.getEvents().add(event);
                     messageRepository.save(message);
                 }
             }

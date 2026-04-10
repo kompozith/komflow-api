@@ -1,6 +1,7 @@
 package com.kompozith.komflow.features.messaging.service;
 
 import com.kompozith.komflow.features.messaging.dto.CreateMessageDto;
+import com.kompozith.komflow.features.messaging.dto.DuplicateMessageDto;
 import com.kompozith.komflow.features.messaging.dto.MessageDto;
 import com.kompozith.komflow.features.messaging.dto.SendResult;
 import com.kompozith.komflow.features.messaging.entity.Message;
@@ -13,6 +14,7 @@ import java.util.List;
 
 public interface MessageService {
     MessageDto create(CreateMessageDto createMessageDto);
+    MessageDto duplicate(Long id, DuplicateMessageDto dto);
     List<MessageDto> findAll();
     Page<MessageDto> findAll(Pageable pageable);
     Page<MessageDto> findAll(Pageable pageable, MessageChannel channel, String search, Instant createdAtFrom, Instant createdAtTo);

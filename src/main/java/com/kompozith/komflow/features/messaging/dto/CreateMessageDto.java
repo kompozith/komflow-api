@@ -20,5 +20,5 @@ public class CreateMessageDto {
 
     private List<FileDto> attachments;
 
-    private Long eventId;
+    private List<Long> eventIds;
 }

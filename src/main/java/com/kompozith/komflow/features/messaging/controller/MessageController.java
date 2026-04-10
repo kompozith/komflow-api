@@ -2,6 +2,7 @@ package com.kompozith.komflow.features.messaging.controller;
 
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.messaging.dto.CreateMessageDto;
+import com.kompozith.komflow.features.messaging.dto.DuplicateMessageDto;
 import com.kompozith.komflow.features.messaging.dto.MessageDto;
 import com.kompozith.komflow.features.messaging.dto.MessageTestDirectRequestDto;
 import com.kompozith.komflow.features.messaging.dto.MessageTestRequestDto;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.time.Instant;
 
@@ -80,6 +82,16 @@ public class MessageController {
     public ResponseEntity<SimpleResponse> delete(@PathVariable Long id) {
         messageService.delete(id);
         return ResponseEntity.ok(new SimpleResponse<>("Message deleted successfully", null));
+    }
+
+    @PreAuthorize("hasAuthority('MESSAGE_CREATE')")
+    @PostMapping("/{id}/duplicate")
+    @Operation(summary = "Duplicate a message", description = "Create a copy of an existing message with a new title")
+    public ResponseEntity<MessageDto> duplicate(
+            @PathVariable Long id,
+            @RequestBody @Valid DuplicateMessageDto dto) {
+        MessageDto duplicated = messageService.duplicate(id, dto);
+        return ResponseEntity.ok(duplicated);
     }
 
     @PreAuthorize("hasAuthority('MESSAGE_LIST')")
