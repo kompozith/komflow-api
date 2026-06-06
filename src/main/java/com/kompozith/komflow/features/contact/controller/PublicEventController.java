@@ -16,6 +16,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -72,6 +75,10 @@ public class PublicEventController {
             HttpServletRequest httpRequest
     ) {
         EventDto event = eventService.findBySlug(slug);
+        Instant registrationDeadline = event.getEndAt() != null ? event.getEndAt() : event.getStartAt();
+        if (registrationDeadline != null && registrationDeadline.isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Les inscriptions pour cet événement sont terminées.");
+        }
         return contactService.registerPublicEvent(event.getId(), event.getSlug(), request, buildRequestMetadata(httpRequest));
     }
 
