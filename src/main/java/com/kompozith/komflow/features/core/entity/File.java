@@ -20,4 +20,7 @@ public class File extends BaseEntity {
 
     @Column(nullable = false)
     private String url;
+
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 }

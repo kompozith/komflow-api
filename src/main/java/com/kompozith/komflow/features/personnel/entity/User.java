@@ -44,7 +44,8 @@ public class User extends BaseEntity {
             joinColumns = @JoinColumn(name = "prs_user_id"),
             inverseJoinColumns = @JoinColumn(name = "aut_role_id")
     )
-    private Set<Role> roles;
+    @Builder.Default
+    private Set<Role> roles = new java.util.HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL)
     private List<AuditLog> logs;

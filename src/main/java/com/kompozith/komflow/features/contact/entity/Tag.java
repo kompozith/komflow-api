@@ -34,4 +34,7 @@ public class Tag extends BaseEntity {
 
     @ManyToMany(mappedBy = "tags")
     private Set<Contact> contacts;
+
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 }

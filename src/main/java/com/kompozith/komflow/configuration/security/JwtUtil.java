@@ -25,14 +25,30 @@ public class JwtUtil {
     }
 
     public String generateToken(String username, String role) {
-        return Jwts.builder()
+        return generateToken(username, role, null);
+    }
+
+    public String generateToken(String username, String role, Long organizationId) {
+        var builder = Jwts.builder()
                 .subject(username)
                 .claim("role", role)
                 .issuer(config.getIssuer())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + config.getExpirationMs()))
-                .signWith(getSigningKey(), Jwts.SIG.HS256)
-                .compact();
+                .expiration(new Date(System.currentTimeMillis() + config.getExpirationMs()));
+        if (organizationId != null) {
+            builder.claim("organizationId", organizationId);
+        }
+        return builder.signWith(getSigningKey(), Jwts.SIG.HS256).compact();
+    }
+
+    public Long extractOrganizationId(String token) {
+        try {
+            Object claim = extractAllClaims(token).get("organizationId");
+            if (claim instanceof Number n) return n.longValue();
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public String generateRefreshToken(String username) {

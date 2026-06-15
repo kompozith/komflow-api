@@ -78,4 +78,7 @@ public class Campaign extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "cnt_tag_id")
     )
     private List<com.kompozith.komflow.features.contact.entity.Tag> mailCciTags;
+
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 }

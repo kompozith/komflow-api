@@ -68,4 +68,7 @@ public class Event extends BaseEntity {
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC")
     private List<EventRegistrationWorkflowStep> registrationWorkflowSteps = new ArrayList<>();
+
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 }

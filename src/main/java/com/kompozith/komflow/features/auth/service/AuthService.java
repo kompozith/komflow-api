@@ -12,6 +12,9 @@ public interface AuthService {
 
     SimpleResponse<UserDetailsDto>  signUp(SignUpDto registerDto);
 
+    /** Inscription SaaS : crée l'organisation + l'utilisateur admin, retourne les JWT. */
+    LoginResponseDto signUpForFrontend(SignUpDto signUpDto);
+
     SimpleResponse<UserDetailsDto> login(LoginDto loginDto);
 
     SimpleResponse<UserDetailsDto> refreshToken(RefreshTokenDto refreshTokenDto);

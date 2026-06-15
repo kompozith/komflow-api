@@ -1,11 +1,8 @@
 package com.kompozith.komflow.features.auth.controller;
 
-import com.kompozith.komflow.features.auth.dto.LoginDto;
-import com.kompozith.komflow.features.auth.dto.LoginResponseDto;
-import com.kompozith.komflow.features.auth.dto.RefreshTokenDto;
-import com.kompozith.komflow.features.auth.dto.SignUpDto;
-import com.kompozith.komflow.features.auth.dto.UserPermissionsDto;
+import com.kompozith.komflow.features.auth.dto.*;
 import com.kompozith.komflow.features.auth.service.AuthService;
+import com.kompozith.komflow.features.auth.service.PasswordResetService;
 import com.kompozith.komflow.features.personnel.dto.UserDetailsDto;
 import com.kompozith.komflow.util.SimpleResponse;
 import com.kompozith.komflow.configuration.security.AuthCookieConfig;
@@ -35,14 +32,18 @@ import jakarta.servlet.http.HttpServletResponse;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
     private final JwtUtil jwtUtil;
     private final AuthCookieConfig authCookieConfig;
 
     @PostMapping("/signup")
-    @Operation(summary = "Register a new user", description = "Create a new user account")
-    public ResponseEntity<SimpleResponse<UserDetailsDto>> signUp(@Valid @RequestBody SignUpDto signUpDto) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(authService.signUp(signUpDto));
+    @Operation(summary = "Register a new user", description = "Create a new user account and its organisation, then return JWT tokens")
+    public ResponseEntity<LoginResponseDto> signUp(@Valid @RequestBody SignUpDto signUpDto, HttpServletResponse response) {
+        LoginResponseDto body = authService.signUpForFrontend(signUpDto);
+        ResponseCookie refreshCookie = buildRefreshCookie(body.getRefreshToken());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        body.setRefreshToken(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
     @PostMapping("/login")
@@ -83,6 +84,29 @@ public class AuthController {
     public ResponseEntity<UserPermissionsDto> getPermissions() {
         UserPermissionsDto permissions = authService.getUserPermissions();
         return ResponseEntity.status(HttpStatus.OK).body(permissions);
+    }
+
+    // ─── Password Reset ────────────────────────────────────────────────────────
+
+    @PostMapping("/password-reset/initiate")
+    @Operation(summary = "Initiate password reset", description = "Send a 6-digit OTP to the user's email address")
+    public ResponseEntity<Void> initiatePasswordReset(@Valid @RequestBody PasswordResetInitiateRequest request) {
+        passwordResetService.initiatePasswordReset(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/password-reset/verify")
+    @Operation(summary = "Verify OTP", description = "Verify the OTP code and return a reset token for the final step")
+    public ResponseEntity<PasswordResetVerifyResponse> verifyOtp(@Valid @RequestBody PasswordResetVerifyRequest request) {
+        PasswordResetVerifyResponse response = passwordResetService.verifyOtp(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/password-reset/complete")
+    @Operation(summary = "Complete password reset", description = "Set the new password using the reset token from step 2")
+    public ResponseEntity<Void> completePasswordReset(@Valid @RequestBody PasswordResetCompleteRequest request) {
+        passwordResetService.completePasswordReset(request);
+        return ResponseEntity.ok().build();
     }
 
     private RefreshTokenDto resolveRefreshToken(RefreshTokenDto refreshTokenDto, String refreshTokenCookie) {

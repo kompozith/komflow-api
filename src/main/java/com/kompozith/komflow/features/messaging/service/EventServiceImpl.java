@@ -22,6 +22,7 @@ import com.kompozith.komflow.features.messaging.entity.Message;
 import com.kompozith.komflow.features.messaging.mapper.EventMapper;
 import com.kompozith.komflow.features.messaging.repository.EventRepository;
 import com.kompozith.komflow.features.messaging.repository.MessageRepository;
+import com.kompozith.komflow.features.organization.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,8 +67,10 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventDto create(CreateEventDto createEventDto) {
+        Long orgId = TenantContext.getOrganizationId();
         validatePayload(createEventDto);
         Event event = eventMapper.createEventDtoToEvent(createEventDto);
+        event.setOrganizationId(orgId);
         event.setTitle(createEventDto.getTitle().trim());
         event.setSlug(generateUniqueSlug(event.getTitle(), null));
         event.setDescription(sanitizeRichTextToNull(createEventDto.getDescription()));
@@ -91,7 +94,9 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public List<EventDto> findAll() {
+        Long orgId = TenantContext.getOrganizationId();
         return eventRepository.findAll().stream()
+                .filter(e -> orgId.equals(e.getOrganizationId()))
                 .map(this::toEventDto)
                 .toList();
     }
@@ -99,8 +104,10 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public List<EventDto> findFuture(Instant from) {
+        Long orgId = TenantContext.getOrganizationId();
         Instant start = from != null ? from : Instant.now();
         return eventRepository.findAllByStartAtGreaterThanEqualOrderByStartAtAsc(start).stream()
+                .filter(e -> orgId.equals(e.getOrganizationId()))
                 .map(this::toEventDto)
                 .toList();
     }

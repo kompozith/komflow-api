@@ -37,7 +37,8 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     FROM komflow.cnt_tags t
     LEFT JOIN komflow.cnt_contact_tags ct ON t.id = ct.cnt_tag_id
     LEFT JOIN komflow.cnt_contacts c ON ct.cnt_contact_id = c.id
-    WHERE (COALESCE(:search, '') = ''
+    WHERE t.organization_id = :organizationId
+      AND (COALESCE(:search, '') = ''
            OR LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%'))
            OR LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%')))
       AND (CAST(:createdAtFrom AS TIMESTAMP) IS NULL OR t.created_at >= CAST(:createdAtFrom AS TIMESTAMP))
@@ -46,9 +47,13 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     GROUP BY t.id, t.name, t.description, t.color_code, t.enabled, t.created_at, t.updated_at
     """,
             nativeQuery = true)
-    Page<TagWithContactCountDto> findWithFiltersAndContactCount(@Param("search") String search,
+    Page<TagWithContactCountDto> findWithFiltersAndContactCount(@Param("organizationId") Long organizationId,
+                                                                @Param("search") String search,
                                                                 @Param("createdAtFrom") Instant createdAtFrom,
                                                                 @Param("createdAtTo") Instant createdAtTo,
                                                                 @Param("enabled") Boolean enabled,
                                                                 Pageable pageable);
+
+    @Query("SELECT t, COUNT(c) FROM Tag t LEFT JOIN t.contacts c WHERE t.organizationId = :orgId GROUP BY t.id")
+    List<Object[]> findAllWithContactCountByOrg(@Param("orgId") Long orgId);
 }

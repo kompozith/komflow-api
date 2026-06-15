@@ -18,6 +18,7 @@ import com.kompozith.komflow.features.messaging.entity.MessageChannel;
 import com.kompozith.komflow.features.messaging.mapper.MessageMapper;
 import com.kompozith.komflow.features.messaging.repository.EventRepository;
 import com.kompozith.komflow.features.messaging.repository.MessageRepository;
+import com.kompozith.komflow.features.organization.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -64,10 +65,12 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional
     public MessageDto create(CreateMessageDto createMessageDto) {
+        Long orgId = TenantContext.getOrganizationId();
         validateCreateMessage(createMessageDto);
         createMessageDto.setContent(normalizeLegacyEventVariables(createMessageDto.getContent()));
         createMessageDto.setContent(messageContentParserService.normalizeForStorage(createMessageDto.getContent(), createMessageDto.getChannel()));
         Message message = messageMapper.createMessageDtoToMessage(createMessageDto);
+        message.setOrganizationId(orgId);
         message.setAttachments(resolveAttachmentEntities(createMessageDto.getAttachments()));
         message.setEvents(resolveEventsForMessage(createMessageDto.getEventIds()));
         Message savedMessage = messageRepository.save(message);
@@ -113,7 +116,9 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<MessageDto> findAll() {
+        Long orgId = TenantContext.getOrganizationId();
         return messageRepository.findAll().stream()
+                .filter(m -> orgId.equals(m.getOrganizationId()))
                 .map(messageMapper::messageToMessageDto)
                 .map(this::normalizeMessageDtoContent)
                 .collect(Collectors.toList());
@@ -121,7 +126,8 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public Page<MessageDto> findAll(Pageable pageable) {
-        return messageRepository.findAll(pageable)
+        Long orgId = TenantContext.getOrganizationId();
+        return messageRepository.findByOrganizationId(orgId, pageable)
                 .map(messageMapper::messageToMessageDto)
                 .map(this::normalizeMessageDtoContent);
     }

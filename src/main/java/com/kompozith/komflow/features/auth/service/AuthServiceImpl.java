@@ -8,10 +8,18 @@ import com.kompozith.komflow.features.auth.dto.UserPermissionsDto;
 import com.kompozith.komflow.features.auth.entity.RefreshToken;
 import com.kompozith.komflow.features.auth.entity.Role;
 import com.kompozith.komflow.features.auth.repository.RefreshTokenRepository;
+import com.kompozith.komflow.features.auth.repository.RoleRepository;
 import com.kompozith.komflow.exception.InvalidCredentialsException;
 import com.kompozith.komflow.exception.ObjectExistException;
 import com.kompozith.komflow.exception.ObjectNotFoundException;
 import com.kompozith.komflow.features.core.service.BaseService;
+import com.kompozith.komflow.features.organization.TenantContext;
+import com.kompozith.komflow.features.organization.entity.Organization;
+import com.kompozith.komflow.features.organization.entity.OrganizationMember;
+import com.kompozith.komflow.features.organization.entity.OrganizationMember.MemberStatus;
+import com.kompozith.komflow.features.organization.entity.OrganizationMember.WorkspaceRole;
+import com.kompozith.komflow.features.organization.repository.OrganizationMemberRepository;
+import com.kompozith.komflow.features.organization.repository.OrganizationRepository;
 import com.kompozith.komflow.features.personnel.dto.UserDetailsDto;
 import com.kompozith.komflow.features.personnel.entity.Person;
 import com.kompozith.komflow.features.personnel.entity.User;
@@ -26,6 +34,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -38,12 +47,15 @@ public class AuthServiceImpl extends BaseService implements AuthService {
 
     private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid credentials";
 
-    private final UserRepository userRepository;
-    private final PersonRepository personRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
+    private final UserRepository         userRepository;
+    private final PersonRepository       personRepository;
+    private final OrganizationRepository organizationRepository;
+    private final OrganizationMemberRepository memberRepository;
+    private final PasswordEncoder        passwordEncoder;
+    private final AuthenticationManager  authenticationManager;
+    private final JwtUtil                jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RoleRepository         roleRepository;
 
     @Override
     public SimpleResponse<UserDetailsDto>  signUp(SignUpDto signUpDto) {
@@ -88,6 +100,79 @@ public class AuthServiceImpl extends BaseService implements AuthService {
                 "userAccount.created",
                 UserDetailsDto.mapFromUser(user)
         );
+    }
+
+    @Override
+    @Transactional
+    public LoginResponseDto signUpForFrontend(SignUpDto signUpDto) {
+        // ── Vérifications unicité ─────────────────────────────────────────
+        if (userRepository.findByUsername(signUpDto.username()).isPresent()) {
+            throw new ObjectExistException(User.class.getSimpleName(), "username", signUpDto.username());
+        }
+        personRepository.findByEmail(signUpDto.email()).ifPresent(p -> {
+            userRepository.findByPersonId(p.getId()).ifPresent(u -> {
+                throw new ObjectExistException(User.class.getSimpleName(), "email", signUpDto.email());
+            });
+        });
+
+        // ── Création de l'organisation ────────────────────────────────────
+        String slug = buildSlug(signUpDto.organizationSlug(), signUpDto.organizationName());
+        if (organizationRepository.existsBySlug(slug)) {
+            // Unicité du slug : on suffixe avec un timestamp court
+            slug = slug + "-" + Long.toHexString(System.currentTimeMillis()).substring(4);
+        }
+        Organization org = Organization.builder()
+                .name(signUpDto.organizationName())
+                .slug(slug)
+                .planCode("FREE")
+                .active(true)
+                .build();
+        org = organizationRepository.save(org);
+
+        // ── Création de la personne et de l'utilisateur ───────────────────
+        Person person = personRepository.save(Person.builder()
+                .email(signUpDto.email())
+                .firstName(signUpDto.firstName())
+                .lastName(signUpDto.lastName())
+                .build());
+
+        User user = userRepository.save(User.builder()
+                .username(signUpDto.username())
+                .password(passwordEncoder.encode(signUpDto.password()))
+                .person(person)
+                .enabled(true)
+                .build());
+
+        // ── Création du membre OWNER dans l'organisation ──────────────────────
+        OrganizationMember ownerMembership = OrganizationMember.builder()
+                .organization(org)
+                .user(user)
+                .role(WorkspaceRole.OWNER)
+                .status(MemberStatus.ACTIVE)
+                .build();
+        memberRepository.save(ownerMembership);
+
+        // ── Assigner le rôle ADMIN système au nouvel utilisateur ────────────
+        roleRepository.findByName("ADMIN").ifPresent(adminRole ->
+                user.setRoles(java.util.Set.of(adminRole)));
+        userRepository.save(user);
+
+        // ── Émission des tokens avec organizationId ───────────────────────
+        TenantContext.setOrganizationId(org.getId());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), null, List.of()));
+
+        return issueTokensForFrontend(user, org.getId());
+    }
+
+    /** Génère un slug URL-friendly depuis un slug fourni ou un nom libre. */
+    private String buildSlug(String slugInput, String name) {
+        String base = (slugInput != null && !slugInput.isBlank())
+                ? slugInput
+                : name.toLowerCase()
+                      .replaceAll("[^a-z0-9]+", "-")
+                      .replaceAll("^-|-$", "");
+        return base.length() > 60 ? base.substring(0, 60) : base;
     }
 
     @Override
@@ -230,7 +315,12 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     }
 
     private LoginResponseDto issueTokensForFrontend(User user) {
-        String accessToken = jwtUtil.generateToken(user.getUsername(), "");
+        Long orgId = TenantContext.getOrganizationId();
+        return issueTokensForFrontend(user, orgId);
+    }
+
+    private LoginResponseDto issueTokensForFrontend(User user, Long orgId) {
+        String accessToken = jwtUtil.generateToken(user.getUsername(), "", orgId);
         String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
 
         replaceRefreshToken(user, refreshToken);

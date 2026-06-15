@@ -20,6 +20,7 @@ import com.kompozith.komflow.features.messaging.entity.CampaignStatus;
 import com.kompozith.komflow.features.messaging.mapper.CampaignMapper;
 import com.kompozith.komflow.features.messaging.repository.CampaignContactResultRepository;
 import com.kompozith.komflow.features.messaging.repository.CampaignRepository;
+import com.kompozith.komflow.features.organization.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -49,7 +50,9 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional
     public CampaignDto create(CreateCampaignDto createCampaignDto) {
+        Long orgId = TenantContext.getOrganizationId();
         Campaign campaign = campaignMapper.createCampaignDtoToCampaign(createCampaignDto);
+        campaign.setOrganizationId(orgId);
 
         // Set message
         campaign.setMessage(messageService.findEntityById(createCampaignDto.getMessageId()));
@@ -98,7 +101,9 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional(readOnly = true)
     public List<CampaignDto> findAll() {
+        Long orgId = TenantContext.getOrganizationId();
         return campaignRepository.findAll().stream()
+                .filter(c -> orgId.equals(c.getOrganizationId()))
                 .map(campaignMapper::campaignToCampaignDto)
                 .collect(Collectors.toList());
     }
@@ -106,7 +111,8 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional(readOnly = true)
     public Page<CampaignDto> findAll(Pageable pageable) {
-        return campaignRepository.findAll(pageable)
+        Long orgId = TenantContext.getOrganizationId();
+        return campaignRepository.findByOrganizationId(orgId, pageable)
                 .map(campaignMapper::campaignToCampaignDto);
     }
 

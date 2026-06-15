@@ -10,6 +10,7 @@ import com.kompozith.komflow.features.contact.mapper.TagMapper;
 import com.kompozith.komflow.features.contact.repository.ContactRepository;
 import com.kompozith.komflow.features.contact.repository.TagRepository;
 import com.kompozith.komflow.features.core.service.BaseService;
+import com.kompozith.komflow.features.organization.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,13 +36,15 @@ public class TagServiceImpl extends BaseService implements TagService {
     @Override
     @Transactional
     public TagDto create(TagDto tagDto) {
-        // Check if tag with same name already exists
-        if (tagRepository.findByName(tagDto.getName()).isPresent()) {
+        Long orgId = TenantContext.getOrganizationId();
+        // Check if tag with same name already exists in this org
+        if (tagRepository.findByName(tagDto.getName()).filter(t -> orgId.equals(t.getOrganizationId())).isPresent()) {
             throw new ObjectExistException(Tag.class.getSimpleName(), "name", tagDto.getName());
         }
 
         Tag tag = tagMapper.tagDtoToTag(tagDto);
-        tag.setEnabled(true); // Default to enabled
+        tag.setEnabled(true);
+        tag.setOrganizationId(orgId);
         Tag savedTag = tagRepository.save(tag);
 
         syncTagContacts(savedTag, tagDto.getContactIds());
@@ -57,7 +60,8 @@ public class TagServiceImpl extends BaseService implements TagService {
 
     @Override
     public List<TagDto> findAll() {
-        List<Object[]> results = tagRepository.findAllWithContactCount();
+        Long orgId = TenantContext.getOrganizationId();
+        List<Object[]> results = tagRepository.findAllWithContactCountByOrg(orgId);
         return results.stream()
                 .map(result -> {
                     Tag tag = (Tag) result[0];
@@ -71,8 +75,8 @@ public class TagServiceImpl extends BaseService implements TagService {
 
     @Override
     public Page<TagWithContactCountDto> findAll(Pageable pageable, String search, Instant startDate, Instant endDate, Boolean enabled) {
-        // Get all tags with contact count
-        return tagRepository.findWithFiltersAndContactCount(search, startDate, endDate, enabled, pageable);
+        Long orgId = TenantContext.getOrganizationId();
+        return tagRepository.findWithFiltersAndContactCount(orgId, search, startDate, endDate, enabled, pageable);
     }
 
     @Override

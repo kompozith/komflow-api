@@ -108,7 +108,7 @@ public class GlobalExceptionHandler {
     //Handle 404 not found exception
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler({NoResourceFoundException.class, EntityNotFoundException.class, ObjectNotFoundException.class})
-    public ErrorResponse handlerResourceFoundException(RuntimeException exception){
+    public ErrorResponse handlerResourceFoundException(Exception exception){
         return new ErrorResponse("RESOURCE_NOT_FOUND", exception.getMessage());
     }
 

@@ -2,6 +2,8 @@ package com.kompozith.komflow.features.messaging.repository;
 
 import com.kompozith.komflow.features.messaging.entity.Campaign;
 import com.kompozith.komflow.features.messaging.entity.CampaignStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -28,4 +30,6 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
            "UNION " +
            "SELECT DISTINCT c.id FROM Campaign camp JOIN camp.tags t JOIN t.contacts c WHERE camp.id = :id")
     Set<Long> findDirectAndTagContactIds(@Param("id") Long id);
+
+    Page<Campaign> findByOrganizationId(Long organizationId, Pageable pageable);
 }

@@ -27,7 +27,8 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     LEFT JOIN komflow.prs_phone_number pn ON p.id = pn.person_id
     LEFT JOIN komflow.cnt_contact_tags ct ON c.id = ct.cnt_contact_id
     LEFT JOIN komflow.cnt_tags t ON t.id = ct.cnt_tag_id
-    WHERE (COALESCE(:search, '') = ''
+    WHERE c.organization_id = :organizationId
+      AND (COALESCE(:search, '') = ''
            OR LOWER(p.first_name) LIKE LOWER(CONCAT('%', :search, '%'))
            OR LOWER(p.last_name) LIKE LOWER(CONCAT('%', :search, '%'))
            OR LOWER(p.email) LIKE LOWER(CONCAT('%', :search, '%'))
@@ -43,6 +44,7 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     GROUP BY c.id, c.enabled, c.last_message_received_at, c.civility, c.profession, c.age_range, c.objectives, c.website_url, c.prs_person_id, c.created_at, c.updated_at, p.id, p.first_name, p.last_name, p.email, p.language, p.country, p.city, p.timezone, p.created_at, p.updated_at, pn.number
     """, nativeQuery = true)
     Page<ContactWithTagCountDto> findWithFiltersAndTagCount(
+            @Param("organizationId") Long organizationId,
             @Param("search") String search,
             @Param("enabled") Boolean enabled,
             @Param("createdAtFrom") Instant createdAtFrom,

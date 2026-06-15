@@ -48,4 +48,7 @@ public class Contact extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "cnt_tag_id")
     )
     private Set<Tag> tags;
+
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 }

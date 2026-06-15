@@ -59,4 +59,7 @@ public class Message extends BaseEntity {
         if (events == null || events.isEmpty()) return null;
         return events.get(0);
     }
+
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 }

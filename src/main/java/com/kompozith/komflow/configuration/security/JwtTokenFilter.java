@@ -1,6 +1,7 @@
 package com.kompozith.komflow.configuration.security;
 
 import com.kompozith.komflow.exception.JwtAuthenticationException;
+import com.kompozith.komflow.features.organization.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -35,6 +36,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
+
+                // Alimentation du TenantContext (multi-tenancy)
+                Long orgId = jwtUtil.extractOrganizationId(token);
+                if (orgId != null) {
+                    TenantContext.setOrganizationId(orgId);
+                }
             }
         } catch (JwtAuthenticationException ex) {
             request.setAttribute("jwtError", ex);
@@ -42,7 +49,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             request.setAttribute("authError", ex);
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            TenantContext.clear();
+        }
     }
 
     private String resolveToken(HttpServletRequest request) {

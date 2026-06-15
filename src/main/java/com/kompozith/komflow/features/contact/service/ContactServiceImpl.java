@@ -21,6 +21,7 @@ import com.kompozith.komflow.features.core.dto.GeoCityDto;
 import com.kompozith.komflow.features.core.dto.GeoCountryDto;
 import com.kompozith.komflow.features.core.service.BaseService;
 import com.kompozith.komflow.features.core.service.GeoService;
+import com.kompozith.komflow.features.organization.TenantContext;
 import com.kompozith.komflow.features.personnel.dto.CreatePersonDto;
 import com.kompozith.komflow.features.personnel.dto.CreatePhoneNumberDto;
 import com.kompozith.komflow.features.personnel.entity.Person;
@@ -106,10 +107,12 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
     @Override
     public ContactDto create(CreateContactDto createContactDto) {
+        Long orgId = TenantContext.getOrganizationId();
         Contact contact = contactMapper.createContactDtoToContact(createContactDto);
 
         Person person = resolvePersonForCreate(createContactDto);
         contact.setPerson(person);
+        contact.setOrganizationId(orgId);
 
         if (createContactDto.getTagIds() != null && !createContactDto.getTagIds().isEmpty()) {
             contact.setTags(new HashSet<>(tagRepository.findAllById(createContactDto.getTagIds())));
@@ -120,26 +123,38 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
     @Override
     public List<ContactDto> findAll() {
-        return contactRepository.findAll().stream().map(contactMapper::contactToContactDto).collect(Collectors.toList());
+        Long orgId = TenantContext.getOrganizationId();
+        return contactRepository.findAll().stream()
+                .filter(c -> orgId.equals(c.getOrganizationId()))
+                .map(contactMapper::contactToContactDto).collect(Collectors.toList());
     }
 
     @Override
     public Page<ContactWithTagCountDto> findAll(Pageable pageable, String search, Boolean enabled, Instant createdAtFrom, Instant createdAtTo, String tagIds) {
+        Long orgId = TenantContext.getOrganizationId();
         String normalizedTagIds = normalizeTagIds(tagIds);
-        return contactRepository.findWithFiltersAndTagCount(search, enabled, createdAtFrom, createdAtTo, normalizedTagIds, pageable);
+        return contactRepository.findWithFiltersAndTagCount(orgId, search, enabled, createdAtFrom, createdAtTo, normalizedTagIds, pageable);
     }
 
     @Override
     public ContactDetailsDto findById(Long id) {
+        Long orgId = TenantContext.getOrganizationId();
         Contact contact = contactRepository.findByIdWithAssociations(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Contact.class.getSimpleName(), id));
+        if (!orgId.equals(contact.getOrganizationId())) {
+            throw new ObjectNotFoundException(Contact.class.getSimpleName(), id);
+        }
         return contactMapper.contactToContactDetailsDto(contact);
     }
 
     @Override
     public ContactDto update(Long id, CreateContactDto createContactDto) {
+        Long orgId = TenantContext.getOrganizationId();
         Contact contact = contactRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Contact.class.getSimpleName(), id));
+        if (!orgId.equals(contact.getOrganizationId())) {
+            throw new ObjectNotFoundException(Contact.class.getSimpleName(), id);
+        }
 
         Contact alreadyExistedContact = contactRepository.findByPersonId(createContactDto.getPersonId()).orElse(null);
 
@@ -174,9 +189,12 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
     @Override
     public void delete(Long id) {
-        contactRepository.findById(id)
+        Long orgId = TenantContext.getOrganizationId();
+        Contact contact = contactRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException(Contact.class.getSimpleName(), id));
-
+        if (!orgId.equals(contact.getOrganizationId())) {
+            throw new ObjectNotFoundException(Contact.class.getSimpleName(), id);
+        }
         contactRepository.deleteById(id);
     }
 
@@ -188,7 +206,9 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         }
 
         String normalizedTagIds = normalizeTagIds(tagIds);
+        Long orgId = TenantContext.getOrganizationId();
         Page<ContactWithTagCountDto> page = contactRepository.findWithFiltersAndTagCount(
+                orgId,
                 search,
                 enabled,
                 createdAtFrom,
