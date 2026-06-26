@@ -1,6 +1,1 @@
 CREATE SCHEMA IF NOT EXISTS komflow;
-ALTER TABLE IF EXISTS komflow.msg_events
-    ALTER COLUMN all_day SET DEFAULT FALSE;
-
-ALTER TABLE IF EXISTS komflow.msg_events
-    ADD COLUMN IF NOT EXISTS banner_image_url VARCHAR(2048);
