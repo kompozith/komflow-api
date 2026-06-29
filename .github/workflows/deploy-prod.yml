@@ -3,14 +3,6 @@ name: Deploy to production
 on:
   push:
     branches:
-      - main
-      - master
-      - prod
-      - 'feature/**'
-  pull_request:
-    branches:
-      - main
-      - master
       - prod
 
 jobs:
