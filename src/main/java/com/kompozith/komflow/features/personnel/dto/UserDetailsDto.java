@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 @SuperBuilder
 public class UserDetailsDto {
 
-    private String username;
     private String email;
     private String firstName;
     private String lastName;
@@ -23,7 +22,6 @@ public class UserDetailsDto {
 
     public static UserDetailsDto mapFromUser(User user) {
         return UserDetailsDto.builder()
-                .username(user.getUsername())
                 .email(user.getPerson().getEmail())
                 .firstName(user.getPerson().getFirstName())
                 .lastName(user.getPerson().getLastName())
@@ -36,7 +34,6 @@ public class UserDetailsDto {
 
     public static UserDetailsDto mapFormUserDetailsInterface(UserDetailsInterfaceDto userDetailsInterfaceDto) {
         return UserDetailsDto.builder()
-                .username(userDetailsInterfaceDto.getUsername())
                 .email(userDetailsInterfaceDto.getEmail())
                 .firstName(userDetailsInterfaceDto.getFirstName())
                 .lastName(userDetailsInterfaceDto.getLastName())

@@ -22,8 +22,8 @@ public class Person extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    // Email du contact
-    @Column(nullable = false)
+    // Email du contact — identifiant unique de connexion (seul identifiant d'authentification)
+    @Column(nullable = false, unique = true)
     private String email;
 
     // Prenom du contact

@@ -18,6 +18,7 @@ import com.kompozith.komflow.features.organization.entity.Organization;
 import com.kompozith.komflow.features.organization.entity.OrganizationMember;
 import com.kompozith.komflow.features.organization.entity.OrganizationMember.MemberStatus;
 import com.kompozith.komflow.features.organization.entity.OrganizationMember.WorkspaceRole;
+import com.kompozith.komflow.features.organization.dto.WorkspaceSummaryDto;
 import com.kompozith.komflow.features.organization.repository.OrganizationMemberRepository;
 import com.kompozith.komflow.features.organization.repository.OrganizationRepository;
 import com.kompozith.komflow.features.personnel.dto.UserDetailsDto;
@@ -60,13 +61,6 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     @Override
     public SimpleResponse<UserDetailsDto>  signUp(SignUpDto signUpDto) {
 
-        // Check is the username is used
-        Optional<User> foundUserByUserName = userRepository.findByUsername(signUpDto.username());
-
-        if (foundUserByUserName.isPresent()) {
-            throw new ObjectExistException(User.class.getSimpleName(),"username",signUpDto.username());
-        }
-
         // Check if email is used
         Optional<Person> foundPersonByEmail = personRepository.findByEmail(signUpDto.email());
         if (foundPersonByEmail.isPresent()) {
@@ -88,7 +82,6 @@ public class AuthServiceImpl extends BaseService implements AuthService {
         person = personRepository.save(person);
 
         User user = User.builder()
-                .username(signUpDto.username())
                 .password(passwordEncoder.encode(signUpDto.password()))
                 .person(person)
                 .build();
@@ -106,9 +99,6 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     @Transactional
     public LoginResponseDto signUpForFrontend(SignUpDto signUpDto) {
         // ── Vérifications unicité ─────────────────────────────────────────
-        if (userRepository.findByUsername(signUpDto.username()).isPresent()) {
-            throw new ObjectExistException(User.class.getSimpleName(), "username", signUpDto.username());
-        }
         personRepository.findByEmail(signUpDto.email()).ifPresent(p -> {
             userRepository.findByPersonId(p.getId()).ifPresent(u -> {
                 throw new ObjectExistException(User.class.getSimpleName(), "email", signUpDto.email());
@@ -137,7 +127,6 @@ public class AuthServiceImpl extends BaseService implements AuthService {
                 .build());
 
         User user = userRepository.save(User.builder()
-                .username(signUpDto.username())
                 .password(passwordEncoder.encode(signUpDto.password()))
                 .person(person)
                 .enabled(true)
@@ -160,7 +149,7 @@ public class AuthServiceImpl extends BaseService implements AuthService {
         // ── Émission des tokens avec organizationId ───────────────────────
         TenantContext.setOrganizationId(org.getId());
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), null, List.of()));
+                new UsernamePasswordAuthenticationToken(user.getPerson().getEmail(), null, List.of()));
 
         return issueTokensForFrontend(user, org.getId());
     }
@@ -200,7 +189,7 @@ public class AuthServiceImpl extends BaseService implements AuthService {
         User user = authenticateUser(loginDto);
         // Set the authenticated user in SecurityContext
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), null, List.of())
+                new UsernamePasswordAuthenticationToken(user.getPerson().getEmail(), null, List.of())
         );
         return issueTokensForFrontend(user);
     }
@@ -213,11 +202,12 @@ public class AuthServiceImpl extends BaseService implements AuthService {
 
     @Override
     public void logout() {
-        // Get current user from security context
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (username != null) {
-            // Find user by username
-            Optional<User> userOpt = userRepository.findByUsername(username);
+        // Get current user (email) from security context
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (email != null) {
+            // Find user by email
+            Optional<Person> personOpt = personRepository.findByEmail(email);
+            Optional<User> userOpt = personOpt.flatMap(p -> userRepository.findByPersonId(p.getId()));
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 // Delete refresh token for the user
@@ -232,16 +222,17 @@ public class AuthServiceImpl extends BaseService implements AuthService {
 
     @Override
     public UserPermissionsDto getUserPermissions() {
-        // Get current authenticated user
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (username == null) {
+        // Get current authenticated user (email)
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (email == null) {
             throw new InvalidCredentialsException("User not authenticated");
         }
 
-        // Find user by username
-        Optional<User> userOpt = userRepository.findByUsername(username);
+        // Find user by email
+        Optional<User> userOpt = personRepository.findByEmail(email)
+                .flatMap(p -> userRepository.findByPersonId(p.getId()));
         if (userOpt.isEmpty()) {
-            throw new ObjectNotFoundException(User.class.getSimpleName(), "username", username);
+            throw new ObjectNotFoundException(User.class.getSimpleName(), "email", email);
         }
 
         User user = userOpt.get();
@@ -264,7 +255,7 @@ public class AuthServiceImpl extends BaseService implements AuthService {
 
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getUsername(), loginDto.password())
+                    new UsernamePasswordAuthenticationToken(user.getPerson().getEmail(), loginDto.password())
             );
         } catch (ObjectNotFoundException | AuthenticationException e) {
             throw new InvalidCredentialsException(INVALID_CREDENTIALS_MESSAGE);
@@ -274,11 +265,6 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     }
 
     private User resolveUserByLogin(String login) {
-        Optional<User> optUser = userRepository.findByUsername(login);
-        if (optUser.isPresent()) {
-            return optUser.get();
-        }
-
         Optional<Person> personOpt = personRepository.findByEmail(login);
         if (personOpt.isEmpty()) {
             throw new InvalidCredentialsException(INVALID_CREDENTIALS_MESSAGE);
@@ -320,8 +306,24 @@ public class AuthServiceImpl extends BaseService implements AuthService {
     }
 
     private LoginResponseDto issueTokensForFrontend(User user, Long orgId) {
-        String accessToken = jwtUtil.generateToken(user.getUsername(), "", orgId);
-        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
+        List<WorkspaceSummaryDto> workspaces = memberRepository
+                .findByUserIdOrderByCreatedAtAsc(user.getId())
+                .stream()
+                .map(WorkspaceSummaryDto::from)
+                .toList();
+
+        // A plain login carries no organizationId claim (unlike signup, which sets
+        // TenantContext right after creating the org). If the user belongs to
+        // exactly one workspace, mint the token with it already selected instead
+        // of forcing an extra /workspaces/{orgId}/switch round trip.
+        Long effectiveOrgId = orgId;
+        if (effectiveOrgId == null && workspaces.size() == 1) {
+            effectiveOrgId = workspaces.get(0).orgId();
+        }
+
+        String email = user.getPerson().getEmail();
+        String accessToken = jwtUtil.generateToken(email, "", effectiveOrgId);
+        String refreshToken = jwtUtil.generateRefreshToken(email);
 
         replaceRefreshToken(user, refreshToken);
 
@@ -332,7 +334,8 @@ public class AuthServiceImpl extends BaseService implements AuthService {
                 accessToken,
                 refreshToken,
                 Math.toIntExact(jwtUtil.getConfig().getAccessTokenExpirationSeconds()),
-                permissions
+                permissions,
+                workspaces
         );
     }
 

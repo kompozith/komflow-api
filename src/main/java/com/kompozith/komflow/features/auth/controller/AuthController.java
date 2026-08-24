@@ -3,6 +3,7 @@ package com.kompozith.komflow.features.auth.controller;
 import com.kompozith.komflow.features.auth.dto.*;
 import com.kompozith.komflow.features.auth.service.AuthService;
 import com.kompozith.komflow.features.auth.service.PasswordResetService;
+import com.kompozith.komflow.features.organization.service.WorkspaceMemberService;
 import com.kompozith.komflow.features.personnel.dto.UserDetailsDto;
 import com.kompozith.komflow.util.SimpleResponse;
 import com.kompozith.komflow.configuration.security.AuthCookieConfig;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,6 +35,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final WorkspaceMemberService workspaceMemberService;
     private final JwtUtil jwtUtil;
     private final AuthCookieConfig authCookieConfig;
 
@@ -44,6 +47,15 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         body.setRefreshToken(null);
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+
+    record SlugAvailabilityResponse(boolean available) {}
+
+    @GetMapping("/organizations/slug-availability")
+    @Operation(summary = "Check organization slug availability", description = "Used to validate a workspace URL slug in real time during signup")
+    public ResponseEntity<SlugAvailabilityResponse> checkSlugAvailability(@RequestParam String slug) {
+        boolean available = StringUtils.hasText(slug) && !workspaceMemberService.slugExists(slug);
+        return ResponseEntity.ok(new SlugAvailabilityResponse(available));
     }
 
     @PostMapping("/login")

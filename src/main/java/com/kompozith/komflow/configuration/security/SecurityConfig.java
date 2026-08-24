@@ -34,7 +34,6 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final JwtTokenFilter jwtTokenFilter;
-    private final AuditTrailFilter auditTrailFilter;
     private final AppCorsProperties corsProperties;
 
     @Bean
@@ -93,10 +92,6 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtTokenFilter,
                         UsernamePasswordAuthenticationFilter.class
-                )
-                .addFilterAfter(
-                        auditTrailFilter,
-                        JwtTokenFilter.class
                 )
                 .build();
     }

@@ -38,9 +38,11 @@ public enum MessageVariable {
     SUBSCRIBER_ID("{{subscriber_id}}", "id", "Identifiant unique de la personne inscrite"),
     SUBSCRIBER_ENABLED("{{subscriber_enabled}}", "enabled", "Statut d'activation de la personne inscrite"),
 
-    // User fields (if linked)
-    USERNAME("{{contact_username}}", "person.user.username", "Nom d'utilisateur du contact (si lie a un compte)"),
-    SUBSCRIBER_USERNAME("{{subscriber_username}}", "person.user.username", "Nom d'utilisateur de la personne inscrite (si lie a un compte)"),
+    // User fields (if linked). Le concept de "username" de connexion a ete supprime :
+    // ces variables de templating sont conservees pour compatibilite ascendante et
+    // resolvent desormais vers l'email de la personne (seul identifiant de compte).
+    USERNAME("{{contact_username}}", "person.email", "Nom d'utilisateur du contact (alias de l'email, si lie a un compte)"),
+    SUBSCRIBER_USERNAME("{{subscriber_username}}", "person.email", "Nom d'utilisateur de la personne inscrite (alias de l'email, si lie a un compte)"),
 
     // Phone numbers (first available phone)
     PHONE_NUMBER("{{contact_phone_number}}", "person.phoneNumbers[0].number", "Premier numero de telephone du contact"),

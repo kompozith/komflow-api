@@ -24,19 +24,19 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws ObjectNotFoundException {
-        User user = userRepository.findByUsernameWithRolesAndPermissions(username)
-                .orElseThrow(() -> new ObjectNotFoundException("User not found with username: " + username));
+    public UserDetails loadUserByUsername(String email) throws ObjectNotFoundException {
+        User user = userRepository.findByPersonEmailWithRolesAndPermissions(email)
+                .orElseThrow(() -> new ObjectNotFoundException("User not found with email: " + email));
 
         List<GrantedAuthority> authorities = user.getRoles().stream()
                 .flatMap(role -> role.getPermissions().stream())
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
-        log.debug("Permissions loaded for {}: {}", username, authorities);
+        log.debug("Permissions loaded for {}: {}", email, authorities);
 
         return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
+                user.getPerson().getEmail(),
                 user.getPassword(),
                 authorities
         );

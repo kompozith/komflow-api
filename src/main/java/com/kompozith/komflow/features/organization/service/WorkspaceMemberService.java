@@ -136,7 +136,7 @@ public class WorkspaceMemberService {
     memberRepository.save(member);
 
     log.info("[Workspace] Invitation acceptée org={} user={}",
-        member.getOrganization().getId(), currentUser.getUsername());
+        member.getOrganization().getId(), currentUser.getPerson().getEmail());
 
     return MemberDto.from(member);
   }
@@ -190,7 +190,7 @@ public class WorkspaceMemberService {
     User current = currentUser();
     OrganizationMember member = memberRepository
         .findByOrganizationIdAndUserId(orgId, current.getId())
-        .orElseThrow(() -> new ObjectNotFoundException("OrganizationMember", "user", current.getUsername()));
+        .orElseThrow(() -> new ObjectNotFoundException("OrganizationMember", "user", current.getPerson().getEmail()));
 
     if (member.getRole() == WorkspaceRole.OWNER
         && memberRepository.countOwnersByOrganizationId(orgId) <= 1) {
@@ -198,7 +198,7 @@ public class WorkspaceMemberService {
     }
 
     memberRepository.delete(member);
-    log.info("[Workspace] User {} a quitté l'org {}", current.getUsername(), orgId);
+    log.info("[Workspace] User {} a quitté l'org {}", current.getPerson().getEmail(), orgId);
   }
 
   // ── Lister les espaces ─────────────────────────────────────────────────
@@ -258,9 +258,10 @@ public class WorkspaceMemberService {
   }
 
   private User currentUser() {
-    String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    return userRepository.findByUsername(username)
-        .orElseThrow(() -> new ObjectNotFoundException("User", "username", username));
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    return personRepository.findByEmail(email)
+        .flatMap(person -> userRepository.findByPersonId(person.getId()))
+        .orElseThrow(() -> new ObjectNotFoundException("User", "email", email));
   }
 
   /**
@@ -310,7 +311,7 @@ public class WorkspaceMemberService {
         .build();
     memberRepository.save(member);
 
-    log.info("[Workspace] Espace créé: id={} slug={} owner={}", org.getId(), slug, owner.getUsername());
+    log.info("[Workspace] Espace créé: id={} slug={} owner={}", org.getId(), slug, owner.getPerson().getEmail());
     return WorkspaceSummaryDto.from(member);
   }
 

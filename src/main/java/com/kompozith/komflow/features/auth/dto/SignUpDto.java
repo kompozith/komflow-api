@@ -11,11 +11,17 @@ public record SignUpDto (
     @Email(message = "user.email.format")
     String email,
 
-    @NotBlank(message = "user.username.blank")
-    String username,
-
     @NotBlank(message = "user.password.blank")
-    @Size(min = 6, max = 20, message = "user.password.length")
+    @Size(min = 8, max = 20, message = "user.password.length")
+    /**
+     * Requires at least one lowercase letter, one uppercase letter, one digit,
+     * and one special character from a fixed allow-list (@_#$%-^*()!) — kept
+     * in sync with the frontend's PASSWORD_SPECIAL_CHARS. This is a
+     * defense-in-depth password-quality rule, not the SQL-injection defense:
+     * that is provided by JPA/Hibernate parameterized queries, never by
+     * filtering input characters.
+     */
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@_#$%\\-^*()!]).+$", message = "user.password.weak")
     String password,
 
     String firstName,
