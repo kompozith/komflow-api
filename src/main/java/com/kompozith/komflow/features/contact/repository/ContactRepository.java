@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.contact.repository;
 
-import com.kompozith.komflow.features.contact.dto.ContactWithTagCountDto;
+import com.kompozith.komflow.features.contact.dto.ContactWithTagCountProjection;
 import com.kompozith.komflow.features.contact.entity.Contact;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +21,7 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     Optional<Contact> findByIdWithAssociations(@Param("id") Long id);
 
     @Query(value = """
-    SELECT DISTINCT c.id, c.enabled, c.last_message_received_at, c.civility, c.profession, c.age_range, c.objectives, c.website_url, c.created_at, c.updated_at, COUNT(ct.cnt_tag_id) AS tagCount, p.id, p.email, p.first_name, p.last_name, p.language, p.country, p.city, p.timezone, p.created_at, p.updated_at, pn.number
+    SELECT DISTINCT c.id AS id, c.enabled AS enabled, c.last_message_received_at AS lastMessageReceivedAt, c.civility AS civility, c.profession AS profession, c.age_range AS ageRange, c.objectives AS objectives, c.website_url AS websiteUrl, c.created_at AS createdAt, c.updated_at AS updatedAt, COUNT(ct.cnt_tag_id) AS tagCount, p.id AS personId, p.email AS email, p.first_name AS firstName, p.last_name AS lastName, p.language AS language, p.country AS country, p.city AS city, p.timezone AS timezone, p.created_at AS personCreatedAt, p.updated_at AS personUpdatedAt, pn.number AS phoneNumber
     FROM komflow.cnt_contacts c
     LEFT JOIN komflow.prs_persons p ON p.id = c.prs_person_id
     LEFT JOIN komflow.prs_phone_number pn ON p.id = pn.person_id
@@ -43,7 +43,7 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
           )
     GROUP BY c.id, c.enabled, c.last_message_received_at, c.civility, c.profession, c.age_range, c.objectives, c.website_url, c.prs_person_id, c.created_at, c.updated_at, p.id, p.first_name, p.last_name, p.email, p.language, p.country, p.city, p.timezone, p.created_at, p.updated_at, pn.number
     """, nativeQuery = true)
-    Page<ContactWithTagCountDto> findWithFiltersAndTagCount(
+    Page<ContactWithTagCountProjection> findWithFiltersAndTagCount(
             @Param("organizationId") Long organizationId,
             @Param("search") String search,
             @Param("enabled") Boolean enabled,

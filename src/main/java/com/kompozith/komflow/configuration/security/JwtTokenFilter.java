@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +27,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private static final String WORKSPACE_SLUG_HEADER = "X-Workspace-Slug";
@@ -75,6 +77,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                         TenantContext.clear();
                         errorResponseWriter.writeErrorResponse(response, HttpStatus.FORBIDDEN, ex);
                         return;
+                    } catch (Exception ex) {
+                        log.error("Failed to resolve workspace slug '{}' for user '{}'", workspaceSlug, username, ex);
+                        throw ex;
                     }
                 }
             }

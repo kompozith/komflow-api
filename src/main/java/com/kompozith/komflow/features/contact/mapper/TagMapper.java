@@ -2,6 +2,7 @@ package com.kompozith.komflow.features.contact.mapper;
 
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
+import com.kompozith.komflow.features.contact.dto.TagWithContactCountProjection;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -19,5 +20,7 @@ public interface TagMapper {
     TagDto tagToTagDto(Tag tag);
 
     TagWithContactCountDto tagToTagWithContactCountDto(Tag tag);
+
+    TagWithContactCountDto projectionToTagWithContactCountDto(TagWithContactCountProjection projection);
 
 }

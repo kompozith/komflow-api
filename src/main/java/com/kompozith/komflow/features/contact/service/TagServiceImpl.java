@@ -76,7 +76,8 @@ public class TagServiceImpl extends BaseService implements TagService {
     @Override
     public Page<TagWithContactCountDto> findAll(Pageable pageable, String search, Instant startDate, Instant endDate, Boolean enabled) {
         Long orgId = TenantContext.getOrganizationId();
-        return tagRepository.findWithFiltersAndContactCount(orgId, search, startDate, endDate, enabled, pageable);
+        return tagRepository.findWithFiltersAndContactCount(orgId, search, startDate, endDate, enabled, pageable)
+                .map(tagMapper::projectionToTagWithContactCountDto);
     }
 
     @Override
