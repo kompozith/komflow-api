@@ -411,6 +411,7 @@ BEGIN
         ADD CONSTRAINT uc_830b01f41407eebc0d0a5f200 UNIQUE (organization_id, metric, year_month);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -419,6 +420,7 @@ BEGIN
         ADD CONSTRAINT uc_aut_roles_name UNIQUE (name);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -427,6 +429,7 @@ BEGIN
         ADD CONSTRAINT uc_bil_subscriptions_organization UNIQUE (organization_id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -435,6 +438,7 @@ BEGIN
         ADD CONSTRAINT uc_cnt_contacts_prs_person UNIQUE (prs_person_id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -443,6 +447,7 @@ BEGIN
         ADD CONSTRAINT uc_cnt_tags_name UNIQUE (name);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -451,6 +456,7 @@ BEGIN
         ADD CONSTRAINT uc_d1c132e9c034c594422766d19 UNIQUE (organization_id, user_id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -459,6 +465,7 @@ BEGIN
         ADD CONSTRAINT uc_msg_message_attachments_core_file UNIQUE (core_file_id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -467,6 +474,7 @@ BEGIN
         ADD CONSTRAINT uc_org_members_invite_token UNIQUE (invite_token);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -475,6 +483,7 @@ BEGIN
         ADD CONSTRAINT uc_org_organizations_slug UNIQUE (slug);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -483,6 +492,7 @@ BEGIN
         ADD CONSTRAINT uc_prs_users_logs_logs UNIQUE (logs_id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -491,6 +501,7 @@ BEGIN
         ADD CONSTRAINT uc_prs_users_prs_person UNIQUE (prs_person_id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -499,6 +510,7 @@ BEGIN
         ADD CONSTRAINT uc_prs_users_username UNIQUE (username);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -507,6 +519,7 @@ BEGIN
         ADD CONSTRAINT uc_refresh_tokens_token UNIQUE (token);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -515,6 +528,7 @@ BEGIN
         ADD CONSTRAINT uc_refresh_tokens_user UNIQUE (user_id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_ccr_campaign_id_status ON msg_campaign_contact_results (campaign_id, status);
@@ -525,6 +539,7 @@ BEGIN
         ADD CONSTRAINT FK_BIL_SUBSCRIPTIONS_ON_ORGANIZATION FOREIGN KEY (organization_id) REFERENCES org_organizations (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -533,6 +548,7 @@ BEGIN
         ADD CONSTRAINT FK_CNT_CONTACTS_ON_PRS_PERSON FOREIGN KEY (prs_person_id) REFERENCES prs_persons (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -541,6 +557,7 @@ BEGIN
         ADD CONSTRAINT FK_MSG_CAMPAIGNS_ON_MESSAGE FOREIGN KEY (message_id) REFERENCES msg_messages (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -549,6 +566,7 @@ BEGIN
         ADD CONSTRAINT FK_MSG_CAMPAIGN_CONTACT_RESULTS_ON_CAMPAIGN FOREIGN KEY (campaign_id) REFERENCES msg_campaigns (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_ccr_campaign_id ON msg_campaign_contact_results (campaign_id);
@@ -559,6 +577,7 @@ BEGIN
         ADD CONSTRAINT FK_MSG_CAMPAIGN_CONTACT_RESULTS_ON_CONTACT FOREIGN KEY (contact_id) REFERENCES cnt_contacts (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -567,6 +586,7 @@ BEGIN
         ADD CONSTRAINT FK_MSG_EVENT_REGISTRATION_WORKFLOW_STEPS_ON_MSG_EVENT FOREIGN KEY (msg_event_id) REFERENCES msg_events (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -575,6 +595,7 @@ BEGIN
         ADD CONSTRAINT FK_MSG_EVENT_REGISTRATION_WORKFLOW_STEPS_ON_MSG_MESSAGE FOREIGN KEY (msg_message_id) REFERENCES msg_messages (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -583,6 +604,7 @@ BEGIN
         ADD CONSTRAINT FK_ORG_MEMBERS_ON_ORGANIZATION FOREIGN KEY (organization_id) REFERENCES org_organizations (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -591,6 +613,7 @@ BEGIN
         ADD CONSTRAINT FK_ORG_MEMBERS_ON_USER FOREIGN KEY (user_id) REFERENCES prs_users (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -599,6 +622,7 @@ BEGIN
         ADD CONSTRAINT FK_PRS_PERSONS_ON_USER FOREIGN KEY (user_id) REFERENCES prs_users (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -607,6 +631,7 @@ BEGIN
         ADD CONSTRAINT FK_PRS_PHONE_NUMBER_ON_CONTACT FOREIGN KEY (contact_id) REFERENCES cnt_contacts (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -615,6 +640,7 @@ BEGIN
         ADD CONSTRAINT FK_PRS_PHONE_NUMBER_ON_PERSON FOREIGN KEY (person_id) REFERENCES prs_persons (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -623,6 +649,7 @@ BEGIN
         ADD CONSTRAINT FK_PRS_USERS_ON_PRS_PERSON FOREIGN KEY (prs_person_id) REFERENCES prs_persons (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -631,6 +658,7 @@ BEGIN
         ADD CONSTRAINT FK_REFRESH_TOKENS_ON_USER FOREIGN KEY (user_id) REFERENCES prs_users (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -639,6 +667,7 @@ BEGIN
         ADD CONSTRAINT fk_aut_role_permissions_on_role FOREIGN KEY (aut_role_id) REFERENCES aut_roles (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -647,6 +676,7 @@ BEGIN
         ADD CONSTRAINT fk_cntcontag_on_contact FOREIGN KEY (cnt_contact_id) REFERENCES cnt_contacts (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -655,6 +685,7 @@ BEGIN
         ADD CONSTRAINT fk_cntcontag_on_tag FOREIGN KEY (cnt_tag_id) REFERENCES cnt_tags (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -663,6 +694,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamccitag_on_campaign FOREIGN KEY (msg_campaign_id) REFERENCES msg_campaigns (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -671,6 +703,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamccitag_on_tag FOREIGN KEY (cnt_tag_id) REFERENCES cnt_tags (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -679,6 +712,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamcctag_on_campaign FOREIGN KEY (msg_campaign_id) REFERENCES msg_campaigns (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -687,6 +721,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamcctag_on_tag FOREIGN KEY (cnt_tag_id) REFERENCES cnt_tags (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -695,6 +730,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamcon_on_campaign FOREIGN KEY (campaign_id) REFERENCES msg_campaigns (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -703,6 +739,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamcon_on_contact FOREIGN KEY (contacts_id) REFERENCES cnt_contacts (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -711,6 +748,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamtag_on_campaign FOREIGN KEY (contacts_id) REFERENCES msg_campaigns (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -719,6 +757,7 @@ BEGIN
         ADD CONSTRAINT fk_msgcamtag_on_tag FOREIGN KEY (tags_id) REFERENCES cnt_tags (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -727,6 +766,7 @@ BEGIN
         ADD CONSTRAINT fk_msgemacccon_on_campaign FOREIGN KEY (msg_campaign_id) REFERENCES msg_campaigns (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -735,6 +775,7 @@ BEGIN
         ADD CONSTRAINT fk_msgemacccon_on_contact FOREIGN KEY (cnt_contact_id) REFERENCES cnt_contacts (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -743,6 +784,7 @@ BEGIN
         ADD CONSTRAINT fk_msgemaccicon_on_campaign FOREIGN KEY (msg_campaign_id) REFERENCES msg_campaigns (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -751,6 +793,7 @@ BEGIN
         ADD CONSTRAINT fk_msgemaccicon_on_contact FOREIGN KEY (cnt_contact_id) REFERENCES cnt_contacts (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -759,6 +802,7 @@ BEGIN
         ADD CONSTRAINT fk_msgmesatt_on_file FOREIGN KEY (core_file_id) REFERENCES core_file (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -767,6 +811,7 @@ BEGIN
         ADD CONSTRAINT fk_msgmesatt_on_message FOREIGN KEY (msg_message_id) REFERENCES msg_messages (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -775,6 +820,7 @@ BEGIN
         ADD CONSTRAINT fk_msgmeseve_on_event FOREIGN KEY (msg_event_id) REFERENCES msg_events (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -783,6 +829,7 @@ BEGIN
         ADD CONSTRAINT fk_msgmeseve_on_message FOREIGN KEY (msg_message_id) REFERENCES msg_messages (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -791,6 +838,7 @@ BEGIN
         ADD CONSTRAINT fk_org_member_permissions_on_organization_member FOREIGN KEY (member_id) REFERENCES org_members (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -799,6 +847,7 @@ BEGIN
         ADD CONSTRAINT fk_prsuselog_on_audit_log FOREIGN KEY (logs_id) REFERENCES aut_audit_logs (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -807,6 +856,7 @@ BEGIN
         ADD CONSTRAINT fk_prsuselog_on_user FOREIGN KEY (user_id) REFERENCES prs_users (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -815,6 +865,7 @@ BEGIN
         ADD CONSTRAINT fk_prsuserol_on_role FOREIGN KEY (aut_role_id) REFERENCES aut_roles (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -823,6 +874,7 @@ BEGIN
         ADD CONSTRAINT fk_prsuserol_on_user FOREIGN KEY (prs_user_id) REFERENCES prs_users (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 CREATE TABLE IF NOT EXISTS komflow.auth_password_reset_tokens
@@ -843,6 +895,7 @@ BEGIN
         ADD CONSTRAINT uc_auth_password_reset_tokens_reset_token UNIQUE (reset_token);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
 
 DO $$
@@ -851,4 +904,5 @@ BEGIN
         ADD CONSTRAINT FK_AUTH_PASSWORD_RESET_TOKENS_ON_USER FOREIGN KEY (user_id) REFERENCES prs_users (id);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;

@@ -19,4 +19,5 @@ BEGIN
         ADD CONSTRAINT uc_prs_persons_email UNIQUE (email);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
+    WHEN undefined_column THEN NULL;
 END $$;
