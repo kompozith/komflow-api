@@ -8,13 +8,6 @@ public class SignInLoginParameterValidator implements ConstraintValidator<LoginP
 
     @Override
     public boolean isValid(LoginDto dto, ConstraintValidatorContext context) {
-        if (dto == null) return false;
-
-        /*boolean emailPresent = dto.email() != null && !dto.email().isBlank();
-        boolean usernamePresent = dto.username() != null && !dto.username().isBlank();
-
-        return emailPresent || usernamePresent;*/
-
-        return true;
+        return dto != null;
     }
 }

@@ -5,7 +5,6 @@ import java.time.Instant;
 public interface UserDetailsInterfaceDto {
 
     String getId();
-    String getUsername();
     String getEmail();
     String getFirstName();
     String getLastName();

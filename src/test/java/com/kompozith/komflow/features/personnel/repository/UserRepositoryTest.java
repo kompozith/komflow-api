@@ -9,7 +9,9 @@ import com.kompozith.komflow.features.personnel.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Optional;
 import java.util.Set;
@@ -17,6 +19,8 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
 class UserRepositoryTest {
 
     @Autowired
@@ -41,13 +45,12 @@ class UserRepositoryTest {
 
         // User
         user = User.builder()
-                .username("testUsername")
                 .password("testPassword")
                 .build();
 
         // Person
         person = Person.builder()
-                .email("testUserEmail")
+                .email("testUserEmail@example.com")
                 .firstName("testFirstName")
                 .lastName("testLastName")
                 .build();
@@ -60,25 +63,6 @@ class UserRepositoryTest {
         testRoleName = "TEST_ROLE_NAME";
         role = new Role();
         role.setName(testRoleName);
-    }
-
-    @Test
-    void shouldFindUserByUsernameAndReturnResultSuccessfully() {
-
-        // Given or Arrange
-        Person savedPerson = this.personRepository.save(person);
-
-        user.setPerson(savedPerson);
-        this.userRepository.save(user);
-
-        //When or Act
-        Optional<User> foundUser = userRepository.findByUsername("testUsername");
-
-        //Then or Assert
-        assertTrue(foundUser.isPresent());
-        assertEquals(user.getUsername(), foundUser.get().getUsername());
-        assertEquals(user.getPassword(), foundUser.get().getPassword());
-        assertEquals(user.getPerson().getEmail(), foundUser.get().getPerson().getEmail());
     }
 
     @Test
@@ -95,9 +79,25 @@ class UserRepositoryTest {
 
         //Then or Assert
         assertTrue(foundUser.isPresent());
-        assertEquals(user.getUsername(), foundUser.get().getUsername());
         assertEquals(user.getPassword(), foundUser.get().getPassword());
         assertEquals(user.getPerson().getEmail(), foundUser.get().getPerson().getEmail());
+    }
+
+    @Test
+    void shouldFindUserByPersonEmailContainingIgnoreCase() {
+
+        // Given / Arrange
+        Person savedPerson = this.personRepository.save(person);
+
+        user.setPerson(savedPerson);
+        this.userRepository.save(user);
+
+        //When or Act
+        var foundUsers = userRepository.findByPersonEmailContainingIgnoreCase("testuseremail");
+
+        //Then or Assert
+        assertEquals(1, foundUsers.size());
+        assertEquals(user.getPerson().getEmail(), foundUsers.get(0).getPerson().getEmail());
     }
 
     @Test
@@ -116,14 +116,13 @@ class UserRepositoryTest {
         assertTrue(optUserDto.isPresent());
         UserDetailsInterfaceDto foundUserDto = optUserDto.get();
 
-        assertEquals(user.getUsername(), foundUserDto.getUsername());
         assertEquals(person.getEmail(), foundUserDto.getEmail());
         assertEquals(person.getFirstName(), foundUserDto.getFirstName());
         assertEquals(person.getLastName(), foundUserDto.getLastName());
     }
 
     @Test
-    void shouldFindUserByUsernameWithRolesAndPermissions() {
+    void shouldFindUserByPersonEmailWithRolesAndPermissions() {
 
         /*Given or Arrange*/
         role.setPermissions(Set.of(testAppPermission, testRolePermission));
@@ -136,7 +135,7 @@ class UserRepositoryTest {
         this.userRepository.save(user);
 
         /*When or Act*/
-        Optional<User> foundUser = userRepository.findByUsername("testUsername");
+        Optional<User> foundUser = userRepository.findByPersonEmailWithRolesAndPermissions(savedPerson.getEmail());
 
         /*Then or Assert*/
 
@@ -149,7 +148,6 @@ class UserRepositoryTest {
 
         // User
         assertTrue(foundUser.isPresent());
-        assertEquals(user.getUsername(), foundUser.get().getUsername());
         assertEquals(user.getPassword(), foundUser.get().getPassword());
         assertEquals(user.getPerson().getEmail(), foundUser.get().getPerson().getEmail());
         assertTrue(foundUser.get().getRoles().contains(role));

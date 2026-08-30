@@ -119,7 +119,7 @@ public class PasswordResetService {
         token.setUsed(true);
         tokenRepository.save(token);
 
-        log.info("Password reset completed for user {}", user.getUsername());
+        log.info("Password reset completed for user {}", user.getPerson().getEmail());
     }
 
     // ─── Email ────────────────────────────────────────────────────────────────

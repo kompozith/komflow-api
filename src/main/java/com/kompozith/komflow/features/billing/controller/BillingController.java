@@ -90,6 +90,8 @@ public class BillingController {
       @AuthenticationPrincipal UserDetails user) {
 
     Long orgId = TenantContext.getOrganizationId();
+    // UserDetails#getUsername() returns the Spring Security principal, which is the
+    // user's email since email is the sole account identifier (no more username).
     String email = user != null ? user.getUsername() : "";
 
     BillingProviderPort.CheckoutResult result = billingStack.createCheckoutSession(

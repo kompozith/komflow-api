@@ -8,6 +8,7 @@ import com.kompozith.komflow.util.ErrorResponse;
 import com.kompozith.komflow.util.SimpleResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -145,6 +146,15 @@ public class GlobalExceptionHandler {
         String violationInfo = extractErrorMessage(ex.getRootCause().getMessage());
 
         return new ErrorResponse(errorMessage, String.format(violationInfo));
+    }
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(JpaSystemException.class)
+    public SimpleResponse<Map<String, String>> handleJpaSystemException(JpaSystemException ex) {
+        log.warn("JPA system exception: {}", ex.getMostSpecificCause().toString());
+        Map<String, String> errorMap = new HashMap<>();
+        errorMap.put("error", ex.getMessage());
+        return new SimpleResponse<>("INVALID_DATA", errorMap);
     }
 
     // Méthode pour extraire la partie spécifique du message d'erreur

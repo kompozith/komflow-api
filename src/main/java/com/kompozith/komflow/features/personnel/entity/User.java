@@ -1,6 +1,5 @@
 package com.kompozith.komflow.features.personnel.entity;
 
-import com.kompozith.komflow.features.auth.entity.AuditLog;
 import com.kompozith.komflow.features.auth.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +8,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,9 +23,6 @@ public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
-
-    @Column(nullable = false, unique = true)
-    private String username;
 
     @Column(nullable = false)
     private String password;
@@ -46,9 +41,6 @@ public class User extends BaseEntity {
     )
     @Builder.Default
     private Set<Role> roles = new java.util.HashSet<>();
-
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<AuditLog> logs;
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()

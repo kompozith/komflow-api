@@ -8,6 +8,7 @@ import com.kompozith.komflow.features.organization.entity.OrganizationMember.Mem
 import com.kompozith.komflow.features.organization.repository.OrganizationMemberRepository;
 import com.kompozith.komflow.features.organization.service.WorkspaceMemberService;
 import com.kompozith.komflow.features.personnel.entity.User;
+import com.kompozith.komflow.features.personnel.repository.PersonRepository;
 import com.kompozith.komflow.features.personnel.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +32,7 @@ public class WorkspaceMemberController {
   private final WorkspaceMemberService     memberService;
   private final OrganizationMemberRepository memberRepository;
   private final UserRepository             userRepository;
+  private final PersonRepository           personRepository;
   private final JwtUtil                    jwtUtil;
 
   // ── Mes espaces ─────────────────────────────────────────────────────────
@@ -46,11 +48,11 @@ public class WorkspaceMemberController {
   public ResponseEntity<CreateWorkspaceResponse> createWorkspace(
       @RequestBody CreateWorkspaceRequest req) {
 
-    String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    User user = userRepository.findByUsername(username).orElseThrow();
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    User user = resolveUserByEmail(email);
 
     WorkspaceSummaryDto ws = memberService.createWorkspace(req.name(), req.slug(), user);
-    String newToken = jwtUtil.generateToken(username, "", ws.orgId());
+    String newToken = jwtUtil.generateToken(email, "", ws.orgId());
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(new CreateWorkspaceResponse(newToken, ws));
   }
@@ -72,10 +74,9 @@ public class WorkspaceMemberController {
   @Operation(summary = "Switcher vers un espace — retourne un nouveau JWT avec le bon organizationId")
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<SwitchResponse> switchWorkspace(@PathVariable Long orgId) {
-    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    User user = userRepository.findByUsername(username)
-        .orElseThrow();
+    User user = resolveUserByEmail(email);
 
     // Vérifier que le user est membre actif de cet espace
     OrganizationMember member = memberRepository
@@ -84,7 +85,7 @@ public class WorkspaceMemberController {
         .orElseThrow(() -> new SecurityException("Accès refusé à cet espace."));
 
     // Nouveau JWT avec le bon organizationId
-    String newToken = jwtUtil.generateToken(username, "", orgId);
+    String newToken = jwtUtil.generateToken(email, "", orgId);
 
     WorkspaceSummaryDto summary = WorkspaceSummaryDto.from(member);
     return ResponseEntity.ok(new SwitchResponse(newToken, summary));
@@ -153,8 +154,8 @@ public class WorkspaceMemberController {
   public ResponseEntity<AcceptResponse> acceptInvitation(@RequestParam String token) {
     MemberDto member = memberService.acceptInvitation(token);
 
-    String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    String newToken = jwtUtil.generateToken(username, "", member.orgId());
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    String newToken = jwtUtil.generateToken(email, "", member.orgId());
 
     WorkspaceSummaryDto workspace = new WorkspaceSummaryDto(
         member.orgId(), null, null, null,
@@ -168,9 +169,13 @@ public class WorkspaceMemberController {
   // ── Helper ──────────────────────────────────────────────────────────────
 
   private Long resolveCurrentUserId() {
-    String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    return userRepository.findByUsername(username)
-        .orElseThrow(() -> new IllegalStateException("User not found: " + username))
-        .getId();
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    return resolveUserByEmail(email).getId();
+  }
+
+  private User resolveUserByEmail(String email) {
+    return personRepository.findByEmail(email)
+        .flatMap(person -> userRepository.findByPersonId(person.getId()))
+        .orElseThrow(() -> new IllegalStateException("User not found: " + email));
   }
 }

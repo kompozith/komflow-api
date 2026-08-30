@@ -5,5 +5,5 @@ import com.kompozith.komflow.features.personnel.dto.UserDetailsDto;
 
 public interface UserService {
 
-    SimpleResponse<UserDetailsDto> findUserByUsername(String email);
+    SimpleResponse<UserDetailsDto> findUserByEmail(String email);
 }

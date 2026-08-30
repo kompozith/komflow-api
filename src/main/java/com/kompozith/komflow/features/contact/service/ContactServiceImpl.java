@@ -6,6 +6,7 @@ import com.kompozith.komflow.features.contact.dto.ContactDetailsDto;
 import com.kompozith.komflow.features.contact.dto.ContactDto;
 import com.kompozith.komflow.features.contact.dto.ContactImportResultDto;
 import com.kompozith.komflow.features.contact.dto.ContactWithTagCountDto;
+import com.kompozith.komflow.features.contact.dto.ContactWithTagCountProjection;
 import com.kompozith.komflow.features.contact.dto.CreateContactDto;
 import com.kompozith.komflow.features.contact.dto.PublicEventAgendaItemDto;
 import com.kompozith.komflow.features.contact.dto.PublicEventDetailsDto;
@@ -133,7 +134,8 @@ public class ContactServiceImpl extends BaseService implements ContactService {
     public Page<ContactWithTagCountDto> findAll(Pageable pageable, String search, Boolean enabled, Instant createdAtFrom, Instant createdAtTo, String tagIds) {
         Long orgId = TenantContext.getOrganizationId();
         String normalizedTagIds = normalizeTagIds(tagIds);
-        return contactRepository.findWithFiltersAndTagCount(orgId, search, enabled, createdAtFrom, createdAtTo, normalizedTagIds, pageable);
+        return contactRepository.findWithFiltersAndTagCount(orgId, search, enabled, createdAtFrom, createdAtTo, normalizedTagIds, pageable)
+                .map(contactMapper::projectionToContactWithTagCountDto);
     }
 
     @Override
@@ -207,7 +209,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
 
         String normalizedTagIds = normalizeTagIds(tagIds);
         Long orgId = TenantContext.getOrganizationId();
-        Page<ContactWithTagCountDto> page = contactRepository.findWithFiltersAndTagCount(
+        Page<ContactWithTagCountProjection> page = contactRepository.findWithFiltersAndTagCount(
                 orgId,
                 search,
                 enabled,
@@ -218,7 +220,7 @@ public class ContactServiceImpl extends BaseService implements ContactService {
         );
 
         List<Long> ids = page.getContent().stream()
-                .map(ContactWithTagCountDto::getId)
+                .map(ContactWithTagCountProjection::getId)
                 .distinct()
                 .toList();
 

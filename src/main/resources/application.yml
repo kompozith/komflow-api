@@ -1,1 +1,135 @@
-spring.profiles.active: dev
+# ===============================
+# = COMMON CONFIGURATION
+# ===============================
+# Valeurs partagées par tous les profils (dev, prod, ...). Un profil ne doit
+# redéfinir ici QUE ce qui diffère réellement d'un environnement à l'autre
+# (voir application-dev.yml / application-prod.yml).
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT}
+  servlet:
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH}
+
+spring:
+  profiles:
+    active: dev
+
+  application:
+    name: ${APP_NAME:Komflow}
+
+  # ===============================
+  # = DATA SOURCE
+  # ===============================
+  # Set here configurations for the database connection
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  sql:
+    init.mode: always
+    init.schema-locations: classpath:db/migration/schema.sql
+
+  # ===============================
+  # = JPA / HIBERNATE
+  # ===============================
+  # Show or not log for each sql query
+  jpa:
+    show-sql: true
+    hibernate.ddl-auto: update
+    properties.hibernate.default_schema: ${DB_SCHEMA}
+
+  flyway:
+    enabled: true
+    encoding: UTF-8
+    locations: classpath:db/migration
+    out-of-order: false
+    baseline-on-migrate: true
+    validate-on-migrate: false
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    default-schema: ${DB_SCHEMA}
+    user: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    from-name: ${MAIL_FROM_NAME}
+    # Set to true only when debugging SMTP issues – generates very verbose output
+    debug: false
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE}
+      max-request-size: ${MAX_REQUEST_SIZE}
+
+# Swagger
+springdoc:
+  api-docs:
+    path: ${SPRINGDOC_API_DOCS_PATH}
+  swagger-ui:
+    path: ${SPRINGDOC_SWAGGER_UI_PATH}
+
+# Configuration JWT
+jwt:
+  secret-key: "${JWT_SECRET}"
+  expiration-ms: ${JWT_EXPIRATION_MS}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
+  issuer: ${JWT_ISSUER}
+  # Durée d'expiration du token d'accès en secondes (2 heures = 7200 secondes)
+  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS}
+
+app:
+  # Compte administrateur initial (bootstrap), créé par DataInitializer au démarrage.
+  admin:
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
+  file-storage:
+    path: ${FILE_STORAGE_PATH}
+  notifications:
+    admin-emails: ${APP_ADMIN_EMAILS:}
+  whatsapp:
+    phone-number: ${WHATSAPP_NUMBER}
+    phone-number-id: ${WHATSAPP_NUMBER_ID}
+    business-account-id: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+    access-token: ${WHATSAPP_ACCESS_TOKEN}
+    api-version: ${WHATSAPP_API_VERSION:v25.0}
+    # Nom du template Meta approuvé (laisser vide → mode text, fenêtre 24h uniquement)
+    template-name: ${WHATSAPP_TEMPLATE_NAME:}
+    template-language: ${WHATSAPP_TEMPLATE_LANGUAGE:fr}
+    connect-timeout-ms: ${WHATSAPP_CONNECT_TIMEOUT_MS:10000}
+    read-timeout-ms: ${WHATSAPP_READ_TIMEOUT_MS:15000}
+  cors:
+    # Wide open for now — tighten to explicit origins before going to production.
+    allowed-origins: "*"
+  campaign:
+    # Delay between individual email sends (ms). Prevents Gmail rate-limiting.
+    # ~120 emails/min at 500ms; increase to 1000ms if AUTH failures persist.
+    email-throttle-ms: ${CAMPAIGN_EMAIL_THROTTLE_MS:500}
+    # How many AUTH failures in a row before pausing the campaign
+    max-consecutive-auth-failures: ${CAMPAIGN_MAX_CONSECUTIVE_AUTH_FAILURES:5}
+    # How long to pause (ms) when the circuit-breaker trips (default 2 min)
+    auth-failure-pause-ms: ${CAMPAIGN_AUTH_FAILURE_PAUSE_MS:120000}
+    # Max send attempts per email before giving up (1 attempt + 1 retry)
+    email-max-retry-attempts: ${CAMPAIGN_EMAIL_MAX_RETRY_ATTEMPTS:2}
+
+auth:
+  cookie:
+    name: ${AUTH_REFRESH_COOKIE_NAME}
+    path: ${AUTH_REFRESH_COOKIE_PATH}
+    same-site: ${AUTH_REFRESH_COOKIE_SAMESITE}
+    secure: ${AUTH_REFRESH_COOKIE_SECURE}
+    http-only: ${AUTH_REFRESH_COOKIE_HTTPONLY}
+
+logging:
+  level:
+    root: INFO
+  file:
+    name: ${LOG_FILE_PATH:logs/komflow.log}
+  logback:
+    rollingpolicy:
+      file-name-pattern: logs/komflow-%d{yyyy-MM-dd}.%i.log

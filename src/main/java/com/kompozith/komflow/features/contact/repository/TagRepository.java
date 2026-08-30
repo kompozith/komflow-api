@@ -1,6 +1,6 @@
 package com.kompozith.komflow.features.contact.repository;
 
-import com.kompozith.komflow.features.contact.dto.TagWithContactCountDto;
+import com.kompozith.komflow.features.contact.dto.TagWithContactCountProjection;
 import com.kompozith.komflow.features.contact.entity.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +33,7 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     List<Object[]> findAllWithContactCount();
 
     @Query(value = """
-    SELECT t.id, t.name, t.description, t.color_code, t.enabled, t.created_at, t.updated_at, COUNT(c.id) as contact_count
+    SELECT t.id AS id, t.name AS name, t.description AS description, t.color_code AS colorCode, t.enabled AS enabled, t.created_at AS createdAt, t.updated_at AS updatedAt, COUNT(c.id) AS contactCount
     FROM komflow.cnt_tags t
     LEFT JOIN komflow.cnt_contact_tags ct ON t.id = ct.cnt_tag_id
     LEFT JOIN komflow.cnt_contacts c ON ct.cnt_contact_id = c.id
@@ -47,7 +47,7 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     GROUP BY t.id, t.name, t.description, t.color_code, t.enabled, t.created_at, t.updated_at
     """,
             nativeQuery = true)
-    Page<TagWithContactCountDto> findWithFiltersAndContactCount(@Param("organizationId") Long organizationId,
+    Page<TagWithContactCountProjection> findWithFiltersAndContactCount(@Param("organizationId") Long organizationId,
                                                                 @Param("search") String search,
                                                                 @Param("createdAtFrom") Instant createdAtFrom,
                                                                 @Param("createdAtTo") Instant createdAtTo,

@@ -2,6 +2,8 @@ package com.kompozith.komflow.features.contact.mapper;
 
 import com.kompozith.komflow.features.contact.dto.ContactDetailsDto;
 import com.kompozith.komflow.features.contact.dto.ContactDto;
+import com.kompozith.komflow.features.contact.dto.ContactWithTagCountDto;
+import com.kompozith.komflow.features.contact.dto.ContactWithTagCountProjection;
 import com.kompozith.komflow.features.contact.dto.CreateContactDto;
 import com.kompozith.komflow.features.contact.dto.TagDto;
 import com.kompozith.komflow.features.contact.entity.Contact;
@@ -117,6 +119,39 @@ public class ContactMapperManual implements ContactMapper {
             person.getCreatedAt(),
             person.getUpdatedAt()
         );
+    }
+
+    @Override
+    public ContactWithTagCountDto projectionToContactWithTagCountDto(ContactWithTagCountProjection projection) {
+        if (projection == null) {
+            return null;
+        }
+        ContactWithTagCountDto dto = new ContactWithTagCountDto();
+        dto.setId(projection.getId());
+        dto.setEnabled(Boolean.TRUE.equals(projection.getEnabled()));
+        dto.setLastMessageReceivedAt(projection.getLastMessageReceivedAt());
+        dto.setCivility(projection.getCivility());
+        dto.setProfession(projection.getProfession());
+        dto.setAgeRange(projection.getAgeRange());
+        dto.setObjectives(projection.getObjectives());
+        dto.setWebsiteUrl(projection.getWebsiteUrl());
+        dto.setCreatedAt(projection.getCreatedAt());
+        dto.setUpdatedAt(projection.getUpdatedAt());
+        dto.setTagCount(projection.getTagCount());
+        dto.setPerson(new PersonDto(
+            projection.getPersonId(),
+            projection.getEmail(),
+            projection.getFirstName(),
+            projection.getLastName(),
+            projection.getLanguage(),
+            projection.getCountry(),
+            projection.getCity(),
+            projection.getTimezone(),
+            projection.getPhoneNumber(),
+            projection.getPersonCreatedAt(),
+            projection.getPersonUpdatedAt()
+        ));
+        return dto;
     }
 
     private List<TagDto> mapTags(Set<Tag> tags) {

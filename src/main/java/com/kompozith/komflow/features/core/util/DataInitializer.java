@@ -27,6 +27,7 @@ public class DataInitializer {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final PersonRepository personRepository;
+    private final AdminBootstrapProperties adminBootstrapProperties;
 
     @PostConstruct
     public void init() {
@@ -92,14 +93,15 @@ public class DataInitializer {
 
     void initAdminUser() {
 
-        if (userRepository.findByUsername(ADMIN_USERNAME).isEmpty()) {
+        String adminEmail = adminBootstrapProperties.getEmail();
+
+        if (personRepository.findByEmail(adminEmail).isEmpty()) {
             User admin = new User();
-            admin.setUsername(ADMIN_USERNAME);
-            admin.setPassword(passwordEncoder.encode(ADMIN_PASSWORD));
+            admin.setPassword(passwordEncoder.encode(adminBootstrapProperties.getPassword()));
 
             // Create a person for the user
             Person person = new Person();
-            person.setEmail(ADMIN_EMAIL);
+            person.setEmail(adminEmail);
 
             personRepository.save(person);
 
@@ -110,7 +112,9 @@ public class DataInitializer {
 
     void assignAdminRoleToAdmin() {
         Role adminRole = roleRepository.findByName(ADMIN_ROLE_NAME).orElse(null);
-        User admin = userRepository.findByUsername(ADMIN_USERNAME).orElse(null);
+        User admin = personRepository.findByEmail(adminBootstrapProperties.getEmail())
+                .flatMap(person -> userRepository.findByPersonId(person.getId()))
+                .orElse(null);
 
         assert adminRole != null;
         assert admin != null;

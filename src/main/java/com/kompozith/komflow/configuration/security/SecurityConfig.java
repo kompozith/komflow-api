@@ -34,7 +34,6 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final JwtTokenFilter jwtTokenFilter;
-    private final AuditTrailFilter auditTrailFilter;
     private final AppCorsProperties corsProperties;
 
     @Bean
@@ -57,7 +56,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -93,10 +92,6 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtTokenFilter,
                         UsernamePasswordAuthenticationFilter.class
-                )
-                .addFilterAfter(
-                        auditTrailFilter,
-                        JwtTokenFilter.class
                 )
                 .build();
     }
